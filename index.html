@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bitcoin AllChat — OP_RETURN messages on the timechain</title>
+<meta name="description" content="Every human-readable OP_RETURN message on Bitcoin, read as one global chat. Parsed live from raw blocks.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a; --panel:#101010; --line:#1e1e1e; --fg:#e6e6e6; --dim:#7a7a7a;
+  --orange:#F39F41; --green:#26a69a; --red:#ef5350; --blue:#4a9eff; --purple:#a97bff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font-family:'IBM Plex Mono',Consolas,monospace;font-size:14px;line-height:1.5}
+a{color:var(--orange);text-decoration:none}
+a:hover{text-decoration:underline}
+
+header{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.96);
+  border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 16px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.06em;color:var(--orange);font-size:15px;white-space:nowrap}
+.brand span{color:var(--fg)}
+.stat{color:var(--dim);font-size:11.5px;white-space:nowrap}
+.stat b{color:var(--fg);font-weight:500}
+.spacer{flex:1 1 auto}
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.tabs button{background:#141414;color:var(--dim);border:0;border-right:1px solid var(--line);
+  padding:5px 11px;font:inherit;font-size:12px;cursor:pointer}
+.tabs button:last-child{border-right:0}
+.tabs button.on{background:var(--orange);color:#000;font-weight:600}
+.tabs button:hover:not(.on){color:var(--fg)}
+input[type=search]{background:#141414;border:1px solid var(--line);color:var(--fg);
+  font:inherit;font-size:12px;padding:5px 9px;border-radius:3px;width:190px;outline:none}
+input[type=search]:focus{border-color:var(--orange)}
+
+main{max-width:1000px;margin:0 auto;padding:16px 16px 80px}
+.note{color:var(--dim);font-size:11.5px;padding:6px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+
+.pin{border:1px solid #2a2118;background:#0f0d0a;border-radius:5px;margin-bottom:22px;overflow:hidden}
+.pin-h{display:flex;align-items:center;gap:9px;padding:9px 13px;background:#171310;
+  border-bottom:1px solid #2a2118;cursor:pointer;user-select:none}
+.pin-h b{color:var(--orange);font-size:12.5px;letter-spacing:.04em}
+.pin-h .sub{color:var(--dim);font-size:11px}
+.pin-b{padding:6px 13px 13px;display:none}
+.pin-b.open{display:block}
+
+.msg{border-bottom:1px solid var(--line);padding:11px 2px;display:flex;gap:11px}
+.msg:hover{background:#0e0e0e}
+.av{flex:0 0 34px;height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;background:#151515;border:1px solid var(--line);margin-top:2px}
+.body{flex:1 1 auto;min-width:0}
+.meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px;font-size:11px;color:var(--dim)}
+.badge{padding:1px 6px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.b-talk{background:rgba(38,166,154,.16);color:var(--green)}
+.b-bridge{background:rgba(74,158,255,.14);color:var(--blue)}
+.b-tag{background:rgba(169,123,255,.14);color:var(--purple)}
+.b-pgp{background:rgba(243,159,65,.16);color:var(--orange)}
+.txt{white-space:pre-wrap;word-break:break-word;color:var(--fg);font-size:13.5px}
+.txt.clip{max-height:8.5em;overflow:hidden;position:relative}
+.txt.clip:after{content:'';position:absolute;left:0;right:0;bottom:0;height:2.4em;
+  background:linear-gradient(transparent,var(--bg))}
+.more{font-size:11px;color:var(--orange);cursor:pointer;margin-top:3px;display:inline-block}
+.more:hover{text-decoration:underline}
+
+.load{display:block;width:100%;margin:22px 0 0;padding:11px;background:#141414;color:var(--orange);
+  border:1px solid var(--line);border-radius:4px;font:inherit;font-size:13px;cursor:pointer}
+.load:hover{background:#1a1a1a}
+.load:disabled{color:var(--dim);cursor:default}
+.prog{height:2px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:10px}
+.prog i{display:block;height:100%;width:0;background:var(--orange);transition:width .25s}
+.empty{color:var(--dim);text-align:center;padding:44px 10px;font-size:12.5px}
+footer{border-top:1px solid var(--line);color:var(--dim);font-size:11px;padding:16px;text-align:center}
+.wm{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;
+  z-index:0;font-size:52px;font-weight:700;color:rgba(255,255,255,.035);letter-spacing:5px}
+@media(max-width:640px){
+  .stat.hide-s{display:none}
+  input[type=search]{width:120px}
+  main{padding:12px 11px 70px}
+}
+</style>
+</head>
+<body>
+<div class="wm">@RenshuBTC</div>
+
+<header>
+  <div class="bar">
+    <div class="brand">BITCOIN<span>ALLCHAT</span></div>
+    <div class="stat">tip <b id="s-tip">…</b></div>
+    <div class="stat hide-s">scanned <b id="s-blocks">0</b> blocks</div>
+    <div class="stat hide-s">OP_RETURN <b id="s-or">0</b></div>
+    <div class="stat">messages <b id="s-msg">0</b></div>
+    <div class="spacer"></div>
+    <div class="tabs" id="tabs">
+      <button data-f="talk" class="on">CHAT</button>
+      <button data-f="bridge">BRIDGE</button>
+      <button data-f="tag">TAGS</button>
+      <button data-f="all">ALL</button>
+    </div>
+    <input type="search" id="q" placeholder="search…" autocomplete="off">
+  </div>
+  <div class="prog"><i id="prog"></i></div>
+</header>
+
+<main>
+  <div class="note">
+    Every OP_RETURN output is a message anyone can write into a Bitcoin block, permanently, for the price of a fee.
+    This page parses raw blocks straight from <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>
+    in your browser and reads them all as one room. Nothing is stored; the chain is the database.
+  </div>
+
+  <div class="pin">
+    <div class="pin-h" id="pinh">
+      <b>📌 THE LIQUID NEGOTIATION</b>
+      <span class="sub">Sep 6–7 2026 · blocks 965,822–965,875 · a $321M hack settled in OP_RETURN</span>
+      <span class="spacer"></span><span class="sub" id="pintog">show ▾</span>
+    </div>
+    <div class="pin-b" id="pinb"></div>
+  </div>
+
+  <div id="feed"></div>
+  <div class="empty" id="empty">scanning the timechain…</div>
+  <button class="load" id="load">LOAD 5 OLDER BLOCKS</button>
+</main>
+
+<footer>
+  parsed client-side from raw blocks · data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>
+  · built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a>
+</footer>
+
+<script>
+const API='https://mempool.space/api';
+const $=id=>document.getElementById(id);
+let TIP=0, next=0, scanned=0, orCount=0, msgs=[], filter='talk', query='', busy=false;
+
+/* ---------- raw block parser ---------- */
+function parseBlock(buf){
+  const d=new Uint8Array(buf); const dv=new DataView(buf); let p=80;
+  const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
+    if(n===0xfd){const v=dv.getUint16(p,true);p+=2;return v}
+    if(n===0xfe){const v=dv.getUint32(p,true);p+=4;return v}
+    const v=Number(dv.getBigUint64(p,true));p+=8;return v};
+  const n=vi(); const out=[]; let total=0, runes=0;
+  for(let i=0;i<n;i++){
+    const ts=p; p+=4;
+    const sw=d[p]===0x00; if(sw)p+=2;
+    const bodyStart=p;
+    const nin=vi();
+    for(let a=0;a<nin;a++){p+=36;const sl=vi();p+=sl;p+=4}
+    const nout=vi(); const outs=[];
+    for(let a=0;a<nout;a++){p+=8;const sl=vi();outs.push(d.subarray(p,p+sl));p+=sl}
+    const bodyEnd=p;
+    if(sw)for(let a=0;a<nin;a++){const ni=vi();for(let b=0;b<ni;b++){const l=vi();p+=l}}
+    const lockStart=p; p+=4;
+    for(const spk of outs){
+      if(spk.length&&spk[0]===0x6a){
+        total++;
+        if(spk.length>1&&spk[1]===0x5d){runes++;continue;} /* OP_13 = Runes token data */
+        let q=1,len=0;
+        if(q<spk.length){
+          const op=spk[q];
+          if(op<0x4c){len=op;q+=1}
+          else if(op===0x4c){len=spk[q+1];q+=2}
+          else if(op===0x4d){len=spk[q+1]|(spk[q+2]<<8);q+=3}
+          else{len=0;q+=1}
+        }
+        if(len>0) out.push({data:spk.subarray(q,q+len),
+          tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
+      }
+    }
+  }
+  return {outs:out,bytes:d,total,runes};
+}
+/* txid = dsha256 of the non-witness serialization; computed only for matches */
+async function txidOf(d,t){
+  let ser;
+  if(t.sw){
+    ser=new Uint8Array(4+(t.bodyEnd-t.bodyStart)+4);
+    ser.set(d.subarray(t.ver,t.ver+4),0);
+    ser.set(d.subarray(t.bodyStart,t.bodyEnd),4);
+    ser.set(d.subarray(t.lockStart,t.lockStart+4),4+(t.bodyEnd-t.bodyStart));
+  }else{
+    ser=d.subarray(t.ver,t.end);
+  }
+  const h1=await crypto.subtle.digest('SHA-256',ser);
+  const h2=new Uint8Array(await crypto.subtle.digest('SHA-256',h1));
+  let s='';for(let i=h2.length-1;i>=0;i--)s+=h2[i].toString(16).padStart(2,'0');
+  return s;
+}
+
+/* ---------- classification ---------- */
+const dec=new TextDecoder('utf-8',{fatal:false});
+function classify(bytes){
+  if(bytes.length<8) return null;
+  let s; try{s=dec.decode(bytes)}catch(e){return null}
+  if(s.indexOf('�')>=0) return null;
+  let pr=0,alpha=0,spaces=0;
+  for(const ch of s){const c=ch.codePointAt(0);
+    if((c>=32&&c<127)||c===10||c===13)pr++;
+    if(/[a-zA-Z]/.test(ch))alpha++;
+    if(ch===' ')spaces++;}
+  if(pr/s.length<0.9) return null;
+  if(alpha/s.length<0.30) return null;
+  const t=s.trim();
+  if(/BEGIN PGP/i.test(t)) return {kind:'pgp',text:t};
+  if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&spaces===0) return {kind:'bridge',text:t};
+  const words=t.split(/\s+/).filter(w=>/^[A-Za-z][A-Za-z'.,!?-]*$/.test(w));
+  if(words.length>=3) return {kind:'talk',text:t};
+  if(spaces===0&&t.length<80) return {kind:'tag',text:t};
+  return {kind:'tag',text:t};
+}
+
+/* ---------- rendering ---------- */
+const ICON={talk:'💬',bridge:'🔁',tag:'🏷',pgp:'🔐'};
+const BADGE={talk:'CHAT',bridge:'BRIDGE',tag:'TAG',pgp:'PGP'};
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function ago(ts){const s=Math.floor(Date.now()/1000-ts);
+  if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'}
+function row(m){
+  const long=m.text.length>260;
+  return `<div class="msg">
+    <div class="av">${ICON[m.kind]}</div>
+    <div class="body">
+      <div class="meta">
+        <span class="badge b-${m.kind}">${BADGE[m.kind]}</span>
+        <a href="https://mempool.space/block/${m.height}" target="_blank" rel="noopener">#${m.height.toLocaleString()}</a>
+        <span>${ago(m.time)}</span>
+        <span>${m.bytes}B</span>
+        <a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${m.txid.slice(0,10)}…</a>
+      </div>
+      <div class="txt ${long?'clip':''}">${esc(m.text)}</div>
+      ${long?'<span class="more">show more ▾</span>':''}
+    </div></div>`;
+}
+function render(){
+  const list=msgs.filter(m=>{
+    if(filter!=='all'&&!(filter==='talk'?(m.kind==='talk'||m.kind==='pgp'):m.kind===filter))return false;
+    if(query&&m.text.toLowerCase().indexOf(query)<0)return false;
+    return true;});
+  $('feed').innerHTML=list.map(row).join('');
+  $('empty').style.display=list.length?'none':'block';
+  if(!list.length&&scanned) $('empty').textContent='no messages match — try ALL or another filter';
+  $('s-msg').textContent=msgs.length;
+  document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
+    const t=el.previousElementSibling; t.classList.toggle('clip');
+    el.textContent=t.classList.contains('clip')?'show more ▾':'show less ▴';});
+}
+
+/* ---------- scanning ---------- */
+async function scanBlock(height){
+  const hash=await (await fetch(`${API}/block-height/${height}`)).text();
+  const meta=await (await fetch(`${API}/block/${hash}`)).json();
+  const buf=await (await fetch(`${API}/block/${hash}/raw`)).arrayBuffer();
+  const {outs,bytes,total}=parseBlock(buf);
+  orCount+=total;
+  const found=[];
+  for(const o of outs){
+    const c=classify(o.data);
+    if(c){
+      let txid='';
+      try{ txid=await txidOf(bytes,o.tx); }catch(e){}
+      found.push({...c,height,time:meta.timestamp,bytes:o.data.length,txid});
+    }
+  }
+  scanned++;
+  $('s-blocks').textContent=scanned;
+  $('s-or').textContent=orCount.toLocaleString();
+  return found;
+}
+async function loadNext(count=5){
+  if(busy)return; busy=true; $('load').disabled=true; $('load').textContent='SCANNING…';
+  for(let i=0;i<count&&next>0;i++){
+    $('prog').style.width=((i+1)/count*100)+'%';
+    try{
+      const f=await scanBlock(next);
+      msgs=msgs.concat(f); msgs.sort((a,b)=>b.height-a.height||0);
+      render();
+    }catch(e){console.warn('block',next,e)}
+    next--;
+  }
+  $('prog').style.width='0';
+  $('load').disabled=false; $('load').textContent='LOAD 5 OLDER BLOCKS'; busy=false;
+}
+
+/* ---------- pinned thread ---------- */
+const LIQUID=[
+ {h:965822,t:'91271efcbb5ab29abfc38ae635f0644e3ba042aad56f92d40136e1dde4742fe8',
+  who:'Blockstream Security',k:'talk',
+  m:'Please contact security@blockstream.com'},
+ {h:965865,t:'bd81219691eb1e22475c5985d847fa888c38f1b6d2cb2b7193f54d0cfa72394c',
+  who:'Blockstream Security',k:'pgp',
+  m:'Encrypted to the key behind bc1ql4mfu6aundtkksxklfajs2h3t9nzcd6gyqjlte (Electrum BIE1 ECIES) — a detached signature verifiable against blockstream.com/pgp.txt.'},
+ {h:965869,t:'3a3eac4a26395b8c2563aaf1eb8b1b77798c81c7d6337f51321827a244a480aa',
+  who:'The white hats',k:'talk',
+  m:'sending most back to bc1qdlld6antmv4xug242ed83q7k4rqw50cwfns38szx4qu2f4jwaxxsuhwxxr, is that ok'},
+ {h:965875,t:'83825b2135dd0abac12c9dfe17f29ab81b3427e1ae864947b0bebce5e47c3c4b',
+  who:'The white hats',k:'talk',
+  m:'Please fix the bug first. The chain is under risk at latest commit right now. Make sure every node is patched. Then we will transfer the money back safely after confirming the fix. The detail is as follows (encrypted using https://blockstream.com/pgp.txt).\n-----BEGIN PGP MESSAGE-----'},
+ {h:965875,t:'8a444eed65c4584f138e08ee138f61490ef73e84f71e14dac3ca66c230cf7e97',
+  who:'Blockstream Security',k:'pgp',
+  m:'-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\nYes, thank you.\n-----BEGIN PGP SIGNATURE-----'},
+];
+function pin(){
+  $('pinb').innerHTML=LIQUID.map(x=>`<div class="msg">
+    <div class="av">${x.who.startsWith('Block')?'🛡':'🎩'}</div>
+    <div class="body"><div class="meta">
+      <span class="badge b-${x.k==='pgp'?'pgp':'talk'}">${x.who}</span>
+      <a href="https://mempool.space/block/${x.h}" target="_blank" rel="noopener">#${x.h.toLocaleString()}</a>
+      <a href="https://mempool.space/tx/${x.t}" target="_blank" rel="noopener">${x.t.slice(0,10)}…</a>
+    </div><div class="txt">${esc(x.m)}</div></div></div>`).join('')
+    +`<div class="note" style="border:0;padding-top:12px">4,000 BTC moved off Liquid; the thief and Blockstream
+      negotiated entirely in OP_RETURN, in public, at ~1 sat/vB. The last message here — Blockstream's PGP-signed
+      <b>“Yes, thank you.”</b> — is the reply most write-ups missed.</div>`;
+}
+$('pinh').onclick=()=>{const b=$('pinb');b.classList.toggle('open');
+  $('pintog').textContent=b.classList.contains('open')?'hide ▴':'show ▾'};
+
+/* ---------- boot ---------- */
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); filter=b.dataset.f; render()};
+$('q').oninput=e=>{query=e.target.value.trim().toLowerCase(); render()};
+$('load').onclick=()=>loadNext(5);
+
+(async()=>{
+  pin();
+  try{
+    TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
+    $('s-tip').textContent='#'+TIP.toLocaleString();
+    next=TIP;
+    await loadNext(4);
+    setInterval(async()=>{
+      try{
+        const t=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
+        if(t>TIP){const old=TIP;TIP=t;$('s-tip').textContent='#'+t.toLocaleString();
+          for(let h=t;h>old;h--){const f=await scanBlock(h);msgs=f.concat(msgs);}
+          msgs.sort((a,b)=>b.height-a.height); render();}
+      }catch(e){}
+    },60000);
+  }catch(e){ $('empty').textContent='could not reach mempool.space — retry shortly'; }
+})();
+</script>
+</body>
+</html>
