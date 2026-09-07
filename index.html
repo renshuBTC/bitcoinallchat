@@ -158,7 +158,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .chip.on{color:var(--coral)}
 
 /* composer */
-.comp .cnt{font-family:var(--mono);font-size:13.4px;color:var(--mut2);white-space:nowrap}
+.comp .cnt{font-family:var(--mono);font-size:13.4px;color:var(--code);white-space:nowrap}
+.hint{padding:9px 8px 0;font-size:13.6px;line-height:1.45;color:var(--mut2);text-align:center;min-height:1.45em}
+.hint.bad{color:var(--coral)}
+.hint a{color:var(--coral);text-decoration:underline;text-underline-offset:2px}
+.hint button{background:transparent;border:0;font:inherit;font-size:13.6px;color:var(--coral);cursor:pointer;
+  padding:0 3px;text-decoration:underline;text-underline-offset:2px}
 .comp .send{width:30px;height:30px;border-radius:50%;border:0;background:var(--coral);color:#17110e;
   font-size:15px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:0 0 30px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
@@ -282,6 +287,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="rb" id="searchb" title="Search messages">⌕</button>
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
     </div>
+    <div class="hint" id="hint"></div>
   </div>
 </div>
 
@@ -552,13 +558,13 @@ const sats=n=>n.toLocaleString()+' sats';
 /* ---- composer ---- */
 function refreshComp(){
   const n=nbytes($('q').value);
-  $('cnt').textContent=n?n+' B':'';
-  $('cnt').style.color=n>MAXDATA?'var(--coral)':n>LEGACY?'var(--code)':'var(--mut2)';
-  $('sendb').disabled=!n||n>MAXDATA;
+  $('cnt').textContent=n>LEGACY?n+' B':'';        /* only speaks up past the old relay limit */
+  $('cnt').style.color=n>MAXDATA?'var(--coral)':'var(--code)';
+  $('sendb').disabled=!n||n>MAXDATA||BUSY;
 }
 $('q').oninput=refreshComp;
-$('q').onkeydown=e=>{if(e.key==='Enter'&&!$('sendb').disabled){e.preventDefault();openPost()}};
-$('sendb').onclick=()=>openPost();
+$('q').onkeydown=e=>{if(e.key==='Enter'&&!$('sendb').disabled){e.preventDefault();send()}};
+$('sendb').onclick=()=>send();
 $('plusb').onclick=()=>openInfo();
 
 /* ---- search palette ---- */
@@ -658,65 +664,70 @@ const WAL=[
     return{psbt:s instanceof Uint8Array?s:L.hexToBytes(s)}}},
 ];
 const detected=()=>WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
-const setst=h=>{const e=$('st'); if(e) e.innerHTML=h};
-const fail=e=>setst(`<div class="err">${esc((e&&e.message)||String(e))}</div>`);
-function done(txid){
-  setst(`<div class="ok">Broadcast. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
-    +`<br><span class="k">It shows up in this room once a miner puts it in a block.</span></div>`);
-  $('q').value=''; refreshComp();
+const PICK='bac_wallet';
+let BUSY=false;
+
+/* One status line under the composer carries the whole flow: which wallet,
+   what the fee is, and the link when it lands. No dialog, no options. */
+function hint(h,bad){
+  const e=$('hint'); if(!e) return;
+  e.innerHTML=h||''; e.classList.toggle('bad',!!bad);
+}
+const setst=h=>{const e=$('st'); e?e.innerHTML=h:hint(h.replace(/<[^>]+>/g,''))};
+const fail=e=>{const m=esc((e&&e.message)||String(e));
+  const t=$('st'); if(t){t.innerHTML=`<div class="err">${m}</div>`}else hint(m,true)};
+
+async function send(){
+  const text=$('q').value;
+  if(!text.trim()||BUSY) return;
+  const av=detected();
+  if(!av.length){
+    hint('No Bitcoin wallet in this browser. <button id="hoff">Sign offline instead</button>');
+    $('hoff').onclick=()=>{ovp.classList.add('on');drawQR(text)};
+    return;
+  }
+  let w=av.find(x=>x.id===localStorage.getItem(PICK));
+  if(!w&&av.length===1) w=av[0];
+  if(!w){
+    hint('sign with '+av.map(x=>`<button data-w="${x.id}">${x.name}</button>`).join(''));
+    $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      try{localStorage.setItem(PICK,b.dataset.w)}catch(e){}
+      publish(WAL.find(x=>x.id===b.dataset.w),text);
+    });
+    return;
+  }
+  publish(w,text);
 }
 
-async function openPost(){
-  const text=$('q').value;
-  if(!text.trim()) return;
-  ovp.classList.add('on');
-  pcard.innerHTML='<div class="cbd"><span class="k">reading current fee rates…</span></div>';
-  try{FEES=await (await fetch(API+'/v1/fees/recommended')).json()}catch(e){}
-  if(RATE==null) RATE=FEES.halfHourFee||3;
-  drawPost(text);
-}
-function drawPost(text,note){
-  stopAnim(); stopCam();
-  const n=nbytes(text), av=detected();
-  const pre=[['economy',FEES.economyFee],['1 hr',FEES.hourFee],['30 min',FEES.halfHourFee],['next block',FEES.fastestFee]];
-  pcard.innerHTML=`<div class="chd"><h2>Publish onto Bitcoin</h2><button class="cl" id="pcl">✕</button></div>
-  <div class="cbd">
-    <div class="pv">${esc(text)}</div>
-    <div class="row2"><span class="k">message</span><b>${n} bytes</b></div>
-    <div class="row2"><span class="k">output</span><b>OP_RETURN, 0 sats</b></div>
-    ${n>LEGACY?`<div class="warn">Over ${LEGACY} bytes. Bitcoin Core v30 relays OP_RETURN data up to ${MAXDATA.toLocaleString()} bytes by default, but nodes still on v29 or on Knots drop it, so it can take longer to reach a miner.</div>`:''}
-    <div class="k" style="margin:16px 0 8px">Fee rate. The whole fee is paid to the miner of the block. This site charges nothing and never holds your coins.</div>
-    <div class="fee" id="fee">${pre.map(([l,v])=>`<button data-v="${v}" class="${v===RATE?'on':''}">${l} · ${v} sat/vB</button>`).join('')}</div>
-    <div class="k" style="margin:16px 0 8px">Sign with</div>
-    <div class="wal" id="wal">${av.length?av.map(w=>`<button data-w="${w.id}">${w.name}</button>`).join('')
-      :'<span class="k">No Bitcoin wallet extension found in this browser. Install UniSat, Xverse, Leather, OKX or Phantom — or use the offline route below.</span>'}</div>
-    <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
-    <div class="st" id="st">${note||''}</div>
-  </div>`;
-  $('pcl').onclick=closeSheet;
-  $('fee').querySelectorAll('button').forEach(b=>b.onclick=()=>{RATE=+b.dataset.v;drawPost(text)});
-  $('wal').querySelectorAll('button').forEach(b=>b.onclick=()=>doWallet(b.dataset.w,text));
-  $('qrb').onclick=()=>drawQR(text);
-}
-async function doWallet(id,text){
+async function publish(w,text){
+  BUSY=true; refreshComp();
   try{
-    setst('<span class="k">loading the transaction builder…</span>');
+    hint('preparing…');
     const L=await lib();
-    const w=WAL.find(x=>x.id===id), p=w.p();
-    setst(`<span class="k">waiting for ${w.name}…</span>`);
+    if(RATE==null){
+      try{FEES=await (await fetch(API+'/v1/fees/recommended')).json()}catch(e){}
+      RATE=FEES.halfHourFee||3;
+    }
+    const p=w.p();
+    hint(`waiting for ${esc(w.name)}…`);
     const acc=await w.connect(p);
     if(!acc||!acc.address) throw new Error(w.name+' did not return an address');
-    setst('<span class="k">reading your unspent outputs…</span>');
+    hint('reading your coins…');
     const us=await getUtxos(acc.address);
-    if(!us.length) throw new Error('no confirmed unspent outputs on '+acc.address);
-    let b=await L.buildPsbt({address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE});
-    if(b.type==='p2pkh') b=await L.buildPsbt({address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE,prevTx:await prevTxs(b.inputs)});
-    setst(`<span class="k">fee ${sats(b.fee)} for ${b.vbytes} vB`
-      +(b.overpay?`, of which ${sats(b.overpay)} is a remainder too small to hand back as change and goes to the miner as well`:'')
-      +` — confirm in ${w.name}</span>`);
+    if(!us.length) throw new Error('no confirmed coins on '+acc.address);
+    const args={address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE};
+    let b=await L.buildPsbt(args);
+    if(b.type==='p2pkh') b=await L.buildPsbt({...args,prevTx:await prevTxs(b.inputs)});
+    hint(`${sats(b.fee)} to the miner — confirm in ${esc(w.name)}`);
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
-    done(r.txid||await push(L.extract(r.psbt)));
-  }catch(e){ fail(e) }
+    const txid=r.txid||await push(L.extract(r.psbt));
+    $('q').value='';
+    hint(`Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,12)}…</a> appears here at the next block.`);
+    setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
+  }catch(e){
+    const m=((e&&e.message)||String(e)).replace(/^Error:\s*/,'');
+    hint(esc(/reject|denied|cancel/i.test(m)?'cancelled':m),true);
+  }finally{ BUSY=false; refreshComp() }
 }
 
 /* ---- offline signer route ---- */
@@ -783,7 +794,10 @@ async function broadcastPasted(L){
       raw = L.extract(L.b64dec(v.replace(/\s+/g,'')));
     }
     setst('<span class="k">broadcasting…</span>');
-    done(await push(raw));
+    const txid=await push(raw);
+    $('q').value=''; refreshComp();
+    setst(`<div class="ok">Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
+      +`<br><span class="k">It appears in the room at the next block.</span></div>`);
   }catch(e){ fail(e) }
 }
 
@@ -800,10 +814,12 @@ function openInfo(){
     <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
       transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
       signs it. The page never sees a key and never holds coins. The only cost is the miner fee.</p>
-    <p style="margin:0">Bitcoin Core v30 relays up to ${MAXDATA.toLocaleString()} bytes of OP_RETURN data by default;
-      older nodes stop at ${LEGACY}.</p>
+    <p style="margin:0 0 12px">Bitcoin Core v30 relays up to ${MAXDATA.toLocaleString()} bytes of OP_RETURN data by default;
+      older nodes stop at ${LEGACY}, which is when the byte count in the composer starts showing.</p>
+    <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
   </div>`;
   $('pcl').onclick=closeSheet;
+  $('qrb').onclick=()=>drawQR($('q').value);
 }
 $('jump').onclick=()=>toBottom(true);
 $('theme').onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
