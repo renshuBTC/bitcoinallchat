@@ -157,6 +157,64 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .chip:hover{color:var(--ink2)}
 .chip.on{color:var(--coral)}
 
+/* composer */
+.comp .cnt{font-family:var(--mono);font-size:13.4px;color:var(--mut2);white-space:nowrap}
+.comp .send{width:30px;height:30px;border-radius:50%;border:0;background:var(--coral);color:#17110e;
+  font-size:15px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:0 0 30px}
+.comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
+.row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
+
+/* overlays: search palette + publish sheet */
+.ov{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.52);display:none;
+  padding:74px 20px 20px;justify-content:center;align-items:flex-start}
+.ov.on{display:flex}
+.pal{width:100%;max-width:var(--col);background:var(--comp);border:1px solid var(--line2);border-radius:14px;
+  box-shadow:0 18px 48px rgba(0,0,0,.5);overflow:hidden;max-height:78vh;display:flex;flex-direction:column}
+.pal-t{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.pal-t input{flex:1 1 auto;background:transparent;border:0;outline:0;font:inherit;font-size:16.6px;color:var(--ink)}
+.pal-t input::placeholder{color:var(--mut2)}
+.pal-t .ic{color:var(--mut);font-size:16px}
+.cl{background:transparent;border:0;color:var(--mut);font-size:17px;cursor:pointer;line-height:1}
+.cl:hover{color:var(--ink)}
+.pal-l{overflow-y:auto;padding:7px}
+.it{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;cursor:pointer}
+.it:hover{background:var(--pill)}
+.it .d{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+.it .tx{flex:1 1 auto;min-width:0;font-size:16.6px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it .h{font-family:var(--mono);font-size:13.8px;color:var(--mut2);white-space:nowrap}
+.pal-e{padding:20px 18px;color:var(--mut);font-size:16.6px;line-height:1.5}
+
+/* publish sheet */
+.chd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.chd h2{margin:0;font-size:16.6px;font-weight:600;color:var(--ink)}
+.cbd{overflow-y:auto;padding:18px 20px 20px;font-size:16.6px;line-height:1.5;color:var(--ink2)}
+.cbd .k{color:var(--mut);font-size:16.6px;line-height:1.5}
+.pv{background:var(--pill);border-radius:11px;padding:11px 13px;color:var(--ink);white-space:pre-wrap;
+  word-break:break-word;max-height:9em;overflow:auto;margin-bottom:12px}
+.row2{display:flex;justify-content:space-between;gap:14px;padding:4px 0}
+.row2 b{font-family:var(--mono);font-weight:400;font-size:15.4px;color:var(--ink2)}
+.warn{color:var(--code);margin-top:9px;line-height:1.5}
+.err{color:var(--coral);margin-top:12px;word-break:break-word}
+.ok{margin-top:12px;color:var(--ink2)}
+.ok a,.cbd a{color:var(--coral);text-decoration:underline;text-underline-offset:2px}
+.fee,.wal{display:flex;flex-wrap:wrap;gap:8px}
+.fee button{background:var(--pill);border:1px solid var(--line);color:var(--mut);border-radius:9px;
+  padding:7px 12px;font:inherit;font-size:15.4px;cursor:pointer}
+.fee button.on{border-color:var(--coral);color:var(--ink)}
+.wal button{background:var(--pill);border:1px solid var(--line2);color:var(--ink2);border-radius:10px;
+  padding:9px 15px;font:inherit;font-size:16.6px;cursor:pointer}
+.wal button:hover{border-color:var(--coral);color:var(--ink)}
+.lnk{background:transparent;border:0;color:var(--mut);font:inherit;font-size:16.6px;padding:14px 0 0;
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.lnk:hover{color:var(--ink2)}
+.ti{width:100%;background:var(--pill);border:1px solid var(--line2);border-radius:10px;color:var(--ink);
+  font:inherit;font-family:var(--mono);font-size:14.6px;padding:11px 13px;outline:0;margin:10px 0}
+.go{background:var(--coral);border:0;color:#17110e;border-radius:10px;padding:10px 16px;font:inherit;
+  font-size:16.6px;cursor:pointer}
+.st{margin-top:14px;min-height:1.5em}
+.frames{display:grid;place-items:center;gap:10px;margin-top:14px}
+.frames img,.frames video{width:100%;max-width:300px;background:#fff;border-radius:10px}
+
 @media(max-width:900px){
   .info{position:static;width:100%;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
   .info .open-p,.info .open-s{display:none}
@@ -206,12 +264,23 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <button class="jump" id="jump" title="Jump to latest">↓</button>
 
+<div class="ov" id="ovs"><div class="pal">
+  <div class="pal-t"><span class="ic">⌕</span>
+    <input id="sq" placeholder="Search messages, senders, txids…" autocomplete="off">
+    <button class="cl" id="scl" title="Close">✕</button></div>
+  <div class="pal-l" id="sl"></div>
+</div></div>
+
+<div class="ov" id="ovp"><div class="pal" id="pcard"></div></div>
+
 <div class="dock">
   <div class="dock-in">
     <div class="comp">
-      <button class="plus" id="plusb" title="How to post">+</button>
-      <input id="q" placeholder="Search messages…" autocomplete="off">
-      <button class="rb" id="clearb" title="Clear">◉</button>
+      <button class="plus" id="plusb" title="How this works">+</button>
+      <input id="q" placeholder="Write a message onto Bitcoin…" autocomplete="off">
+      <span class="cnt" id="cnt"></span>
+      <button class="rb" id="searchb" title="Search messages">⌕</button>
+      <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
     </div>
   </div>
 </div>
@@ -222,6 +291,7 @@ const $=id=>document.getElementById(id);
 let TIP=0,next=0,scanned=0,orCount=0,msgs=[],filter='talk',query='',busy=false;
 
 /* ---------------- raw block parser ---------------- */
+const h32=b=>{let h=2166136261;for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619)}return h>>>0};
 function parseBlock(buf){
   const d=new Uint8Array(buf); const dv=new DataView(buf); let p=80;
   const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
@@ -240,6 +310,8 @@ function parseBlock(buf){
     const bodyEnd=p;
     if(sw)for(let a=0;a<nin;a++){const ni=vi();for(let b=0;b<ni;b++){const l=vi();p+=l}}
     const lockStart=p; p+=4;
+    const pay=[];
+    for(const spk of outs) if(!(spk.length&&spk[0]===0x6a)) pay.push(h32(spk));
     for(const spk of outs){
       if(spk.length&&spk[0]===0x6a){
         total++;
@@ -250,7 +322,7 @@ function parseBlock(buf){
           else if(op===0x4c){len=spk[q+1];q+=2}
           else if(op===0x4d){len=spk[q+1]|(spk[q+2]<<8);q+=3}
           else{len=0;q+=1}}
-        if(len>0) out.push({data:spk.subarray(q,q+len),tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
+        if(len>0) out.push({data:spk.subarray(q,q+len),pay,tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
       }
     }
   }
@@ -335,16 +407,28 @@ function turn(m,prev){
     </div></div>`;
 }
 /* find the message this one answers: first by spend-link, then by a txid quoted in the text */
-let BYTX=new Map(), BYPFX=new Map();
+let BYTX=new Map();
 function reindex(list){
-  BYTX=new Map(); BYPFX=new Map();
-  for(const m of list){ if(!m.txid) continue;
-    BYTX.set(m.txid,m); BYPFX.set(m.txid.slice(0,8),m); }
+  BYTX=new Map();
+  for(const m of list){ if(m.txid) BYTX.set(m.txid,m) }
+}
+/* A reply is a transaction that spends an output of the transaction it answers.
+   Two things have to be excluded or the quotes are nonsense:
+     - a wallet spending its own change, which is one person posting repeatedly
+     - the same text posted again, which is a repost rather than an answer      */
+const sameWallet=(a,b)=>!!(a.pay&&b.pay&&a.pay.some(x=>b.pay.includes(x)));
+const norm=s=>(s||'').replace(/\s+/g,' ').trim().toLowerCase();
+function repost(a,b){
+  const x=norm(a.text), y=norm(b.text); if(!x||!y) return false;
+  const sh=x.length<y.length?x:y, lo=x.length<y.length?y:x;
+  return lo.startsWith(sh)&&sh.length>=20;
 }
 function parentOf(m){
-  if(m.ins) for(const t of m.ins){ const p=BYTX.get(t); if(p&&p!==m) return p }
-  const hits=(m.text||'').toLowerCase().match(/\b[0-9a-f]{8,64}\b/g);
-  if(hits) for(const h of hits){ const p=BYPFX.get(h.slice(0,8)); if(p&&p!==m) return p }
+  if(!m.ins) return null;
+  for(const t of m.ins){
+    const p=BYTX.get(t);
+    if(p&&p!==m&&!sameWallet(p,m)&&!repost(p,m)) return p;
+  }
   return null;
 }
 function counts(){
@@ -427,7 +511,7 @@ async function scanBlock(height){
     if(c){let txid='',ins=[];
       try{txid=await txidOf(bytes,o.tx)}catch(e){}
       try{ins=inTxids(bytes,dv,o.tx.bodyStart,4)}catch(e){}
-      found.push({...c,height,time:meta.timestamp,txid,ins,me:false})}
+      found.push({...c,height,time:meta.timestamp,txid,ins,pay:o.pay,me:false})}
   }
   return found;
 }
@@ -461,10 +545,266 @@ async function loadInitial(){
 }
 
 /* ---------------- ui ---------------- */
-$('q').oninput=e=>{query=e.target.value.trim().toLowerCase();
-  render()};
-$('clearb').onclick=()=>{$('q').value='';query='';render()};
-$('plusb').onclick=()=>alert('There is no send button here.\n\nTo post, broadcast a Bitcoin transaction carrying an OP_RETURN output — any wallet that lets you set custom outputs will do. Your message appears in this room at the next block, and stays there forever.');
+const MAXDATA=100000, LEGACY=83;
+const nbytes=s=>new TextEncoder().encode(s).length;
+const sats=n=>n.toLocaleString()+' sats';
+
+/* ---- composer ---- */
+function refreshComp(){
+  const n=nbytes($('q').value);
+  $('cnt').textContent=n?n+' B':'';
+  $('cnt').style.color=n>MAXDATA?'var(--coral)':n>LEGACY?'var(--code)':'var(--mut2)';
+  $('sendb').disabled=!n||n>MAXDATA;
+}
+$('q').oninput=refreshComp;
+$('q').onkeydown=e=>{if(e.key==='Enter'&&!$('sendb').disabled){e.preventDefault();openPost()}};
+$('sendb').onclick=()=>openPost();
+$('plusb').onclick=()=>openInfo();
+
+/* ---- search palette ---- */
+const ovs=$('ovs'), ovp=$('ovp'), pcard=$('pcard');
+function openSearch(){ovs.classList.add('on');$('sq').value='';fillSearch();$('sq').focus()}
+function closeSearch(){ovs.classList.remove('on')}
+function closeSheet(){ovp.classList.remove('on');stopAnim();stopCam()}
+$('searchb').onclick=openSearch;
+$('scl').onclick=closeSearch;
+$('sq').oninput=fillSearch;
+ovs.onclick=e=>{if(e.target===ovs)closeSearch()};
+ovp.onclick=e=>{if(e.target===ovp)closeSheet()};
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch()}
+  else if(e.key==='Escape'){closeSearch();closeSheet()}
+});
+function fillSearch(){
+  const q=$('sq').value.trim().toLowerCase();
+  const all=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp');
+  const hits=(q?all.filter(m=>m.text.toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q)):all).slice(-80).reverse();
+  $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
+      return `<div class="it" data-id="${m.txid||''}"><span class="d" style="background:${hue(w)}"></span>`
+        +`<span class="tx">${esc(m.text.replace(/\s+/g,' ').slice(0,140))}</span>`
+        +`<span class="h">${esc(w)} · ${m.height.toLocaleString()}</span></div>`}).join('')
+    :`<div class="pal-e">Nothing matching “${esc($('sq').value)}” in the ${scanned} blocks loaded so far. Scroll up in the room to pull in older blocks, then search again.</div>`;
+  $('sl').querySelectorAll('.it').forEach(el=>el.onclick=()=>{
+    closeSearch();
+    const t=document.getElementById('m-'+el.dataset.id);
+    if(t){t.scrollIntoView({block:'center',behavior:'smooth'});
+      t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),1500)}
+  });
+}
+
+/* ---- publishing ----
+   The page builds an unsigned transaction: one OP_RETURN output carrying the
+   text, change back to the same address. A wallet signs it. Nothing is charged
+   here and no key or coin passes through this page; the fee goes to the miner. */
+let LIB=null, FEES={economyFee:1,hourFee:2,halfHourFee:3,fastestFee:6}, RATE=null;
+function lib(){ if(LIB) return Promise.resolve(LIB);
+  return new Promise((res,rej)=>{const s=document.createElement('script');s.src='post.js';
+    s.onload=()=>{LIB=window.BTCPOST;LIB?res(LIB):rej(new Error('post.js loaded but exported nothing'))};
+    s.onerror=()=>rej(new Error('could not load the transaction builder (post.js)'));
+    document.head.appendChild(s)});
+}
+async function getUtxos(a){
+  const r=await fetch(`${API}/address/${encodeURIComponent(a)}/utxo`);
+  if(!r.ok) throw new Error('mempool.space would not return unspent outputs for that address');
+  return (await r.json()).filter(u=>u.status&&u.status.confirmed);
+}
+async function push(hex){
+  const r=await fetch(API+'/tx',{method:'POST',headers:{'content-type':'text/plain'},body:hex});
+  const t=(await r.text()).trim();
+  if(!r.ok) throw new Error(t||'the network rejected the transaction');
+  return t;
+}
+async function prevTxs(inputs){
+  const out={};
+  for(const u of inputs){
+    const r=await fetch(`${API}/tx/${u.txid}/hex`);
+    if(r.ok) out[u.txid]=(await r.text()).trim();
+  }
+  return out;
+}
+
+const WAL=[
+ {id:'unisat',name:'UniSat',p:()=>window.unisat,
+  async connect(p){const a=await p.requestAccounts();return{address:a[0],publicKey:await p.getPublicKey()}},
+  async sign(p,psbt,addr,idx,L){const s=await p.signPsbt(L.bytesToHex(psbt),{autoFinalized:true});
+    try{return{txid:await p.pushPsbt(s)}}catch(e){return{psbt:L.hexToBytes(s)}}}},
+ {id:'okx',name:'OKX',p:()=>window.okxwallet&&window.okxwallet.bitcoin,
+  async connect(p){const r=await p.connect();return{address:r.address,publicKey:r.publicKey||r.compressedPublicKey}},
+  async sign(p,psbt,addr,idx,L){const s=await p.signPsbt(L.bytesToHex(psbt),{autoFinalized:true});
+    try{return{txid:await p.pushPsbt(s)}}catch(e){return{psbt:L.hexToBytes(s)}}}},
+ {id:'xverse',name:'Xverse',p:()=>window.XverseProviders&&window.XverseProviders.BitcoinProvider,
+  async connect(p){let r;try{r=await p.request('wallet_connect',{addresses:['payment']})}
+    catch(e){r=await p.request('getAccounts',{purposes:['payment']})}
+    const list=(r.result&&r.result.addresses)||r.result;
+    const a=list.find(x=>!x.purpose||x.purpose==='payment')||list[0];
+    return{address:a.address,publicKey:a.publicKey}},
+  async sign(p,psbt,addr,idx,L){
+    const r=await p.request('signPsbt',{psbt:L.b64enc(psbt),signInputs:{[addr]:idx},broadcast:true});
+    if(r.result&&r.result.txid) return{txid:r.result.txid};
+    return{psbt:L.b64dec(r.result.psbt)}}},
+ {id:'leather',name:'Leather',p:()=>window.LeatherProvider,
+  async connect(p){const r=await p.request('getAddresses');
+    const A=r.result.addresses.filter(x=>x.symbol==='BTC');
+    const a=A.find(x=>/p2wpkh/i.test(x.type||''))||A[0];
+    return{address:a.address,publicKey:a.publicKey}},
+  async sign(p,psbt,addr,idx,L){
+    const r=await p.request('signPsbt',{hex:L.bytesToHex(psbt),network:'mainnet',broadcast:true});
+    if(r.result&&r.result.txid) return{txid:r.result.txid};
+    return{psbt:L.hexToBytes(r.result.hex)}}},
+ {id:'phantom',name:'Phantom',p:()=>window.phantom&&window.phantom.bitcoin,
+  async connect(p){const a=await p.requestAccounts();const x=a.find(y=>y.purpose==='payment')||a[0];
+    return{address:x.address,publicKey:x.publicKey}},
+  async sign(p,psbt,addr,idx,L){const s=await p.signPSBT(psbt,{inputsToSign:[{address:addr,signingIndexes:idx}]});
+    return{psbt:s instanceof Uint8Array?s:L.hexToBytes(s)}}},
+];
+const detected=()=>WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
+const setst=h=>{const e=$('st'); if(e) e.innerHTML=h};
+const fail=e=>setst(`<div class="err">${esc((e&&e.message)||String(e))}</div>`);
+function done(txid){
+  setst(`<div class="ok">Broadcast. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
+    +`<br><span class="k">It shows up in this room once a miner puts it in a block.</span></div>`);
+  $('q').value=''; refreshComp();
+}
+
+async function openPost(){
+  const text=$('q').value;
+  if(!text.trim()) return;
+  ovp.classList.add('on');
+  pcard.innerHTML='<div class="cbd"><span class="k">reading current fee rates…</span></div>';
+  try{FEES=await (await fetch(API+'/v1/fees/recommended')).json()}catch(e){}
+  if(RATE==null) RATE=FEES.halfHourFee||3;
+  drawPost(text);
+}
+function drawPost(text,note){
+  stopAnim(); stopCam();
+  const n=nbytes(text), av=detected();
+  const pre=[['economy',FEES.economyFee],['1 hr',FEES.hourFee],['30 min',FEES.halfHourFee],['next block',FEES.fastestFee]];
+  pcard.innerHTML=`<div class="chd"><h2>Publish onto Bitcoin</h2><button class="cl" id="pcl">✕</button></div>
+  <div class="cbd">
+    <div class="pv">${esc(text)}</div>
+    <div class="row2"><span class="k">message</span><b>${n} bytes</b></div>
+    <div class="row2"><span class="k">output</span><b>OP_RETURN, 0 sats</b></div>
+    ${n>LEGACY?`<div class="warn">Over ${LEGACY} bytes. Bitcoin Core v30 relays OP_RETURN data up to ${MAXDATA.toLocaleString()} bytes by default, but nodes still on v29 or on Knots drop it, so it can take longer to reach a miner.</div>`:''}
+    <div class="k" style="margin:16px 0 8px">Fee rate. The whole fee is paid to the miner of the block. This site charges nothing and never holds your coins.</div>
+    <div class="fee" id="fee">${pre.map(([l,v])=>`<button data-v="${v}" class="${v===RATE?'on':''}">${l} · ${v} sat/vB</button>`).join('')}</div>
+    <div class="k" style="margin:16px 0 8px">Sign with</div>
+    <div class="wal" id="wal">${av.length?av.map(w=>`<button data-w="${w.id}">${w.name}</button>`).join('')
+      :'<span class="k">No Bitcoin wallet extension found in this browser. Install UniSat, Xverse, Leather, OKX or Phantom — or use the offline route below.</span>'}</div>
+    <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
+    <div class="st" id="st">${note||''}</div>
+  </div>`;
+  $('pcl').onclick=closeSheet;
+  $('fee').querySelectorAll('button').forEach(b=>b.onclick=()=>{RATE=+b.dataset.v;drawPost(text)});
+  $('wal').querySelectorAll('button').forEach(b=>b.onclick=()=>doWallet(b.dataset.w,text));
+  $('qrb').onclick=()=>drawQR(text);
+}
+async function doWallet(id,text){
+  try{
+    setst('<span class="k">loading the transaction builder…</span>');
+    const L=await lib();
+    const w=WAL.find(x=>x.id===id), p=w.p();
+    setst(`<span class="k">waiting for ${w.name}…</span>`);
+    const acc=await w.connect(p);
+    if(!acc||!acc.address) throw new Error(w.name+' did not return an address');
+    setst('<span class="k">reading your unspent outputs…</span>');
+    const us=await getUtxos(acc.address);
+    if(!us.length) throw new Error('no confirmed unspent outputs on '+acc.address);
+    let b=await L.buildPsbt({address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE});
+    if(b.type==='p2pkh') b=await L.buildPsbt({address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE,prevTx:await prevTxs(b.inputs)});
+    setst(`<span class="k">fee ${sats(b.fee)} for ${b.vbytes} vB`
+      +(b.overpay?`, of which ${sats(b.overpay)} is a remainder too small to hand back as change and goes to the miner as well`:'')
+      +` — confirm in ${w.name}</span>`);
+    const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
+    done(r.txid||await push(L.extract(r.psbt)));
+  }catch(e){ fail(e) }
+}
+
+/* ---- offline signer route ---- */
+let ANIM=null, CAM=null;
+function stopAnim(){ if(ANIM){clearInterval(ANIM);ANIM=null} }
+function stopCam(){ if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null} }
+function drawQR(text){
+  stopAnim(); stopCam();
+  pcard.innerHTML=`<div class="chd"><h2>Sign offline</h2><button class="cl" id="pcl">✕</button></div>
+  <div class="cbd">
+    <div class="k">Enter the address you are spending from. Its unspent outputs are read from mempool.space and turned into an unsigned PSBT, shown below as a BBQr. Sign it on your own device and paste or scan the signed result back. No key ever reaches this page.</div>
+    <input class="ti" id="qa" placeholder="bc1q… or bc1p…" autocomplete="off" spellcheck="false">
+    <button class="go" id="qgo">Build the PSBT</button>
+    <div class="st" id="st"></div>
+    <div class="frames" id="fr"></div>
+  </div>`;
+  $('pcl').onclick=closeSheet;
+  $('qgo').onclick=()=>buildQR(text);
+  $('qa').onkeydown=e=>{if(e.key==='Enter')buildQR(text)};
+}
+async function buildQR(text){
+  try{
+    const addr=$('qa').value.trim();
+    if(!addr) throw new Error('enter an address first');
+    setst('<span class="k">loading the transaction builder…</span>');
+    const L=await lib();
+    setst('<span class="k">reading unspent outputs…</span>');
+    const us=await getUtxos(addr);
+    if(!us.length) throw new Error('no confirmed unspent outputs on '+addr);
+    let b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3});
+    if(b.type==='p2pkh') b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3,prevTx:await prevTxs(b.inputs)});
+    const parts=L.bbqr(b.psbt,'P');
+    stopAnim();
+    const fr=$('fr');
+    fr.innerHTML=`<div id="qrbox"></div>
+      <div class="k" id="fno"></div>
+      <textarea class="ti" id="sig" rows="3" placeholder="paste the signed transaction (hex), a signed PSBT (base64), or the BBQr lines"></textarea>
+      <button class="go" id="bcb">Broadcast the signed result</button>`;
+    let i=0;
+    const show=()=>{const c=L.qrCanvas(parts[i],320);
+      const box=$('qrbox'); if(!box){stopAnim();return}
+      box.innerHTML=''; box.appendChild(c);
+      $('fno').textContent=parts.length>1?`frame ${i+1} of ${parts.length}`:'';
+      i=(i+1)%parts.length};
+    show();
+    if(parts.length>1) ANIM=setInterval(show,400);
+    setst(`<span class="k">fee ${sats(b.fee)} for ${b.vbytes} vB at ${RATE||3} sat/vB`
+      +(b.overpay?`, including ${sats(b.overpay)} of remainder that also goes to the miner`:'')+`</span>`);
+    $('bcb').onclick=()=>broadcastPasted(L);
+  }catch(e){ fail(e) }
+}
+async function broadcastPasted(L){
+  try{
+    const v=$('sig').value.trim();
+    if(!v) throw new Error('paste the signed transaction or PSBT first');
+    let raw;
+    if(/^B\$/.test(v)){
+      const j=L.bbqrJoin(v.split(/\s+/).filter(Boolean));
+      raw = j.fileType==='T' ? L.bytesToHex(j.raw) : L.extract(j.raw);
+    } else if(/^[0-9a-fA-F\s]+$/.test(v)){
+      const h=v.replace(/\s+/g,'');
+      raw = h.slice(0,10).toLowerCase()==='70736274ff' ? L.extract(L.hexToBytes(h)) : h;
+    } else {
+      raw = L.extract(L.b64dec(v.replace(/\s+/g,'')));
+    }
+    setst('<span class="k">broadcasting…</span>');
+    done(await push(raw));
+  }catch(e){ fail(e) }
+}
+
+function openInfo(){
+  stopAnim(); stopCam();
+  ovp.classList.add('on');
+  pcard.innerHTML=`<div class="chd"><h2>How this works</h2><button class="cl" id="pcl">✕</button></div>
+  <div class="cbd">
+    <p style="margin:0 0 12px">This room is the OP_RETURN outputs of recent Bitcoin blocks, fetched raw from
+      <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> and parsed here in the page.
+      Scrolling up pulls in older blocks.</p>
+    <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
+      between two different wallets. That link is on the chain, not added by this site.</p>
+    <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
+      transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
+      signs it. The page never sees a key and never holds coins. The only cost is the miner fee.</p>
+    <p style="margin:0">Bitcoin Core v30 relays up to ${MAXDATA.toLocaleString()} bytes of OP_RETURN data by default;
+      older nodes stop at ${LEGACY}.</p>
+  </div>`;
+  $('pcl').onclick=closeSheet;
+}
 $('jump').onclick=()=>toBottom(true);
 $('theme').onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
   document.documentElement.setAttribute('data-theme',d?'light':'dark');
