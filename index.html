@@ -17,7 +17,7 @@
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-  --side-w:248px; --col:790px;
+  --side-w:0px; --col:760px;
 }
 [data-theme=light]{
   --bg:#FAF9F5; --side:#F0EEE6; --pill:#EDEAE1; --line:#E6E2D8; --line2:#D9D5C9;
@@ -60,9 +60,12 @@ a{color:inherit}
 .sfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 
 /* ---------------- main ---------------- */
-.main{margin-left:var(--side-w);flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.main{margin-left:0;flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
 .top{position:sticky;top:0;z-index:12;background:var(--bg);padding:10px 24px;display:flex;align-items:center;gap:10px}
-.top .ttl{font-size:14px;color:var(--mut);font-weight:450}
+.top .brand{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.top .brand .mark{width:22px;height:22px;border-radius:6px;background:var(--coral);color:#fff;flex:0 0 22px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.dockfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 .pill{font-size:11px;color:var(--mut2);font-family:var(--mono);white-space:nowrap}
 .pill b{color:var(--mut);font-weight:400}
 .icb{background:transparent;border:0;color:var(--mut);width:30px;height:30px;border-radius:7px;font-size:14px}
@@ -113,13 +116,19 @@ a{color:inherit}
 .skel.w2{width:78%}.skel.w3{width:54%}
 @keyframes pu{0%,100%{opacity:.45}50%{opacity:.85}}
 .mid{text-align:center;color:var(--mut);font-size:13.5px;padding:34px 0}
+.toploader{text-align:center;color:var(--mut2);font-size:12.5px;padding:16px 0 6px}
+.jump{position:fixed;left:50%;transform:translateX(-50%);bottom:112px;z-index:14;display:none;
+  align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
+  background:var(--comp);border:1px solid var(--line2);color:var(--ink2);font-size:15px;
+  box-shadow:0 2px 10px rgba(0,0,0,.28)}
+.jump:hover{color:var(--coral);border-color:var(--coral)}
 .midb{background:transparent;border:1px solid var(--line2);color:var(--ink2);padding:8px 16px;
   border-radius:9px;font-size:13px}
 .midb:hover{background:rgba(255,255,255,.05)}
 [data-theme=light] .midb:hover{background:rgba(0,0,0,.04)}
 
 /* ---------------- composer ---------------- */
-.dock{position:fixed;left:var(--side-w);right:0;bottom:0;z-index:13;padding:0 24px 14px;
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:13;padding:0 24px 14px;
   background:linear-gradient(transparent,var(--bg) 32%);pointer-events:none}
 .dock-in{max-width:var(--col);margin:0 auto;pointer-events:auto}
 .comp{background:var(--comp);border:1px solid var(--line);border-radius:19px;padding:13px 15px;
@@ -157,31 +166,9 @@ a{color:inherit}
 <body>
 <div class="app">
 
-  <aside class="side" id="side">
-    <div class="logo"><span class="mark">₿</span> Bitcoin AllChat</div>
-    <button class="newb" id="rescan"><span class="plus">+</span> Scan new blocks</button>
-
-    <div class="slab">Conversations</div>
-    <button class="nav on" data-f="talk"><span class="ic">💬</span> Chat <span class="ct" id="c-talk">0</span></button>
-    <button class="nav" data-f="pgp"><span class="ic">🔐</span> Signed &amp; encrypted <span class="ct" id="c-pgp">0</span></button>
-    <button class="nav" data-f="bridge"><span class="ic">🔁</span> Bridge orders <span class="ct" id="c-bridge">0</span></button>
-    <button class="nav" data-f="tag"><span class="ic">🏷</span> Tags &amp; signals <span class="ct" id="c-tag">0</span></button>
-    <button class="nav" data-f="all"><span class="ic">📚</span> Everything <span class="ct" id="c-all">0</span></button>
-
-    <div class="slab">Pinned</div>
-    <button class="nav" data-f="liquid"><span class="ic">📌</span> The Liquid negotiation</button>
-
-    <div class="sfoot">
-      Parsed in your browser, straight from raw blocks.<br>
-      Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
-      by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a>
-    </div>
-  </aside>
-
   <div class="main">
     <div class="top">
-      <button class="icb burger" id="burger">☰</button>
-      <span class="ttl" id="title">Chat</span>
+      <span class="brand"><span class="mark">₿</span> Bitcoin AllChat</span>
       <span class="pill hide-s" style="margin-left:auto">tip <b id="s-tip">…</b></span>
       <span class="pill hide-s"><b id="s-blocks">0</b> blocks</span>
       <span class="pill hide-s"><b id="s-or">0</b> OP_RETURN</span>
@@ -191,6 +178,8 @@ a{color:inherit}
   </div>
 </div>
 
+<button class="jump" id="jump" title="Jump to latest">↓</button>
+
 <div class="dock">
   <div class="dock-in">
     <div class="comp">
@@ -199,12 +188,8 @@ a{color:inherit}
       <button class="rb" id="clearb" title="Clear">◉</button>
     </div>
     <div class="dockfoot">
-      <button class="chip on" data-q="">All</button>
-      <button class="chip" data-q="bitcoin">bitcoin</button>
-      <button class="chip" data-q="love">love</button>
-      <button class="chip" data-q="hello">hello</button>
-      <button class="chip" data-q="whitehat">whitehat</button>
-      <span class="r"><b id="foot-n">0</b> messages · <b>OP_RETURN</b></span>
+      <span>Parsed in your browser, straight from raw Bitcoin blocks · data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> · built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a></span>
+      <span class="r"><b id="foot-n">0</b> messages</span>
     </div>
   </div>
 </div>
@@ -307,32 +292,27 @@ function turn(m){
   return `<div class="turn">${meta}${body}${acts}</div>`;
 }
 function counts(){
-  const c={talk:0,pgp:0,bridge:0,tag:0};
-  msgs.forEach(m=>{if(c[m.kind]!==undefined)c[m.kind]++});
-  $('c-talk').textContent=c.talk; $('c-pgp').textContent=c.pgp;
-  $('c-bridge').textContent=c.bridge; $('c-tag').textContent=c.tag;
-  $('c-all').textContent=msgs.length; $('foot-n').textContent=msgs.length;
+  const n=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp').length;
+  const f=$('foot-n'); if(f)f.textContent=n;
 }
 function render(){
-  $('title').textContent=NAMES[filter]||'Chat';
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
-  const list=msgs.filter(m=>(filter==='all'||m.kind===filter)&&(!query||m.text.toLowerCase().includes(query)));
+  const list=msgs.filter(m=>(m.kind==='talk'||m.kind==='pgp')&&(!query||m.text.toLowerCase().includes(query)));
   let head=`<div class="open-h">Everything written into Bitcoin, as one conversation.</div>
     <p class="open-p">Anyone can attach a message to a block using an OP_RETURN output — permanently,
     for the price of a fee. Most of it is machine noise. Some of it is people talking.</p>
-    <div class="open-s">Reading raw blocks live from the chain. Nothing here is stored; the blockchain is the database.</div>`;
+    <div class="open-s">Reading raw blocks live from the chain. Nothing here is stored; the blockchain is the database.</div>
+    <div class="toploader" id="toploader">${next>0?'Loading earlier messages…':'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
-  else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br><br>
-    <button class="midb" id="more">Scan 5 older blocks</button></div>`;
+  else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
   let body='',lastDay='';
   for(const m of list){
     const day=new Date(m.time*1000).toLocaleDateString(undefined,{month:'long',day:'numeric'});
     if(day!==lastDay){body+=`<div class="daysep">${day}</div>`;lastDay=day}
     body+=turn(m);
   }
-  const foot=(scanned&&list.length)?`<div class="mid"><button class="midb" id="more">Scan 5 older blocks</button></div>`:'';
-  t.innerHTML=head+body+foot; counts(); bind();
+  t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
@@ -340,8 +320,20 @@ function bind(){
     s.classList.toggle('clip'); el.textContent=s.classList.contains('clip')?'Show more':'Show less'});
   document.querySelectorAll('.cp').forEach(el=>el.onclick=()=>{
     navigator.clipboard.writeText(el.dataset.t).then(()=>{el.textContent='Copied';setTimeout(()=>el.textContent='Copy',1200)})});
-  const m=$('more'); if(m)m.onclick=()=>loadNext(5);
 }
+
+/* ---------------- scroll: newest at the bottom, older loads as you scroll up ---------------- */
+let io=null;
+function atBottom(){return window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-140}
+function toBottom(smooth){window.scrollTo({top:document.documentElement.scrollHeight,behavior:smooth?'smooth':'auto'})}
+function observeTop(){
+  if(io)io.disconnect();
+  const el=$('toploader'); if(!el||filter==='liquid'||next<=0)return;
+  io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))loadOlder(3)},{rootMargin:'700px 0px 0px 0px'});
+  io.observe(el);
+}
+function updateJump(){const b=$('jump'); if(b)b.style.display=atBottom()?'none':'flex'}
+window.addEventListener('scroll',updateJump,{passive:true});
 
 /* ---------------- pinned ---------------- */
 const LIQUID=[
@@ -383,31 +375,36 @@ async function scanBlock(height){
   }
   return found;
 }
-async function loadNext(count=4){
-  if(busy)return; busy=true;
-  const b=$('more'); if(b){b.textContent='Scanning…';b.disabled=true}
+/* older blocks: prepend above, holding the reader's place */
+async function loadOlder(count=3){
+  if(busy||next<=0)return; busy=true;
   for(let i=0;i<count&&next>0;i++){
-    try{const f=await scanBlock(next); msgs=msgs.concat(f); msgs.sort((a,b)=>b.height-a.height); render()}
+    const before=document.documentElement.scrollHeight;
+    try{const f=await scanBlock(next); msgs=msgs.concat(f); msgs.sort((a,b)=>a.height-b.height); render()}
+    catch(e){console.warn('block',next,e)}
+    const after=document.documentElement.scrollHeight;
+    if(after!==before) window.scrollTo(0,window.scrollY+(after-before));
+    next--;
+  }
+  busy=false; updateJump();
+}
+/* first fill: load, then land at the newest message */
+async function loadInitial(count=4){
+  busy=true;
+  for(let i=0;i<count&&next>0;i++){
+    try{const f=await scanBlock(next); msgs=msgs.concat(f); msgs.sort((a,b)=>a.height-b.height); render(); toBottom()}
     catch(e){console.warn('block',next,e)}
     next--;
   }
-  busy=false;
+  busy=false; toBottom(); updateJump();
 }
 
 /* ---------------- ui ---------------- */
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); filter=b.dataset.f; render();
-  $('side').classList.remove('open'); window.scrollTo({top:0,behavior:'smooth'})});
 $('q').oninput=e=>{query=e.target.value.trim().toLowerCase();
-  if(filter==='liquid'){filter='all';document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('on',x.dataset.f==='all'))}
   render()};
-document.querySelector('.dockfoot').onclick=e=>{const c=e.target.closest('.chip'); if(!c)return;
-  document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
-  $('q').value=c.dataset.q; query=c.dataset.q; if(filter==='liquid')filter='all'; render()};
 $('clearb').onclick=()=>{$('q').value='';query='';render()};
 $('plusb').onclick=()=>alert('There is no send button here.\n\nTo post, broadcast a Bitcoin transaction carrying an OP_RETURN output — any wallet that lets you set custom outputs will do. Your message appears in this room at the next block, and stays there forever.');
-$('burger').onclick=()=>$('side').classList.toggle('open');
+$('jump').onclick=()=>toBottom(true);
 $('theme').onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
   document.documentElement.setAttribute('data-theme',d?'light':'dark');
   try{localStorage.setItem('bac_theme',d?'light':'dark')}catch(e){}};
@@ -419,12 +416,12 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
   try{
     TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
     $('s-tip').textContent='#'+TIP.toLocaleString(); next=TIP;
-    await loadNext(4);
+    await loadInitial(4);
     setInterval(async()=>{
       try{const t=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
-        if(t>TIP){const old=TIP;TIP=t;$('s-tip').textContent='#'+t.toLocaleString();
-          for(let h=t;h>old;h--){const f=await scanBlock(h);msgs=f.concat(msgs)}
-          msgs.sort((a,b)=>b.height-a.height);render()}
+        if(t>TIP){const old=TIP,stick=atBottom();TIP=t;$('s-tip').textContent='#'+t.toLocaleString();
+          for(let h=old+1;h<=t;h++){const f=await scanBlock(h);msgs=msgs.concat(f)}
+          msgs.sort((a,b)=>a.height-b.height);render(); if(stick)toBottom(true); updateJump()}
       }catch(e){}
     },60000);
   }catch(e){$('thread').innerHTML='<div class="mid">Could not reach mempool.space. Refresh to retry.</div>'}
