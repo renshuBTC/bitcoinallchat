@@ -61,10 +61,15 @@ a{color:inherit}
 
 /* ---------------- main ---------------- */
 .main{margin-left:0;flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
-.top{position:sticky;top:0;z-index:12;background:var(--bg);padding:10px 24px;display:flex;align-items:center;gap:10px}
-.top .brand{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
-.top .brand .mark{width:22px;height:22px;border-radius:6px;background:var(--coral);color:#fff;flex:0 0 22px;
+.top{position:sticky;top:0;z-index:12;background:var(--bg);padding:9px 24px 10px;display:flex;
+  align-items:flex-start;gap:10px;border-bottom:1px solid var(--line)}
+.hd{flex:1 1 auto;min-width:0;max-width:var(--col);margin:0 auto}
+.hd1{display:flex;align-items:center;gap:9px;font-size:14.5px;letter-spacing:-.01em}
+.hd1 b{font-weight:600}
+.hd1 .mark{width:22px;height:22px;border-radius:6px;background:var(--coral);color:#fff;flex:0 0 22px;
   display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.hd1 .pill{margin-left:6px}
+.hd2{font-size:12px;color:var(--mut2);line-height:1.45;margin-top:3px;max-width:660px}
 .dockfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 .pill{font-size:11px;color:var(--mut2);font-family:var(--mono);white-space:nowrap}
 .pill b{color:var(--mut);font-weight:400}
@@ -73,43 +78,35 @@ a{color:inherit}
 [data-theme=light] .icb:hover{background:rgba(0,0,0,.05)}
 .burger{display:none}
 
-.thread{flex:1 1 auto;width:100%;max-width:var(--col);margin:0 auto;padding:26px 24px 210px}
+.thread{flex:1 1 auto;width:100%;max-width:var(--col);margin:0 auto;padding:6px 24px 210px}
 
 /* opening */
-.open-h{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.28;letter-spacing:-.015em;
+.open-h{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.28;letter-spacing:-.015em;
   margin:14px 0 12px;color:var(--ink)}
-.open-p{font-family:var(--serif);font-size:17.5px;line-height:1.65;color:var(--ink2);margin:0 0 8px;font-weight:300}
-.open-s{font-size:13px;color:var(--mut);margin:16px 0 30px}
+.open-p{font-family:var(--serif);font-size:16px;line-height:1.65;color:var(--ink2);margin:0 0 8px;font-weight:300}
+.open-s{font-size:12.5px;color:var(--mut2);margin:10px 0 22px}
 
-/* ---- turns ---- */
-.turn{margin:26px 0}
-.meta{font-size:13px;color:var(--mut);margin-bottom:9px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.meta .dot{color:var(--mut2)}
-.meta code{font-family:var(--mono);font-size:11.5px;color:var(--code);background:var(--codebg);
-  padding:2px 6px;border-radius:4px}
-.meta a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--line2)}
-.meta a:hover{color:var(--coral);border-color:var(--coral)}
-.say{font-family:var(--serif);font-size:18px;line-height:1.66;color:var(--ink);font-weight:400;
-  white-space:pre-wrap;word-break:break-word;letter-spacing:-.003em}
-.say.mono{font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--ink2);
-  background:var(--codebg);padding:13px 15px;border-radius:9px;white-space:pre-wrap}
-.say.clip{max-height:10em;overflow:hidden;position:relative}
-.say.clip:after{content:'';position:absolute;left:0;right:0;bottom:0;height:3.4em;
-  background:linear-gradient(transparent,var(--bg))}
-.acts{display:flex;gap:15px;margin-top:9px;font-size:12.5px;color:var(--mut2)}
-.acts span,.acts a{cursor:pointer;text-decoration:none}
-.acts span:hover,.acts a:hover{color:var(--coral)}
-
-/* right-aligned party (mirrors a user message) */
-.turn.me{display:flex;justify-content:flex-end}
-.turn.me .inner{max-width:76%}
-.turn.me .meta{justify-content:flex-end}
-.turn.me .say{background:var(--pill);border-radius:14px;padding:12px 18px;font-family:var(--sans);
-  font-size:15px;line-height:1.6;letter-spacing:0}
-.turn.me .say.mono{font-family:var(--mono);font-size:12.5px}
-.turn.me .acts{justify-content:flex-end}
-
-.daysep{font-size:12.5px;color:var(--mut2);margin:34px 0 4px;text-align:center}
+/* ---- chat bubbles ---- */
+.row{display:flex;gap:8px;margin:3px 0;align-items:flex-end}
+.row.grp{margin-top:12px}
+.ava{width:34px;height:34px;border-radius:50%;flex:0 0 34px;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--sans);user-select:none}
+.ava.hid{visibility:hidden}
+.bub{position:relative;max-width:74%;width:fit-content;background:var(--pill);
+  border-radius:13px 13px 13px 4px;padding:6px 11px 5px;box-shadow:0 1px 1px rgba(0,0,0,.14)}
+[data-theme=light] .bub{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.snd{font-size:13.2px;font-weight:600;line-height:1.35;margin-bottom:1px}
+.txt{font-size:14.6px;line-height:1.46;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+.txt.mono{font-family:var(--mono);font-size:12.2px;line-height:1.5;color:var(--ink2)}
+.txt.clip{max-height:8.6em;overflow:hidden}
+.mst{display:flex;align-items:center;gap:9px;justify-content:flex-end;margin-top:1px;
+  font-size:11px;color:var(--mut2);white-space:nowrap}
+.mst a{color:var(--mut2);text-decoration:none}
+.mst a:hover{color:var(--coral)}
+.mst .more{cursor:pointer;margin-right:auto;color:var(--coral)}
+.daysep{text-align:center;margin:20px 0 12px}
+.daysep span{background:var(--pill);color:var(--mut);font-size:11.5px;padding:3px 12px;border-radius:12px}
+[data-theme=light] .daysep span{background:#EDEAE1}
 .note{font-family:var(--serif);font-size:16px;line-height:1.6;color:var(--ink2);
   border-left:2px solid var(--coral);padding:2px 0 2px 16px;margin:22px 0;font-weight:300}
 .skel{height:20px;border-radius:6px;background:var(--line);margin:14px 0;animation:pu 1.4s infinite}
@@ -168,10 +165,14 @@ a{color:inherit}
 
   <div class="main">
     <div class="top">
-      <span class="brand"><span class="mark">₿</span> Bitcoin AllChat</span>
-      <span class="pill hide-s" style="margin-left:auto">tip <b id="s-tip">…</b></span>
-      <span class="pill hide-s"><b id="s-blocks">0</b> blocks</span>
-      <span class="pill hide-s"><b id="s-or">0</b> OP_RETURN</span>
+      <div class="hd">
+        <div class="hd1"><span class="mark">₿</span><b>Bitcoin AllChat</b>
+          <span class="pill hide-s">tip <b id="s-tip">…</b></span>
+          <span class="pill hide-s"><b id="s-blocks">0</b> blocks</span>
+          <span class="pill hide-s"><b id="s-or">0</b> OP_RETURN</span>
+        </div>
+        <div class="hd2">Every readable message people write into Bitcoin blocks, in one room — live from raw blocks. To post, broadcast a transaction with an OP_RETURN output.</div>
+      </div>
       <button class="icb" id="theme" title="Theme">◐</button>
     </div>
     <div class="thread" id="thread"></div>
@@ -272,24 +273,27 @@ function classify(bytes){
 /* ---------------- render ---------------- */
 const NAMES={talk:'Chat',pgp:'Signed & encrypted',bridge:'Bridge orders',tag:'Tags & signals',all:'Everything',liquid:'The Liquid negotiation'};
 const VERB={talk:'wrote into the chain',pgp:'signed a message on-chain',bridge:'placed a bridge order',tag:'left a tag'};
+const PAL=['#E0805F','#7FB069','#6FA8DC','#C58AC5','#D9A441','#5FB0A8','#CF7B7B','#8E8BD0'];
+function hue(seed){let h=0;for(let i=0;i<seed.length;i++)h=(h*31+seed.charCodeAt(i))>>>0;return PAL[h%PAL.length]}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function ago(ts){const s=Math.floor(Date.now()/1000-ts);
   if(s<90)return 'just now'; if(s<3600)return Math.floor(s/60)+' min ago';
   if(s<86400)return Math.floor(s/3600)+' hr ago'; return Math.floor(s/86400)+' d ago'}
-function turn(m){
+function turn(m,prev){
   const long=m.text.length>340, mono=(m.kind==='pgp'||m.kind==='bridge');
   const who=m.who||('Someone at '+(m.txid?m.txid.slice(0,6):'······'));
-  const meta=`<div class="meta">${esc(who)} <span class="dot">·</span> ${VERB[m.kind]||'wrote'}
-      <span class="dot">·</span> ${ago(m.time)}
-      ${m.txid?`<span class="dot">·</span> <code>${m.txid.slice(0,8)}</code>`:''}</div>`;
-  const acts=`<div class="acts">
-      ${long?'<span class="more">Show more</span>':''}
-      ${m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">Transaction ↗</a>`:''}
-      <a href="https://mempool.space/block/${m.height}" target="_blank" rel="noopener">Block ${m.height.toLocaleString()}</a>
-      <span class="cp" data-t="${esc(m.text).slice(0,4000)}">Copy</span></div>`;
-  const body=`<div class="say ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`;
-  if(m.me) return `<div class="turn me"><div class="inner">${meta}${body}${acts}</div></div>`;
-  return `<div class="turn">${meta}${body}${acts}</div>`;
+  const col=hue(who);
+  const same=prev&&(prev.who||('Someone at '+(prev.txid?prev.txid.slice(0,6):'······')))===who;
+  const t=new Date(m.time*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  return `<div class="row ${same?'':'grp'}">
+    <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who.replace('Someone at ','').slice(0,2)).toUpperCase()}</div>
+    <div class="bub">
+      ${same?'':`<div class="snd" style="color:${col}">${esc(who)}</div>`}
+      <div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>
+      <div class="mst">${long?'<span class="more">more</span>':''}
+        ${m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="View transaction">${m.txid.slice(0,8)} \u2197</a>`:''}
+        <span>${t}</span></div>
+    </div></div>`;
 }
 function counts(){
   const n=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp').length;
@@ -299,27 +303,21 @@ function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
   const list=msgs.filter(m=>(m.kind==='talk'||m.kind==='pgp')&&(!query||m.text.toLowerCase().includes(query)));
-  let head=`<div class="open-h">Everything written into Bitcoin, as one conversation.</div>
-    <p class="open-p">Anyone can attach a message to a block using an OP_RETURN output — permanently,
-    for the price of a fee. Most of it is machine noise. Some of it is people talking.</p>
-    <div class="open-s">Reading raw blocks live from the chain. Nothing here is stored; the blockchain is the database.</div>
-    <div class="toploader" id="toploader">${next>0?'Loading earlier messages…':'Beginning of the scanned range'}</div>`;
+  let head=`<div class="toploader" id="toploader">${next>0?'Loading earlier messages…':'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
-  let body='',lastDay='';
+  let body='',lastDay='',prev=null;
   for(const m of list){
     const day=new Date(m.time*1000).toLocaleDateString(undefined,{month:'long',day:'numeric'});
-    if(day!==lastDay){body+=`<div class="daysep">${day}</div>`;lastDay=day}
-    body+=turn(m);
+    if(day!==lastDay){body+=`<div class="daysep"><span>${day}</span></div>`;lastDay=day;prev=null}
+    body+=turn(m,prev); prev=m;
   }
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
-    const s=el.closest('.turn').querySelector('.say');
-    s.classList.toggle('clip'); el.textContent=s.classList.contains('clip')?'Show more':'Show less'});
-  document.querySelectorAll('.cp').forEach(el=>el.onclick=()=>{
-    navigator.clipboard.writeText(el.dataset.t).then(()=>{el.textContent='Copied';setTimeout(()=>el.textContent='Copy',1200)})});
+    const t=el.closest('.bub').querySelector('.txt');
+    t.classList.toggle('clip'); el.textContent=t.classList.contains('clip')?'more':'less'});
 }
 
 /* ---------------- scroll: newest at the bottom, older loads as you scroll up ---------------- */
@@ -354,7 +352,7 @@ function liquidHTML(){
   <p class="open-p">September 6–7, 2026. Around 4,000 BTC left Liquid, and then something strange happened:
   the thief and Blockstream started talking — in public, inside Bitcoin blocks, at about one satoshi per byte.</p>
   <div class="open-s">Five messages, blocks 965,822 – 965,875. Read in order.</div>`
-  + LIQUID.map((x,i)=>turn({kind:x.k,text:x.m,height:x.h,txid:x.t,time:base+i*600,who:x.who,me:x.me})).join('')
+  + LIQUID.map((x,i)=>turn({kind:x.k,text:x.m,height:x.h,txid:x.t,time:base+i*600,who:x.who},i?LIQUID[i-1]:null)).join('')
   + `<div class="note">The last message — Blockstream's PGP-signed “Yes, thank you.” — is the reply most
      write-ups of this story missed. It sits in block 965,875, three outputs away from the ransom note.</div>`;
 }
