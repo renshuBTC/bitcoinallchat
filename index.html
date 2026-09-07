@@ -17,7 +17,7 @@
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-  --side-w:0px; --col:760px;
+  --side-w:310px; --col:720px;
 }
 [data-theme=light]{
   --bg:#FAF9F5; --side:#F0EEE6; --pill:#EDEAE1; --line:#E6E2D8; --line2:#D9D5C9;
@@ -60,31 +60,32 @@ a{color:inherit}
 .sfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 
 /* ---------------- main ---------------- */
-.main{margin-left:0;flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
-.top{position:sticky;top:0;z-index:12;background:var(--bg);padding:9px 24px 10px;display:flex;
-  align-items:flex-start;gap:10px;border-bottom:1px solid var(--line)}
-.hd{flex:1 1 auto;min-width:0;max-width:var(--col);margin:0 auto}
-.hd1{display:flex;align-items:center;gap:9px;font-size:14.5px;letter-spacing:-.01em}
-.hd1 b{font-weight:600}
-.hd1 .mark{width:22px;height:22px;border-radius:6px;background:var(--coral);color:#fff;flex:0 0 22px;
+.main{margin-left:var(--side-w);flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.info{position:fixed;inset:0 auto 0 0;width:var(--side-w);padding:22px 22px 18px;
+  display:flex;flex-direction:column;background:var(--side);border-right:1px solid var(--line);overflow-y:auto}
+.ihead{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600;letter-spacing:-.01em;margin-bottom:20px}
+.ihead .mark{width:22px;height:22px;border-radius:6px;background:var(--coral);color:#fff;flex:0 0 22px;
   display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
-.hd1 .pill{margin-left:6px}
-.hd2{font-size:12px;color:var(--mut2);line-height:1.45;margin-top:3px;max-width:660px}
+.istats{margin-top:22px;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:7px}
+.istats div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--mut2)}
+.istats b{font-family:var(--mono);font-size:11.5px;color:var(--mut);font-weight:400}
+.ifoot{margin-top:auto;padding-top:18px;font-size:11px;color:var(--mut2);line-height:1.7;position:relative}
+.ifoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
+.ifoot .icb{position:absolute;right:0;bottom:0}
 .dockfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 .pill{font-size:11px;color:var(--mut2);font-family:var(--mono);white-space:nowrap}
 .pill b{color:var(--mut);font-weight:400}
 .icb{background:transparent;border:0;color:var(--mut);width:30px;height:30px;border-radius:7px;font-size:14px}
 .icb:hover{background:rgba(255,255,255,.06);color:var(--ink)}
 [data-theme=light] .icb:hover{background:rgba(0,0,0,.05)}
-.burger{display:none}
 
-.thread{flex:1 1 auto;width:100%;max-width:var(--col);margin:0 auto;padding:6px 24px 210px}
+.thread{flex:1 1 auto;width:100%;max-width:var(--col);margin:0 auto;padding:24px 24px 200px}
 
 /* opening */
-.open-h{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.28;letter-spacing:-.015em;
-  margin:14px 0 12px;color:var(--ink)}
-.open-p{font-family:var(--serif);font-size:16px;line-height:1.65;color:var(--ink2);margin:0 0 8px;font-weight:300}
-.open-s{font-size:12.5px;color:var(--mut2);margin:10px 0 22px}
+.open-h{font-family:var(--serif);font-weight:400;font-size:21px;line-height:1.3;letter-spacing:-.015em;
+  margin:0 0 12px;color:var(--ink)}
+.open-p{font-family:var(--serif);font-size:14.5px;line-height:1.6;color:var(--ink2);margin:0 0 10px;font-weight:300}
+.open-s{font-size:11.5px;line-height:1.6;color:var(--mut2);margin:0}
 
 /* ---- chat bubbles ---- */
 .row{display:flex;gap:8px;margin:3px 0;align-items:flex-end}
@@ -98,6 +99,14 @@ a{color:inherit}
 .snd{display:inline-block;font-size:13.2px;font-weight:600;line-height:1.35;margin-bottom:1px;
   text-decoration:none;font-family:var(--mono);letter-spacing:-.02em}
 a.snd:hover{text-decoration:underline;text-underline-offset:2px}
+.qt{display:block;border-left:2.5px solid var(--coral);background:rgba(255,255,255,.055);
+  border-radius:4px;padding:4px 9px;margin:2px 0 5px;text-decoration:none;overflow:hidden}
+[data-theme=light] .qt{background:rgba(0,0,0,.045)}
+.qt:hover{background:rgba(255,255,255,.09)}
+[data-theme=light] .qt:hover{background:rgba(0,0,0,.07)}
+.qn{display:block;font-size:12px;font-weight:600;font-family:var(--mono);letter-spacing:-.02em}
+.qx{display:block;font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row{scroll-margin-top:20px}
 .txt{font-size:14.6px;line-height:1.46;color:var(--ink);white-space:pre-wrap;word-break:break-word}
 .txt.mono{font-family:var(--mono);font-size:12.2px;line-height:1.5;color:var(--ink2)}
 .txt.clip{max-height:8.6em;overflow:hidden}
@@ -127,7 +136,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 [data-theme=light] .midb:hover{background:rgba(0,0,0,.04)}
 
 /* ---------------- composer ---------------- */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:13;padding:0 24px 14px;
+.dock{position:fixed;left:var(--side-w);right:0;bottom:0;z-index:13;padding:0 24px 14px;
   background:linear-gradient(transparent,var(--bg) 32%);pointer-events:none}
 .dock-in{max-width:var(--col);margin:0 auto;pointer-events:auto}
 .comp{background:var(--comp);border:1px solid var(--line);border-radius:19px;padding:13px 15px;
@@ -148,15 +157,20 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .chip.on{color:var(--coral)}
 
 @media(max-width:900px){
+  .info{position:static;width:100%;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
+  .info .open-p,.info .open-s{display:none}
+  .info .open-h{font-size:17px;margin-bottom:8px}
+  .istats{flex-direction:row;flex-wrap:wrap;gap:14px;margin-top:12px;padding-top:10px}
+  .istats div{flex-direction:row;gap:6px}
+  .ifoot{margin-top:12px;padding-top:10px}
+  .app{flex-direction:column}
   .side{transform:translateX(-100%);box-shadow:3px 0 22px rgba(0,0,0,.35)}
   .side.open{transform:none}
   .main{margin-left:0}
   .dock{left:0;padding:0 14px 12px}
   .thread{padding:18px 16px 200px}
   .top{padding:9px 14px}
-  .burger{display:flex;align-items:center;justify-content:center}
   .hide-s{display:none}
-  .open-h{font-size:25px}
   .say{font-size:17px}
   .turn.me .inner{max-width:88%}
 }
@@ -165,18 +179,27 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 <body>
 <div class="app">
 
-  <div class="main">
-    <div class="top">
-      <div class="hd">
-        <div class="hd1"><span class="mark">₿</span><b>Bitcoin AllChat</b>
-          <span class="pill hide-s">tip <b id="s-tip">…</b></span>
-          <span class="pill hide-s"><b id="s-blocks">0</b> blocks</span>
-          <span class="pill hide-s"><b id="s-or">0</b> OP_RETURN</span>
-        </div>
-        <div class="hd2">Every readable message people write into Bitcoin blocks, in one room — live from raw blocks. To post, broadcast a transaction with an OP_RETURN output.</div>
-      </div>
+  <aside class="info">
+    <div class="ihead"><span class="mark">₿</span> Bitcoin AllChat</div>
+    <h1 class="open-h">Everything written into Bitcoin, as one conversation.</h1>
+    <p class="open-p">Anyone can attach a message to a block using an OP_RETURN output — permanently,
+      for the price of a fee. Most of it is machine noise. Some of it is people talking.</p>
+    <p class="open-s">Reading raw blocks live from the chain. Nothing here is stored; the blockchain is the database.</p>
+    <div class="istats">
+      <div><span>chain tip</span><b id="s-tip">…</b></div>
+      <div><span>blocks scanned</span><b id="s-blocks">0</b></div>
+      <div><span>OP_RETURN seen</span><b id="s-or">0</b></div>
+      <div><span>messages</span><b id="foot-n">0</b></div>
+    </div>
+    <div class="ifoot">
+      Parsed in your browser, straight from raw blocks.<br>
+      Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
+      built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a>
       <button class="icb" id="theme" title="Theme">◐</button>
     </div>
+  </aside>
+
+  <div class="main">
     <div class="thread" id="thread"></div>
   </div>
 </div>
@@ -189,10 +212,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="plus" id="plusb" title="How to post">+</button>
       <input id="q" placeholder="Search everything ever written into a block…" autocomplete="off">
       <button class="rb" id="clearb" title="Clear">◉</button>
-    </div>
-    <div class="dockfoot">
-      <span>Parsed in your browser, straight from raw Bitcoin blocks · data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> · built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a></span>
-      <span class="r"><b id="foot-n">0</b> messages</span>
     </div>
   </div>
 </div>
@@ -235,7 +254,21 @@ function parseBlock(buf){
       }
     }
   }
-  return {outs:out,bytes:d,total};
+  return {outs:out,bytes:d,dv,total};
+}
+/* a reply on Bitcoin = a tx that spends an output of the message it answers */
+function inTxids(d,dv,bodyStart,max){
+  let p=bodyStart;
+  const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
+    if(n===0xfd){const v=dv.getUint16(p,true);p+=2;return v}
+    if(n===0xfe){const v=dv.getUint32(p,true);p+=4;return v}
+    const v=Number(dv.getBigUint64(p,true));p+=8;return v};
+  const n=vi(); const out=[];
+  for(let i=0;i<n;i++){
+    if(i<max){let s='';for(let j=p+31;j>=p;j--)s+=d[j].toString(16).padStart(2,'0');out.push(s)}
+    p+=36; const sl=vi(); p+=sl; p+=4;
+  }
+  return out;
 }
 async function txidOf(d,t){
   let ser;
@@ -287,15 +320,32 @@ function turn(m,prev){
   const col=hue(who);
   const same=prev&&(prev.who||(prev.txid?prev.txid.slice(0,8):'unknown'))===who;
   const t=new Date(m.time*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  const par=parentOf(m);
+  const pw=par?(par.who||par.txid.slice(0,8)):'';
+  const quote=par?`<a class="qt" href="#m-${par.txid}" style="border-color:${hue(pw)}"><span class="qn" style="color:${hue(pw)}">${esc(pw)}</span><span class="qx">${esc((par.text||'').replace(/\s+/g,' ').slice(0,110))}</span></a>`:'';
   const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
                  :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
-  return `<div class="row ${same?'':'grp'}">
+  return `<div class="row ${same?'':'grp'}" id="m-${m.txid||''}">
     <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
       ${same?'':nm}
+      ${quote}
       <div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>
       <div class="mst">${long?'<span class="more">more</span>':''}<span>${t}</span></div>
     </div></div>`;
+}
+/* find the message this one answers: first by spend-link, then by a txid quoted in the text */
+let BYTX=new Map(), BYPFX=new Map();
+function reindex(list){
+  BYTX=new Map(); BYPFX=new Map();
+  for(const m of list){ if(!m.txid) continue;
+    BYTX.set(m.txid,m); BYPFX.set(m.txid.slice(0,8),m); }
+}
+function parentOf(m){
+  if(m.ins) for(const t of m.ins){ const p=BYTX.get(t); if(p&&p!==m) return p }
+  const hits=(m.text||'').toLowerCase().match(/\b[0-9a-f]{8,64}\b/g);
+  if(hits) for(const h of hits){ const p=BYPFX.get(h.slice(0,8)); if(p&&p!==m) return p }
+  return null;
 }
 function counts(){
   const n=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp').length;
@@ -304,6 +354,7 @@ function counts(){
 function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
+  reindex(msgs);
   const list=msgs.filter(m=>(m.kind==='talk'||m.kind==='pgp')&&(!query||m.text.toLowerCase().includes(query)));
   let head=`<div class="toploader" id="toploader">${next>0?'Loading earlier messages…':'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
@@ -354,7 +405,10 @@ function liquidHTML(){
   <p class="open-p">September 6–7, 2026. Around 4,000 BTC left Liquid, and then something strange happened:
   the thief and Blockstream started talking — in public, inside Bitcoin blocks, at about one satoshi per byte.</p>
   <div class="open-s">Five messages, blocks 965,822 – 965,875. Read in order.</div>`
-  + LIQUID.map((x,i)=>turn({kind:x.k,text:x.m,height:x.h,txid:x.t,time:base+i*600,who:x.who},i?LIQUID[i-1]:null)).join('')
+  + (()=>{const built=LIQUID.map((x,i)=>({kind:x.k,text:x.m,height:x.h,txid:x.t,time:base+i*600,who:x.who,
+      ins:i?[LIQUID[i-1].t]:[]}));
+    reindex(built);
+    return built.map((m,i)=>turn(m,i?built[i-1]:null)).join('')})()
   + `<div class="note">The last message — Blockstream's PGP-signed “Yes, thank you.” — is the reply most
      write-ups of this story missed. It sits in block 965,875, three outputs away from the ransom note.</div>`;
 }
@@ -364,14 +418,16 @@ async function scanBlock(height){
   const hash=await (await fetch(`${API}/block-height/${height}`)).text();
   const meta=await (await fetch(`${API}/block/${hash}`)).json();
   const buf=await (await fetch(`${API}/block/${hash}/raw`)).arrayBuffer();
-  const {outs,bytes,total}=parseBlock(buf);
+  const {outs,bytes,dv,total}=parseBlock(buf);
   orCount+=total; scanned++;
   $('s-blocks').textContent=scanned; $('s-or').textContent=orCount.toLocaleString();
   const found=[];
   for(const o of outs){
     const c=classify(o.data);
-    if(c){let txid='';try{txid=await txidOf(bytes,o.tx)}catch(e){}
-      found.push({...c,height,time:meta.timestamp,txid,me:false})}
+    if(c){let txid='',ins=[];
+      try{txid=await txidOf(bytes,o.tx)}catch(e){}
+      try{ins=inTxids(bytes,dv,o.tx.bodyStart,4)}catch(e){}
+      found.push({...c,height,time:meta.timestamp,txid,ins,me:false})}
   }
   return found;
 }
