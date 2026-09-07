@@ -412,21 +412,27 @@ function b64(b){
 function classify(bytes){
   const mt=imgType(bytes);
   if(mt) return {kind:'img',mime:mt,text:'',b64:b64(bytes),bytes:bytes.length};
-  if(bytes.length<8) return null;
+  if(!bytes.length) return null;
   let s; try{s=dec.decode(bytes)}catch(e){return null}
   if(s.indexOf('�')>=0) return null;
-  let pr=0,alpha=0,spaces=0;
-  for(const ch of s){const c=ch.codePointAt(0);
-    if((c>=32&&c<127)||c===10||c===13)pr++;
-    if(/[a-zA-Z]/.test(ch))alpha++;
-    if(ch===' ')spaces++;}
-  if(pr/s.length<0.9) return null;
-  if(alpha/s.length<0.30) return null;
+  const chars=[...s];
+  let pr=0,alpha=0;
+  for(const ch of chars){const c=ch.codePointAt(0);
+    if((c>=32&&c<127)||c===10||c===13||c>0x9f)pr++;   /* emoji and accents count as printable */
+    if(/[a-zA-Z]/.test(ch))alpha++;}
+  if(pr/chars.length<0.9) return null;
   const t=s.trim();
+  if(!t) return null;
   if(/BEGIN PGP/i.test(t)) return {kind:'pgp',text:t};
-  if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&spaces===0) return {kind:'bridge',text:t};
+  if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&!/\s/.test(t)) return {kind:'bridge',text:t};
+  /* Only long payloads have to look like prose; a short one has no ratio worth reading. */
+  if(chars.length>=16&&alpha/chars.length<0.30) return null;
   const words=t.split(/\s+/).filter(w=>/^[A-Za-z][A-Za-z'.,!?-]*$/.test(w));
-  if(words.length>=3) return {kind:'talk',text:t};
+  const emoji=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(t);
+  /* Someone talking: two words, an emoji, or bare punctuation like ":(" — while a
+     protocol marker is one alphanumeric token on its own, which stays hidden. */
+  if(words.length>=2||emoji) return {kind:'talk',text:t};
+  if(t.length<=12&&!/[A-Za-z0-9]/.test(t)) return {kind:'talk',text:t};
   return {kind:'tag',text:t};
 }
 
