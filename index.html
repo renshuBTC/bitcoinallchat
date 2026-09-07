@@ -357,7 +357,7 @@ function render(){
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
   reindex(msgs);
   const list=msgs.filter(m=>(m.kind==='talk'||m.kind==='pgp')&&(!query||m.text.toLowerCase().includes(query)));
-  let head=`<div class="toploader" id="toploader">${next>0?'Loading earlier messages…':'Beginning of the scanned range'}</div>`;
+  let head=`<div class="toploader" id="toploader">${next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
   let body='',lastDay='',prev=null;
@@ -433,25 +433,30 @@ async function scanBlock(height){
   return found;
 }
 /* older blocks: prepend above, holding the reader's place */
-async function loadOlder(count=3){
+async function loadOlder(count=LANES){
   if(busy||next<=0)return; busy=true;
-  for(let i=0;i<count&&next>0;i++){
-    const before=document.documentElement.scrollHeight;
-    try{const f=await scanBlock(next); msgs=msgs.concat(f); msgs.sort((a,b)=>a.height-b.height); render()}
-    catch(e){console.warn('block',next,e)}
-    const after=document.documentElement.scrollHeight;
-    if(after!==before) window.scrollTo(0,window.scrollY+(after-before));
-    next--;
-  }
+  const before=document.documentElement.scrollHeight;
+  await loadBatch(count);
+  render();
+  const after=document.documentElement.scrollHeight;
+  if(after!==before) window.scrollTo(0,window.scrollY+(after-before));
   busy=false; updateJump();
 }
-/* first fill: load, then land at the newest message */
-async function loadInitial(count=4){
+/* first fill: keep pulling blocks (in parallel) until the room holds TARGET messages */
+const TARGET=200, MAXBLOCKS=260, LANES=5;
+function shown(){return msgs.reduce((n,m)=>n+((m.kind==='talk'||m.kind==='pgp')?1:0),0)}
+async function loadBatch(n){
+  const hs=[]; for(let i=0;i<n&&next>0;i++) hs.push(next--);
+  if(!hs.length) return;
+  const res=await Promise.all(hs.map(h=>scanBlock(h).catch(()=>[])));
+  for(const f of res) msgs=msgs.concat(f);
+  msgs.sort((a,b)=>a.height-b.height);
+}
+async function loadInitial(){
   busy=true;
-  for(let i=0;i<count&&next>0;i++){
-    try{const f=await scanBlock(next); msgs=msgs.concat(f); msgs.sort((a,b)=>a.height-b.height); render(); toBottom()}
-    catch(e){console.warn('block',next,e)}
-    next--;
+  while(shown()<TARGET && next>0 && scanned<MAXBLOCKS){
+    await loadBatch(LANES);
+    render(); toBottom();
   }
   busy=false; toBottom(); updateJump();
 }
@@ -473,7 +478,7 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
   try{
     TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
     $('s-tip').textContent='#'+TIP.toLocaleString(); next=TIP;
-    await loadInitial(4);
+    await loadInitial();
     setInterval(async()=>{
       try{const t=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
         if(t>TIP){const old=TIP,stick=atBottom();TIP=t;$('s-tip').textContent='#'+t.toLocaleString();
