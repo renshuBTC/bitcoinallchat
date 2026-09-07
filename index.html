@@ -95,7 +95,9 @@ a{color:inherit}
 .bub{position:relative;max-width:74%;width:fit-content;background:var(--pill);
   border-radius:13px 13px 13px 4px;padding:6px 11px 5px;box-shadow:0 1px 1px rgba(0,0,0,.14)}
 [data-theme=light] .bub{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.snd{font-size:13.2px;font-weight:600;line-height:1.35;margin-bottom:1px}
+.snd{display:inline-block;font-size:13.2px;font-weight:600;line-height:1.35;margin-bottom:1px;
+  text-decoration:none;font-family:var(--mono);letter-spacing:-.02em}
+a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .txt{font-size:14.6px;line-height:1.46;color:var(--ink);white-space:pre-wrap;word-break:break-word}
 .txt.mono{font-family:var(--mono);font-size:12.2px;line-height:1.5;color:var(--ink2)}
 .txt.clip{max-height:8.6em;overflow:hidden}
@@ -281,18 +283,18 @@ function ago(ts){const s=Math.floor(Date.now()/1000-ts);
   if(s<86400)return Math.floor(s/3600)+' hr ago'; return Math.floor(s/86400)+' d ago'}
 function turn(m,prev){
   const long=m.text.length>340, mono=(m.kind==='pgp'||m.kind==='bridge');
-  const who=m.who||('Someone at '+(m.txid?m.txid.slice(0,6):'······'));
+  const who=m.who||(m.txid?m.txid.slice(0,8):'unknown');
   const col=hue(who);
-  const same=prev&&(prev.who||('Someone at '+(prev.txid?prev.txid.slice(0,6):'······')))===who;
+  const same=prev&&(prev.who||(prev.txid?prev.txid.slice(0,8):'unknown'))===who;
   const t=new Date(m.time*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
+                 :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
   return `<div class="row ${same?'':'grp'}">
-    <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who.replace('Someone at ','').slice(0,2)).toUpperCase()}</div>
+    <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
-      ${same?'':`<div class="snd" style="color:${col}">${esc(who)}</div>`}
+      ${same?'':nm}
       <div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>
-      <div class="mst">${long?'<span class="more">more</span>':''}
-        ${m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="View transaction">${m.txid.slice(0,8)} \u2197</a>`:''}
-        <span>${t}</span></div>
+      <div class="mst">${long?'<span class="more">more</span>':''}<span>${t}</span></div>
     </div></div>`;
 }
 function counts(){
