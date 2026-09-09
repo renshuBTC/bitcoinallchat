@@ -1,0 +1,11 @@
+{
+  "name": "bitcoinallchat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reads OP_RETURN messages out of Bitcoin blocks and writes new ones",
+  "license": "MIT",
+  "type": "module",
+  "scripts": { "build": "sh build.sh" },
+  "dependencies": { "qrcode-generator": "2.0.4" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}
