@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<!-- Everything on this page is attacker-supplied: the messages come off a public
+     chain. This caps what any of it could reach even if something got through. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none';
+  script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://mempool.space;
+  base-uri 'none'; form-action 'none'">
 <title>Bitcoin AllChat</title>
 <meta name="description" content="Every message ever written into a Bitcoin block, read as one conversation. Parsed live from raw blocks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,6 +179,9 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
 .row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
 .ims{display:block;max-width:100%;border-radius:9px;margin:3px 0 2px}
+.imh{display:block;margin:3px 0 2px;background:var(--pill);border:1px solid var(--line2);color:var(--ink2);
+  border-radius:9px;padding:9px 12px;font:inherit;font-size:15.4px;cursor:pointer;text-align:left}
+.imh:hover{border-color:var(--coral);color:var(--ink)}
 .att{display:none;align-items:center;gap:11px;margin:0 0 9px;padding:9px 12px;background:var(--comp);
   border:1px solid var(--line2);border-radius:12px}
 .att.on{display:flex}
@@ -441,7 +451,7 @@ const NAMES={talk:'Chat',pgp:'Signed & encrypted',bridge:'Bridge orders',tag:'Ta
 const VERB={talk:'wrote into the chain',pgp:'signed a message on-chain',bridge:'placed a bridge order',tag:'left a tag'};
 const PAL=['#E0805F','#7FB069','#6FA8DC','#C58AC5','#D9A441','#5FB0A8','#CF7B7B','#8E8BD0'];
 function hue(seed){let h=0;for(let i=0;i<seed.length;i++)h=(h*31+seed.charCodeAt(i))>>>0;return PAL[h%PAL.length]}
-function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function ago(ts){const s=Math.floor(Date.now()/1000-ts);
   if(s<90)return 'just now'; if(s<3600)return Math.floor(s/60)+' min ago';
   if(s<86400)return Math.floor(s/3600)+' hr ago'; return Math.floor(s/86400)+' d ago'}
@@ -462,7 +472,7 @@ function turn(m,prev){
       ${same?'':nm}
       ${quote}
       ${m.kind==='img'
-        ? `<img class="ims" src="data:${m.mime};base64,${m.b64}" alt="image written into block ${m.height}">`
+        ? `<button class="imh" data-id="${esc(m.txid||'')}">image · ${(m.bytes/1024).toFixed(1)} KB · show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
       <div class="mst">${long?'<span class="more">more</span>':''}<span>${t}</span></div>
     </div></div>`;
@@ -513,6 +523,15 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
+  /* Anyone can put a picture on the chain, so nobody is shown one until they ask. */
+  document.querySelectorAll('.imh').forEach(el=>el.onclick=()=>{
+    const m=msgs.find(x=>x.txid===el.dataset.id&&x.kind==='img');
+    if(!m) return;
+    const i=document.createElement('img');
+    i.className='ims'; i.loading='lazy'; i.alt='image from block '+m.height;
+    i.src='data:'+m.mime+';base64,'+m.b64;
+    el.replaceWith(i);
+  });
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
     const t=el.closest('.bub').querySelector('.txt');
     t.classList.toggle('clip'); el.textContent=t.classList.contains('clip')?'more':'less'});
@@ -701,6 +720,7 @@ function fillSearch(){
 let LIB=null, FEES={economyFee:1,hourFee:2,halfHourFee:3,fastestFee:6}, RATE=null;
 function lib(){ if(LIB) return Promise.resolve(LIB);
   return new Promise((res,rej)=>{const s=document.createElement('script');s.src='post.js';
+    s.integrity='sha384-Hs8mtIGN+GjUlNluDQhvRgmOKVLd87Vmq/BVEs4KuTsTVB3eZEF9TQfZMSJ1ljJ4';       /* pinned: a swapped builder will not run */
     s.onload=()=>{LIB=window.BTCPOST;LIB?res(LIB):rej(new Error('post.js loaded but exported nothing'))};
     s.onerror=()=>rej(new Error('could not load the transaction builder (post.js)'));
     document.head.appendChild(s)});
@@ -760,8 +780,21 @@ const WAL=[
     return{psbt:s instanceof Uint8Array?s:L.hexToBytes(s)}}},
 ];
 const detected=()=>WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
-const PICK='bac_wallet';
 let BUSY=false;
+
+/* No wallet state is kept. Nothing is written to storage, the choice is not
+   remembered between sends, and the connection is dropped as soon as the wallet
+   has signed — so a reload never lands on a page that is already connected. */
+try{localStorage.removeItem('bac_wallet')}catch(e){}
+async function drop(w){
+  try{
+    const p=w.p(); if(!p) return;
+    if(w.id==='xverse') await p.request('wallet_disconnect',null);
+    else if(typeof p.disconnect==='function') await p.disconnect();
+  }catch(e){}
+}
+const dropAll=()=>{for(const w of WAL) drop(w)};
+addEventListener('pagehide',dropAll);
 
 /* One status line under the composer carries the whole flow: which wallet,
    what the fee is, and the link when it lands. No dialog, no options. */
@@ -782,17 +815,13 @@ async function send(){
     $('hoff').onclick=()=>{ovp.classList.add('on');drawQR(text)};
     return;
   }
-  let w=av.find(x=>x.id===localStorage.getItem(PICK));
-  if(!w&&av.length===1) w=av[0];
-  if(!w){
-    hint('sign with '+av.map(x=>`<button data-w="${x.id}">${x.name}</button>`).join(''));
-    $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-      try{localStorage.setItem(PICK,b.dataset.w)}catch(e){}
-      publish(WAL.find(x=>x.id===b.dataset.w),text);
-    });
+  if(av.length>1){
+    hint('sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join(''));
+    $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>
+      publish(WAL.find(x=>x.id===b.dataset.w),text));
     return;
   }
-  publish(w,text);
+  publish(av[0],text);
 }
 
 async function publish(w,text){
@@ -823,7 +852,7 @@ async function publish(w,text){
   }catch(e){
     const m=((e&&e.message)||String(e)).replace(/^Error:\s*/,'');
     hint(esc(/reject|denied|cancel/i.test(m)?'cancelled':m),true);
-  }finally{ BUSY=false; refreshComp() }
+  }finally{ BUSY=false; refreshComp(); drop(w) }
 }
 
 /* ---- offline signer route ---- */
@@ -910,6 +939,12 @@ function openInfo(){
     <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
       transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
       signs it. The page never sees a key and never holds coins. The only cost is the miner fee.</p>
+    <p style="margin:0 0 12px">Connecting only lets the page read which address you are spending from. Bitcoin has
+      no standing approvals to revoke — nothing here can move a coin without a signature you give at that moment, and
+      the only output this page ever builds besides the message is change back to your own address. The connection is
+      dropped as soon as your wallet has signed, and again when the page is opened or closed, so a reload never
+      arrives connected. Nothing about a wallet is written to storage. Site access can also be removed in your
+      wallet's own connected-sites list.</p>
     <p style="margin:0 0 12px">The + button attaches a file or image, which goes into that same output. One
       transaction holds a little under 100 kB, and the fee is charged per byte, so a picture costs far more to
       publish than a sentence. The size and the fee are shown on the chip before anything is signed.</p>
@@ -929,6 +964,7 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
 /* ---------------- boot ---------------- */
 (async()=>{
   render();
+  dropAll();
   try{
     TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
     $('s-tip').textContent='#'+TIP.toLocaleString(); next=TIP;
