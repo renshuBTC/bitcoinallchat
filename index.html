@@ -441,10 +441,13 @@ function classify(bytes){
   if(chars.length>=16&&alpha/chars.length<0.30) return null;
   const words=t.split(/\s+/).filter(w=>/^[A-Za-z][A-Za-z'.,!?-]*$/.test(w));
   const emoji=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(t);
-  /* Someone talking: two words, an emoji, or bare punctuation like ":(" — while a
-     protocol marker is one alphanumeric token on its own, which stays hidden. */
+  /* Someone talking: two words, an emoji, or bare punctuation like ":(". */
   if(words.length>=2||emoji) return {kind:'talk',text:t};
   if(t.length<=12&&!/[A-Za-z0-9]/.test(t)) return {kind:'talk',text:t};
+  /* One word on its own is either a greeting or a protocol marker. Which one it
+     is cannot be told from the bytes, so it is decided later, once enough blocks
+     are in to see whether the chain repeats it. */
+  if(words.length===1&&t===words[0]&&t.length<=24) return {kind:'word',text:t};
   return {kind:'tag',text:t};
 }
 
@@ -481,6 +484,23 @@ function turn(m,prev){
 }
 /* find the message this one answers: first by spend-link, then by a txid quoted in the text */
 let BYTX=new Map();
+/* Markers arrive in their hundreds; a person says a word once. A lone word is
+   shown when it is not shouted, has a vowel in it, and is not something the
+   loaded blocks keep repeating. */
+let WORDN=new Map();
+function wordIndex(list){
+  WORDN=new Map();
+  for(const m of list) if(m.kind==='word'){
+    const k=m.text.toLowerCase(); WORDN.set(k,(WORDN.get(k)||0)+1);
+  }
+}
+function loneWord(t){
+  if(t===t.toUpperCase()&&/[A-Z]/.test(t)) return false;
+  if(!/[aeiouAEIOU]/.test(t)) return false;
+  return (WORDN.get(t.toLowerCase())||0)<=2;
+}
+const speech=m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img'||(m.kind==='word'&&loneWord(m.text));
+
 function reindex(list){
   BYTX=new Map();
   for(const m of list){ if(m.txid) BYTX.set(m.txid,m) }
@@ -505,14 +525,14 @@ function parentOf(m){
   return null;
 }
 function counts(){
-  const n=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img').length;
+  const n=msgs.filter(speech).length;
   const f=$('foot-n'); if(f)f.textContent=n;
 }
 function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
-  reindex(msgs);
-  const list=msgs.filter(m=>(m.kind==='talk'||m.kind==='pgp'||m.kind==='img')&&(!query||m.text.toLowerCase().includes(query)));
+  reindex(msgs); wordIndex(msgs);
+  const list=msgs.filter(m=>speech(m)&&(!query||m.text.toLowerCase().includes(query)));
   let head=`<div class="toploader" id="toploader">${next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
@@ -609,7 +629,7 @@ async function loadOlder(count=LANES){
 }
 /* first fill: keep pulling blocks (in parallel) until the room holds TARGET messages */
 const TARGET=200, MAXBLOCKS=260, LANES=5;
-function shown(){return msgs.reduce((n,m)=>n+((m.kind==='talk'||m.kind==='pgp'||m.kind==='img')?1:0),0)}
+function shown(){wordIndex(msgs);return msgs.reduce((n,m)=>n+(speech(m)?1:0),0)}
 async function loadBatch(n){
   const hs=[]; for(let i=0;i<n&&next>0;i++) hs.push(next--);
   if(!hs.length) return;
@@ -700,7 +720,7 @@ document.addEventListener('keydown',e=>{
 });
 function fillSearch(){
   const q=$('sq').value.trim().toLowerCase();
-  const all=msgs.filter(m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img');
+  const all=msgs.filter(speech);
   const hits=(q?all.filter(m=>m.text.toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q)):all).slice(-80).reverse();
   $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
       return `<div class="it" data-id="${m.txid||''}"><span class="d" style="background:${hue(w)}"></span>`
