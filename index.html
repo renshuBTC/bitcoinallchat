@@ -180,6 +180,14 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
 .row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
 .ims{display:block;max-width:100%;border-radius:9px;margin:3px 0 2px}
+.fold{display:block;margin:12px auto;padding:5px 13px;border-radius:999px;background:var(--comp);
+  border:1px solid var(--line);color:var(--mut2);font:inherit;font-size:13.4px;cursor:pointer;width:fit-content}
+.fold:hover{color:var(--ink2);border-color:var(--line2)}
+.payl{margin:9px 0 9px 42px;border-left:2px solid var(--line2);padding-left:12px}
+.pay{display:flex;gap:11px;align-items:baseline;padding:2px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
+.pay a{color:var(--mut);text-decoration:none;flex:0 0 auto}
+.pay a:hover{color:var(--coral)}
+.pay .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
 .imh{display:block;margin:3px 0 2px;background:var(--pill);border:1px solid var(--line2);color:var(--ink2);
   border-radius:9px;padding:9px 12px;font:inherit;font-size:15.4px;cursor:pointer;text-align:left}
 .imh:hover{border-color:var(--coral);color:var(--ink)}
@@ -425,20 +433,24 @@ function classify(bytes){
   const mt=imgType(bytes);
   if(mt) return {kind:'img',mime:mt,text:'',b64:b64(bytes),bytes:bytes.length};
   if(!bytes.length) return null;
-  let s; try{s=dec.decode(bytes)}catch(e){return null}
-  if(s.indexOf('�')>=0) return null;
+  /* Nothing readable is thrown away any more. Whatever cannot be read as text is
+     kept as its first bytes, so every OP_RETURN in a block is accounted for. */
+  const raw={kind:'data',text:'',bytes:bytes.length,
+    hex:Array.from(bytes.subarray(0,40),x=>x.toString(16).padStart(2,'0')).join('')+(bytes.length>40?'…':'')};
+  let s; try{s=dec.decode(bytes)}catch(e){return raw}
+  if(s.indexOf('�')>=0) return raw;
   const chars=[...s];
   let pr=0,alpha=0;
   for(const ch of chars){const c=ch.codePointAt(0);
     if((c>=32&&c<127)||c===10||c===13||c>0x9f)pr++;   /* emoji and accents count as printable */
     if(/[a-zA-Z]/.test(ch))alpha++;}
-  if(pr/chars.length<0.9) return null;
+  if(pr/chars.length<0.9) return raw;
   const t=s.trim();
-  if(!t) return null;
+  if(!t) return raw;
   if(/BEGIN PGP/i.test(t)) return {kind:'pgp',text:t};
   if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&!/\s/.test(t)) return {kind:'bridge',text:t};
   /* Only long payloads have to look like prose; a short one has no ratio worth reading. */
-  if(chars.length>=16&&alpha/chars.length<0.30) return null;
+  if(chars.length>=16&&alpha/chars.length<0.30) return {kind:'tag',text:t};
   const words=t.split(/\s+/).filter(w=>/^[A-Za-z][A-Za-z'.,!?-]*$/.test(w));
   const emoji=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(t);
   /* Someone talking: two words, an emoji, or bare punctuation like ":(". */
@@ -528,20 +540,33 @@ function counts(){
   const n=msgs.filter(speech).length;
   const f=$('foot-n'); if(f)f.textContent=n;
 }
+let FOLD=[];
 function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
   reindex(msgs); wordIndex(msgs);
-  const list=msgs.filter(m=>speech(m)&&(!query||m.text.toLowerCase().includes(query)));
+  const list=msgs.filter(m=>!query||(m.text||'').toLowerCase().includes(query));
+  const talk=list.filter(speech);
   let head=`<div class="toploader" id="toploader">${next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
-  else if(!list.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
-  let body='',lastDay='',prev=null;
+  else if(!talk.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
+  /* Everything in a block is here. What people wrote is drawn as conversation;
+     runs of protocol payloads fold into one line that opens on a click. */
+  FOLD=[];
+  let body='',lastDay='',prev=null,run=[];
+  const flush=()=>{
+    if(!run.length) return;
+    const n=run.length; FOLD.push(run); run=[];
+    body+=`<button class="fold" data-f="${FOLD.length-1}">· ${n.toLocaleString()} protocol payload${n>1?'s':''} ·</button>`;
+  };
   for(const m of list){
+    if(!speech(m)){ run.push(m); continue }
+    flush();
     const day=new Date(m.time*1000).toLocaleDateString(undefined,{month:'long',day:'numeric'});
     if(day!==lastDay){body+=`<div class="daysep"><span>${day}</span></div>`;lastDay=day;prev=null}
     body+=turn(m,prev); prev=m;
   }
+  flush();
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
@@ -553,6 +578,16 @@ function bind(){
     i.className='ims'; i.loading='lazy'; i.alt='image from block '+m.height;
     i.src='data:'+m.mime+';base64,'+m.b64;
     el.replaceWith(i);
+  });
+  document.querySelectorAll('.fold').forEach(el=>el.onclick=()=>{
+    const run=FOLD[+el.dataset.f]; if(!run) return;
+    el.outerHTML='<div class="payl">'+run.map(m=>{
+      const body=m.kind==='data'?m.hex:(m.text||'').replace(/\s+/g,' ');
+      return `<div class="pay">`
+        +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
+        +`<span class="p">${esc(body.slice(0,160))}</span>`
+        +`<span>#${m.height.toLocaleString()}</span></div>`;
+    }).join('')+'</div>';
   });
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
     const t=el.closest('.bub').querySelector('.txt');
@@ -720,11 +755,12 @@ document.addEventListener('keydown',e=>{
 });
 function fillSearch(){
   const q=$('sq').value.trim().toLowerCase();
-  const all=msgs.filter(speech);
-  const hits=(q?all.filter(m=>m.text.toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q)):all).slice(-80).reverse();
+  const all=msgs;
+  const hits=(q?all.filter(m=>(m.text||'').toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q))
+                :all.filter(speech)).slice(-80).reverse();
   $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
       return `<div class="it" data-id="${m.txid||''}"><span class="d" style="background:${hue(w)}"></span>`
-        +`<span class="tx">${esc(m.text.replace(/\s+/g,' ').slice(0,140))}</span>`
+        +`<span class="tx">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
         +`<span class="h">${esc(w)} · ${m.height.toLocaleString()}</span></div>`}).join('')
     :`<div class="pal-e">Nothing matching “${esc($('sq').value)}” in the ${scanned} blocks loaded so far. Scroll up in the room to pull in older blocks, then search again.</div>`;
   $('sl').querySelectorAll('.it').forEach(el=>el.onclick=()=>{
@@ -1050,7 +1086,9 @@ function openInfo(){
   <div class="cbd">
     <p style="margin:0 0 12px">This room is the OP_RETURN outputs of recent Bitcoin blocks, fetched raw from
       <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> and parsed here in the page.
-      Scrolling up pulls in older blocks.</p>
+      Scrolling up pulls in older blocks. Every OP_RETURN in those blocks is kept: what people wrote is drawn as
+      conversation, and runs of protocol payloads collapse into one line you can open. Only token data, which is
+      binary and makes up almost all OP_RETURN traffic, is left out — the panel counts it.</p>
     <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
       between two different wallets. That link is on the chain, not added by this site.</p>
     <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
