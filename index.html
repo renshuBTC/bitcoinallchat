@@ -283,7 +283,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     </div>
     <div class="ifoot">
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
-      built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a><br>
+      built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
+      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a><br>
       <button class="how" id="howb">how this works</button>
       <button class="icb" id="theme" title="Theme">◐</button>
     </div>
@@ -806,6 +807,98 @@ const setst=h=>{const e=$('st'); e?e.innerHTML=h:hint(h.replace(/<[^>]+>/g,''))}
 const fail=e=>{const m=esc((e&&e.message)||String(e));
   const t=$('st'); if(t){t.innerHTML=`<div class="err">${m}</div>`}else hint(m,true)};
 
+/* ------------------------------------------------------------------ pre-sign check
+   Read back the transaction the builder produced and prove, without trusting it,
+   that coins can only leave two ways: as fee to whoever mines the block, or as
+   change to the very script they came from. This code is deliberately separate
+   from post.js and duplicates the little it needs, so a swapped builder cannot
+   both write a bad transaction and wave it through. It cannot help if this page
+   itself is replaced — that is what your wallet's own confirmation screen is for. */
+const hx=b=>Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');
+const eqb=(a,b)=>a&&b&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+function opret(bytes){                       /* independent copy of the encoder */
+  const o=[0x6a];
+  for(let i=0;i<bytes.length;i+=520){
+    const c=bytes.subarray(i,Math.min(i+520,bytes.length));
+    if(c.length<0x4c) o.push(c.length);
+    else if(c.length<=0xff) o.push(0x4c,c.length);
+    else o.push(0x4d,c.length&0xff,c.length>>8);
+    for(const b of c) o.push(b);
+  }
+  return new Uint8Array(o);
+}
+function cursor(b){
+  let p=0;
+  const u32=()=>{const v=(b[p]|(b[p+1]<<8)|(b[p+2]<<16)|(b[p+3]<<24))>>>0;p+=4;return v};
+  const u64=()=>{let v=0n;for(let i=0;i<8;i++)v|=BigInt(b[p+i])<<BigInt(8*i);p+=8;return Number(v)};
+  const vi=()=>{const n=b[p++];
+    if(n<0xfd)return n;
+    if(n===0xfd){const v=b[p]|(b[p+1]<<8);p+=2;return v}
+    if(n===0xfe)return u32();
+    return u64()};
+  const take=n=>{const s=b.subarray(p,p+n);p+=n;return s};
+  return {u32,u64,vi,take,at:()=>p,end:()=>p>=b.length};
+}
+function rawTx(R){                            /* only the parts this check needs */
+  const c=cursor(R);
+  c.take(4);
+  if(R[c.at()]===0x00&&R[c.at()+1]===0x01) c.take(2);
+  const nin=c.vi(), ins=[];
+  for(let i=0;i<nin;i++){ c.take(32); const vout=c.u32(); c.take(c.vi()); c.take(4); ins.push({vout}) }
+  const nout=c.vi(), outs=[];
+  for(let i=0;i<nout;i++){ const value=c.u64(); const script=c.take(c.vi()); outs.push({value,script}) }
+  return {ins,outs};
+}
+function readPsbt(b){
+  const c=cursor(b);
+  if(hx(c.take(5))!=='70736274ff') throw new Error('not a transaction');
+  const map=()=>{const m=[];for(;;){const kl=c.vi();if(!kl)break;const k=c.take(kl);m.push([k,c.take(c.vi())])}return m};
+  const g=map();
+  const raw=(g.find(([k])=>k[0]===0x00)||[])[1];
+  if(!raw) throw new Error('the transaction is missing');
+  const {ins,outs}=rawTx(raw);
+  for(let i=0;i<ins.length;i++){
+    const m=map();
+    const wu=(m.find(([k])=>k[0]===0x01)||[])[1];
+    const nw=(m.find(([k])=>k[0]===0x00)||[])[1];
+    if(wu){ const w=cursor(wu); ins[i].value=w.u64(); ins[i].script=w.take(w.vi()) }
+    else if(nw){ const prev=rawTx(nw).outs[ins[i].vout];
+      if(prev){ ins[i].value=prev.value; ins[i].script=prev.script } }
+  }
+  for(let i=0;i<outs.length;i++) map();
+  return {ins,outs};
+}
+function checkPsbt(psbt,data,feeRate,claimed){
+  const {ins,outs}=readPsbt(psbt);
+  if(!ins.length) throw new Error('check failed: the transaction spends nothing');
+  const home=ins[0].script;
+  let inSum=0;
+  for(const i of ins){
+    if(!i.script) throw new Error('check failed: an input has no stated source');
+    if(!eqb(i.script,home)) throw new Error('check failed: it mixes coins from more than one address');
+    inSum+=i.value;
+  }
+  let outSum=0, msg=null;
+  for(const o of outs){
+    outSum+=o.value;
+    if(o.script[0]===0x6a){
+      if(msg) throw new Error('check failed: more than one message output');
+      if(o.value!==0) throw new Error('check failed: the message output carries coins');
+      msg=o.script;
+    }else if(!eqb(o.script,home)){
+      throw new Error('check failed: it would pay an address that is not yours');
+    }
+  }
+  if(!msg) throw new Error('check failed: there is no message in it');
+  if(!eqb(msg,opret(data))) throw new Error('check failed: the message on the wire is not the one you wrote');
+  const fee=inSum-outSum;
+  if(fee<0) throw new Error('check failed: it spends more than it holds');
+  if(fee!==claimed) throw new Error(`check failed: the real fee is ${fee} sats, not the ${claimed} shown`);
+  const cap=Math.max(50000,Math.ceil((data.length+250)*feeRate*3));
+  if(fee>cap) throw new Error(`check failed: ${fee.toLocaleString()} sats is far more than ${feeRate} sat/vB should cost`);
+  return fee;
+}
+
 async function send(){
   const text=payload();
   if(BUSY||(!FILE&&!String(text).trim())) return;
@@ -843,7 +936,9 @@ async function publish(w,text){
     const args={address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE};
     let b=await L.buildPsbt(args);
     if(b.type==='p2pkh') b=await L.buildPsbt({...args,prevTx:await prevTxs(b.inputs)});
-    hint(`${sats(b.fee)} to the miner — confirm in ${esc(w.name)}`);
+    const bytes=typeof text==='string'?new TextEncoder().encode(text):text;
+    const fee=checkPsbt(b.psbt,bytes,RATE,b.fee);
+    hint(`checked · ${sats(fee)} to the miner, the rest back to you — confirm in ${esc(w.name)}`);
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
     const txid=r.txid||await push(L.extract(r.psbt));
     $('q').value=''; FILE=null; drawAtt();
@@ -884,6 +979,7 @@ async function buildQR(text){
     if(!us.length) throw new Error('no confirmed unspent outputs on '+addr);
     let b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3});
     if(b.type==='p2pkh') b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3,prevTx:await prevTxs(b.inputs)});
+    checkPsbt(b.psbt,typeof text==='string'?new TextEncoder().encode(text):text,RATE||3,b.fee);
     const parts=L.bbqr(b.psbt,'P');
     stopAnim();
     const fr=$('fr');
@@ -940,8 +1036,10 @@ function openInfo(){
       transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
       signs it. The page never sees a key and never holds coins. The only cost is the miner fee.</p>
     <p style="margin:0 0 12px">Connecting only lets the page read which address you are spending from. Bitcoin has
-      no standing approvals to revoke — nothing here can move a coin without a signature you give at that moment, and
-      the only output this page ever builds besides the message is change back to your own address. The connection is
+      no standing approvals to revoke — nothing here can move a coin without a signature you give at that moment. The
+      only output this page ever builds besides the message is change back to your own address, and before anything
+      reaches your wallet the page reads its own transaction back and refuses to hand it over unless every coin is
+      accounted for as either miner fee or change to the address it came from. The connection is
       dropped as soon as your wallet has signed, and again when the page is opened or closed, so a reload never
       arrives connected. Nothing about a wallet is written to storage. Site access can also be removed in your
       wallet's own connected-sites list.</p>
