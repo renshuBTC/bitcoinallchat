@@ -123,6 +123,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .mst a{color:var(--mut2);text-decoration:none}
 .mst a:hover{color:var(--coral)}
 .mst .more{cursor:pointer;margin-right:auto;color:var(--coral)}
+.mst .blk{font-family:var(--mono);font-size:10.5px}
 .daysep{text-align:center;margin:20px 0 12px}
 .daysep span{background:var(--pill);color:var(--mut);font-size:11.5px;padding:3px 12px;border-radius:12px}
 [data-theme=light] .daysep span{background:#EDEAE1}
@@ -475,7 +476,7 @@ function turn(m,prev){
       ${m.kind==='img'
         ? `<button class="imh" data-id="${esc(m.txid||'')}">image · ${(m.bytes/1024).toFixed(1)} KB · show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
-      <div class="mst">${long?'<span class="more">more</span>':''}<span>${t}</span></div>
+      <div class="mst">${long?'<span class="more">more</span>':''}<span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span></div>
     </div></div>`;
 }
 /* find the message this one answers: first by spend-link, then by a txid quoted in the text */
