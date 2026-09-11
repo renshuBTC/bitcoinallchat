@@ -332,6 +332,26 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp-r .cnt{margin-left:auto}
 .comp .att{padding:2px 2px 0}
 .comp .att:empty{display:none}
+/* One language for the whole footer line. Nothing in it is coloured and nothing is
+   underlined: what you can click is white, what you cannot is dimmed, and hovering lifts
+   a soft chip behind it. Those are the only three states, as in Claude's own footer. */
+.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:4px 14px;padding:9px 2px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
+  color:var(--mut2)}
+.dfl,.dfr{display:flex;align-items:center;gap:10px;min-width:0}
+.vsw{display:flex;align-items:center;gap:10px;margin:0}
+.vb,.dockfoot .dlink,.hint button{background:transparent;border:0;text-decoration:none;
+  font:inherit;font-family:var(--sans);font-size:12.2px;line-height:1.5;white-space:nowrap;
+  color:var(--mut);cursor:pointer;padding:3px 7px;margin:0 -3px;border-radius:7px}
+.vb:hover,.dockfoot .dlink:hover,.hint button:hover{background:rgba(255,255,255,.075);color:var(--ink)}
+[data-theme=light] .vb:hover,[data-theme=light] .dockfoot .dlink:hover,
+[data-theme=light] .hint button:hover{background:rgba(0,0,0,.055)}
+.vb.on,.hint button{color:var(--ink)}
+.hint{display:inline-flex;align-items:center;gap:2px;padding:0;margin:0;min-height:0;
+  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left}
+.hint:empty{display:none}
+.hint a,.hint a:hover{color:var(--ink);text-decoration:none}
+.dockfoot .bw{color:var(--mut2);font-size:12.2px}
 </style>
 </head>
 <body>
@@ -402,7 +422,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
       </div>
     </div>
-    <div class="hint" id="hint"></div>
     <div class="dockfoot">
       <div class="dfl">
         <div class="vsw">
@@ -411,7 +430,10 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
         </div>
         <button class="dlink" id="howb">how this works</button>
       </div>
-      <span class="bw">Burner wallet, not your main one.</span>
+      <div class="dfr">
+        <span class="hint" id="hint"></span>
+        <span class="bw">Burner wallet, not your main one.</span>
+      </div>
     </div>
   </div>
 </div>
