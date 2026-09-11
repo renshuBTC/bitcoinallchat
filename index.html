@@ -8,7 +8,7 @@
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
   script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://mempool.space;
+  font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space; connect-src https://mempool.space;
   base-uri 'none'; form-action 'none'">
 <title>Bitcoin AllChat</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><style>rect,path{stroke:%23111}@media(prefers-color-scheme:dark){rect,path{stroke:%23f2f1ec}}</style><rect x='5.5' y='5.5' width='21' height='21' rx='5' fill='none' stroke-width='2.6'/><path d='M11 13.5h10M11 18.5h6' fill='none' stroke-width='2.6' stroke-linecap='round'/></svg>">
@@ -289,8 +289,10 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
    a front face carrying the fee summary, with a top and a right face extruded behind it */
 .blocks{display:flex;align-items:flex-end;gap:6px;margin:0;font-family:var(--sans)}
 .mbw{display:flex;flex-direction:column;align-items:center}
-.mbh{font-family:var(--mono);font-size:12px;line-height:14px;height:14px;color:#45c5d8}
-.mbp{font-family:var(--sans);font-size:9.6px;line-height:12px;height:12px;color:var(--mut2);margin-top:5px}
+.mbh{font-family:var(--mono);font-size:13.4px;line-height:16px;height:16px;color:#3fc5db;letter-spacing:.2px}
+.mbp{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px;height:16px;
+  font-family:var(--sans);font-size:11.6px;font-weight:600;line-height:16px;color:var(--ink2)}
+.mbp img{width:13px;height:13px;border-radius:50%;flex:0 0 13px}
 .mb{position:relative;width:100px;height:100px;margin:9px 9px 0 0}
 .mb .top{position:absolute;left:0;width:100%;height:9px;top:-9px;
   transform:skewX(-45deg);transform-origin:bottom left}
@@ -309,7 +311,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .mb.last .top{background:#5a2196}
 .mb.last .rgt{background:#145da4}
 .mb.last .face u{color:#ff9f43}
-.blk-x{align-self:stretch;width:0;border-left:1.5px dashed var(--line2);margin:20px 4px 14px}
+.blk-x{align-self:stretch;display:flex;flex-direction:column;align-items:center;
+  justify-content:space-between;flex:0 0 15px;width:15px;margin:0 1px 14px;
+  color:var(--ink2);font-size:11px;font-style:normal;line-height:1}
+.blk-x i{font-style:normal;opacity:.85}
+.blk-x .ln{flex:1 1 auto;width:2px;margin:5px 0;border:0;
+  background:repeating-linear-gradient(to bottom,var(--ink2) 0 7px,transparent 7px 13px)}
 /* The footer reads like the line under Claude's composer: one size, no boxes, no accent
    colour. What you can click sits left in the brighter grey, the standing note sits right
    in the dimmer one. Anything with its own border or colour has been taken out of it. */
@@ -359,6 +366,13 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .hint:empty{display:none}
 .hint a,.hint a:hover{color:var(--ink);text-decoration:none}
 .dockfoot .bw{color:var(--mut2);font-size:12.2px}
+/* the panel carries the whole explanation now, so it is set smaller than the headline */
+.info h1.open-h{font-size:15.4px;line-height:1.35;margin:0 0 12px}
+.info p.open-p{font-size:13.6px;line-height:1.55;margin:0 0 11px;color:var(--ink2)}
+.info p.warn-p{color:var(--mut2)}
+.info .lnk{font-size:13.6px;padding:0;margin:2px 0 0;color:var(--mut);text-align:left;
+  text-decoration:underline;text-underline-offset:2px}
+.info .lnk:hover{color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -367,8 +381,15 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <aside class="info">
     <div class="ihead">Bitcoin AllChat</div>
     <h1 class="open-h">Text written into Bitcoin blocks.</h1>
-    <p class="open-p">Every message here is an OP_RETURN output from a recent block, read raw from
-      mempool.space and parsed in your browser. Nothing is stored.</p>
+    <p class="open-p">Every message is an OP_RETURN output from a recent block, read raw from mempool.space and
+      parsed in your browser. Nothing is stored.</p>
+    <p class="open-p">Conversation is what people wrote. Everything is every payload, machine data included.</p>
+    <p class="open-p">Writing builds an unsigned transaction: your text in one OP_RETURN output, change back to
+      you. Your wallet signs it, the page never sees a key, and you pay the miner fee. The + button attaches a
+      file, under 100 kB, priced per byte.</p>
+    <p class="open-p warn-p">Use a burner wallet, not the one holding your savings. Nothing published can be
+      undone. No warranty, and no liability for any loss.</p>
+    <button class="lnk" id="qrb">Sign offline instead</button>
     <div class="blocks" id="blocks">
       <div class="mbw">
         <div class="mbh">&nbsp;</div>
@@ -377,7 +398,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
           <i id="p-tx">&nbsp;</i><i id="p-eta">&nbsp;</i></div></div>
         <div class="mbp">&nbsp;</div>
       </div>
-      <span class="blk-x"></span>
+      <span class="blk-x"><i>⇅</i><span class="ln"></span><i>⇄</i></span>
       <div class="mbw">
         <div class="mbh" id="bk-h">&nbsp;</div>
         <div class="mb last"><div class="top"></div><div class="rgt"></div><div class="face">
@@ -436,7 +457,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
           <button class="vb on" data-v="talk">conversation</button>
           <button class="vb" data-v="all">everything</button>
         </div>
-        <button class="dlink" id="howb">how this works</button>
       </div>
       <div class="dfr">
         <span class="hint" id="hint"></span>
@@ -783,13 +803,21 @@ async function blockClock(){
     if(bs&&bs.length){
       const bk=bs[0], x=bk.extras||{};
       BLKT=bk.timestamp;
-      $('bk-h').textContent=bk.height.toLocaleString();
+      $('bk-h').textContent=String(bk.height);
       $('m-med').textContent='~'+feeFmt(x.medianFee)+' sat/vB';
       $('m-rng').textContent=rangeTxt(x.feeRange);
       $('m-btc').textContent=btcTxt(x.totalFees);
       $('m-tx').textContent=txTxt(bk.tx_count);
-      const pool=x.pool&&x.pool.name;
-      $('m-pool').textContent=pool||'\u00a0';
+      const pool=x.pool||null, mp=$('m-pool');
+      mp.textContent='';
+      if(pool&&pool.name){
+        if(pool.slug){
+          const im=new Image(); im.alt=''; im.onerror=()=>im.remove();
+          im.src='https://mempool.space/resources/mining-pools/'+encodeURIComponent(pool.slug)+'.svg';
+          mp.appendChild(im);
+        }
+        const nm=document.createElement('span'); nm.textContent=pool.name; mp.appendChild(nm);
+      } else mp.innerHTML='&nbsp;';
     }
     if(mp&&mp.length){
       const p=mp[0];
@@ -961,7 +989,6 @@ function drawAtt(cost){
 $('q').oninput=refreshComp;
 $('q').onkeydown=e=>{if(e.key==='Enter'&&!$('sendb').disabled){e.preventDefault();send()}};
 $('sendb').onclick=()=>send();
-$('howb').onclick=()=>openInfo();
 
 /* ---- search palette ---- */
 const ovs=$('ovs'), ovp=$('ovp'), pcard=$('pcard');
@@ -1304,48 +1331,6 @@ async function broadcastPasted(L){
   }catch(e){ fail(e) }
 }
 
-function openInfo(){
-  stopAnim(); stopCam();
-  ovp.classList.add('on');
-  pcard.innerHTML=`<div class="chd"><h2>How this works</h2><button class="cl" id="pcl">✕</button></div>
-  <div class="cbd">
-    <p style="margin:0 0 12px">Scrolling up pulls in older blocks. The conversation shows what people wrote. Protocol and token payloads,
-      which are machine data and make up almost all OP_RETURN traffic, are kept out of it — switch the panel to
-      everything to see every payload the parser kept, the binary ones included.</p>
-<p style="margin:0 0 12px">A message is only here once a block carrying it has been mined, which is what the
-      two blocks in the panel show: the last block, and roughly when the next one is due. That estimate is the
-      average gap over the last dozen blocks; real blocks arrive irregularly, so treat it as a rough guide.</p>
-        <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
-      between two different wallets. That link is on the chain, not added by this site.</p>
-    <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
-      transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
-      signs it. The page never sees a key and never holds coins. The only cost is the miner fee.</p>
-    <p style="margin:0 0 12px">Connecting only lets the page read which address you are spending from. Bitcoin has
-      no standing approvals to revoke — nothing here can move a coin without a signature you give at that moment. The
-      only output this page ever builds besides the message is change back to your own address, and before anything
-      reaches your wallet the page reads its own transaction back and refuses to hand it over unless every coin is
-      accounted for as either miner fee or change to the address it came from. The connection is
-      dropped as soon as your wallet has signed, and again when the page is opened or closed, so a reload never
-      arrives connected. Nothing about a wallet is written to storage. Site access can also be removed in your
-      wallet's own connected-sites list.</p>
-    <p style="margin:0 0 12px">The + button attaches a file or image, which goes into that same output. One
-      transaction holds a little under 100 kB, and the fee is charged per byte, so a picture costs far more to
-      publish than a sentence. The size and the fee are shown on the chip before anything is signed.</p>
-    <p style="margin:0 0 12px">Bitcoin Core v30 relays up to ${MAXDATA.toLocaleString()} bytes of OP_RETURN data by default;
-      older nodes stop at ${LEGACY}, which is when the byte count in the composer starts showing.</p>
-<p class="bwarn" style="margin:0 0 12px">Use a burner wallet. Connect one you keep a small amount of bitcoin in
-      for this, not the wallet holding your savings. The page never sees a key and never holds coins, but you are
-      signing real transactions from a real wallet and publishing to a public chain permanently, and nothing
-      published here can be taken back.</p>
-    <p style="margin:0 0 12px">This site is provided as is, with no warranty of any kind. Its authors accept no
-      liability for any loss of bitcoin, for fees paid, for anything you publish, or for anything anyone else
-      publishes here. Messages come from strangers on a public chain, so treat every link, address and instruction
-      in one as hostile until you have checked it yourself.</p>
-        <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
-  </div>`;
-  $('pcl').onclick=closeSheet;
-  $('qrb').onclick=()=>drawQR(payload());
-}
 $('jump').onclick=()=>toBottom(true);
 $('theme').onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
   document.documentElement.setAttribute('data-theme',d?'light':'dark');
@@ -1369,6 +1354,26 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
     },60000);
   }catch(e){$('thread').innerHTML='<div class="mid">Could not reach mempool.space. Refresh to retry.</div>'}
 })();
+
+/* Which wallet will sign is part of how this works, so it is shown from the start rather
+   than appearing only once something has been sent. The publish flow overwrites this line
+   with its own status while it runs. */
+function idleHint(){
+  try{
+    if(typeof BUSY!=='undefined'&&BUSY) return;
+    const h=$('hint'); if(!h) return;
+    const av=WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
+    if(!av.length){ h.innerHTML=''; return }
+    h.innerHTML='sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('');
+    h.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const p=payload();
+      if(!p||!p.length){ const q=$('q'); if(q) q.focus(); return }
+      publish(WAL.find(x=>x.id===b.dataset.w),p);
+    });
+  }catch(e){}
+}
+setTimeout(idleHint,500); setTimeout(idleHint,1800);
+try{ $('qrb').onclick=()=>drawQR(payload()) }catch(e){}
 </script>
 </body>
 </html>
