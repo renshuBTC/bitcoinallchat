@@ -105,4 +105,3 @@ test('A disappeared active provider cannot block the remaining installed provide
   const h=app();h.scope.ACTIVE_WALLET={id:'unisat'};h.draft='Hello';await h.scope.send();
   assert.equal(h.scope.ACTIVE_WALLET,null);assert.deepEqual(h.events,[['publish','xverse','Hello']]);
 });
-
