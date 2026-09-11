@@ -379,7 +379,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 [data-theme=light] .hint button:hover,[data-theme=light] .wallets a:hover,
 [data-theme=light] .wallets button:hover{background:rgba(0,0,0,.055)}
 .vb.on,.hint button,.wallets a,.wallets button{color:var(--ink)}
-.wallets{display:inline-flex;align-items:center;flex:0 0 auto;gap:2px;color:var(--mut2)}
+.wallets{display:none;align-items:center;flex:0 0 auto;gap:2px;color:var(--mut2)}
+.wallets.on{display:inline-flex}
 .wallets a,.wallets button{flex:0 0 auto}
 .hint{display:inline-flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:2px;padding:0;margin:0;min-height:0;
   font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;white-space:nowrap}
@@ -433,8 +434,9 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .istats b{font-weight:700}
 .info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
-/* Keep all signing choices and the reminder on the same horizontally scrollable row. */
-.dockfoot .bw{flex:0 0 auto}
+/* Reveal signing choices and the reminder together after Enter or Send. */
+.dockfoot .bw{display:none;flex:0 0 auto}
+.dockfoot .bw.on{display:inline}
 .txt{font-size:var(--message-size)}
 .istats span{min-width:0}
 .istats b{flex-shrink:0}
@@ -1327,6 +1329,7 @@ function checkPsbt(psbt,data,feeRate,claimed){
 async function send(){
   const text=payload();
   if(BUSY||(!FILE&&!String(text).trim())) return;
+  armFooter();
   hint('');
   $('wallet-xverse').focus();
 }
@@ -1495,11 +1498,11 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
   }catch(e){$('thread').innerHTML='<div class="mid">Could not reach mempool.space. Refresh to retry.</div>'}
 })();
 
-/* Which wallet will sign is part of how this works, so it is shown from the start rather
-   than appearing only once something has been sent. The publish flow overwrites this line
-   with its own status while it runs. */
-
-function armFooter(){ const b=document.querySelector('.bw'); if(b) b.classList.add('on'); }
+/* Signing choices appear after a valid send action, keeping the idle footer quiet. */
+function armFooter(){
+  if($('sendb').disabled) return;
+  document.querySelectorAll('.wallets,.bw').forEach(el=>el.classList.add('on'));
+}
 try{
   const sb=$('sendb'); if(sb) sb.addEventListener('click',armFooter);
   const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing) armFooter() });
