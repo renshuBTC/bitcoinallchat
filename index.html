@@ -413,6 +413,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .istats b{font-weight:700}
 .info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
+/* The signing options and the burner note are both consequences of pressing enter, so the
+   note keeps its place in the row but stays invisible until then — hidden rather than
+   removed, so the footer does not shift when it arrives. */
+.dockfoot .bw{visibility:hidden}
+.dockfoot .bw.on{visibility:visible}
 </style>
 </head>
 <body>
@@ -1256,10 +1261,13 @@ async function send(){
     $('hoff').onclick=()=>{ovp.classList.add('on');drawQR(text)};
     return;
   }
-  if(av.length>1){
-    hint('sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join(''));
+  if(true){
+    hint((av.length?'sign with ':'sign ')
+      +av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('')
+      +'<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">offline</button>');
+    armFooter();
     $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>
-      publish(WAL.find(x=>x.id===b.dataset.w),text));
+      b.dataset.w==='__off' ? drawQR(text) : publish(WAL.find(x=>x.id===b.dataset.w),text));
     return;
   }
   publish(av[0],text);
@@ -1397,24 +1405,12 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
 /* Which wallet will sign is part of how this works, so it is shown from the start rather
    than appearing only once something has been sent. The publish flow overwrites this line
    with its own status while it runs. */
-function idleHint(){
-  try{
-    if(typeof BUSY!=='undefined'&&BUSY) return;
-    const h=$('hint'); if(!h) return;
-    const av=WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
-    const off='<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">offline</button>';
-    h.innerHTML=(av.length
-      ? 'sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('')
-      : 'sign ')+off;
-    h.querySelectorAll('button').forEach(b=>b.onclick=()=>{
-      const p=payload();
-      if(!p||!p.length){ const q=$('q'); if(q) q.focus(); return }
-      if(b.dataset.w==='__off') return drawQR(p);
-      publish(WAL.find(x=>x.id===b.dataset.w),p);
-    });
-  }catch(e){}
-}
-setTimeout(idleHint,500); setTimeout(idleHint,1800);
+
+function armFooter(){ const b=document.querySelector('.bw'); if(b) b.classList.add('on'); }
+try{
+  const sb=$('sendb'); if(sb) sb.addEventListener('click',armFooter);
+  const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey) armFooter() });
+}catch(e){}
 </script>
 </body>
 </html>
