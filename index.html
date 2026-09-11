@@ -674,7 +674,7 @@ async function loadOlder(count=LANES){
   busy=false; updateJump();
 }
 /* first fill: keep pulling blocks (in parallel) until the room holds TARGET messages */
-const TARGET=200, MAXBLOCKS=260, LANES=5;
+const TARGET=100, MAXBLOCKS=260, LANES=5;
 function shown(){wordIndex(msgs);return msgs.reduce((n,m)=>n+(speech(m)?1:0),0)}
 async function loadBatch(n){
   const hs=[]; for(let i=0;i<n&&next>0;i++) hs.push(next--);
@@ -684,12 +684,19 @@ async function loadBatch(n){
   msgs.sort((a,b)=>a.height-b.height);
 }
 async function loadInitial(){
-  busy=true;
+  busy=true; toBottom();
   while(shown()<TARGET && next>0 && scanned<MAXBLOCKS){
     await loadBatch(LANES);
-    render(); toBottom();
+    /* The first fill keeps pulling older blocks for a while after the page looks ready.
+       Those arrive above what is on screen, so hold the reader where they are; only
+       follow the newest message if they were already at the bottom. */
+    const stick=atBottom(), before=document.documentElement.scrollHeight;
+    render();
+    if(stick) toBottom();
+    else { const after=document.documentElement.scrollHeight;
+      if(after!==before) window.scrollTo(0,window.scrollY+(after-before)); }
   }
-  busy=false; toBottom(); updateJump();
+  busy=false; updateJump();
 }
 
 /* ---------------- ui ---------------- */
