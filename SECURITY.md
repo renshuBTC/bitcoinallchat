@@ -2,34 +2,44 @@
 
 ## What there is to attack
 
-No server, no database, no accounts, no funds and no keys are held anywhere. The
-site is static files plus your own wallet. So the interesting attacks are not
-against the site's data — there is none — but against what the page hands your
-wallet to sign, and against the files themselves.
+The site is a static browser application. It does not operate a wallet backend
+or request private keys. Its main trust boundaries are public blockchain/API
+data, transaction preparation, wallet responses, and the files served to visitors.
 
 ## What the page does about it
 
 **Everything on screen is hostile input.** The messages are bytes strangers paid
 to put on a public chain. They are escaped before rendering, a
 Content-Security-Policy with `default-src 'none'` caps what any of it could reach,
-`connect-src` allows only mempool.space, and images are opened by the reader
-rather than shown on arrival.
+`connect-src` allows mempool.space and the configured public price feeds. The
+inline application script is pinned by a CSP hash, and injected inline event
+handlers are not allowed. Block and transaction parsers enforce size and length
+bounds. Images are opened only on request, after byte, dimension and animation
+checks; unsupported previews link to the original transaction.
 
-**The transaction is checked before it is signed.** See the section in the README.
-Coins can leave only as miner fee or as change to the address they came from;
-anything else stops in the page rather than reaching your wallet.
+**Transactions are checked before signing and broadcasting.** Selected funding
+transactions are fetched and their IDs, amounts and address scripts are checked.
+The prepared transaction must use those inputs, the original message bytes, and
+change to the same address. Signed results must retain the prepared version,
+inputs, sequences, outputs and locktime. Supported signatures must commit to all
+outputs. The app broadcasts only after these checks; it does not independently
+verify signatures or replace Bitcoin's validation rules. Transaction IDs are
+validated before display.
 
 **The builder is pinned.** `post.js` loads with a Subresource Integrity hash. If
 that file is altered anywhere between the repository and your browser, it does not
 execute.
 
-**No wallet state is kept.** Nothing is written to storage, the choice of wallet is
-not remembered, and `disconnect()` runs when the page opens, after signing, and
-when the page closes. A reload never arrives connected.
+**Wallet selection is temporary.** It stays in memory for the open page and is not
+restored on reload. The page disconnects only a wallet explicitly selected here;
+it does not disconnect every installed wallet on startup. Up to 1,000 public IDs
+of successfully sent transactions are stored locally for message colours. These
+labels are display preferences, not proof of authorship. Message drafts, wallet
+addresses and private keys are not saved by the app.
 
-**Bitcoin has no standing approvals.** There is no allowance to revoke, on
-revoke.cash or anywhere else. A connection only lets a page read which address you
-are using; every spend needs a signature given at that moment.
+**Connection and spending are separate.** Connecting requests an account from the
+wallet. Publishing requires a signed Bitcoin transaction. Review the outputs and
+fee in the wallet before approving.
 
 ## What it does not protect against
 
@@ -39,8 +49,11 @@ are using; every spend needs a signature given at that moment.
   screen, which shows the real outputs, is the last line — read it.
 - **Lookalike domains.** Same answer: read the outputs before approving.
 - **Wallet extensions themselves**, and anything already running in your browser.
+- **An incorrect API view of the chain or unspent status.** This page is not a full
+  node and does not independently validate proof of work, the complete chain, or
+  recommended fee rates. A displayed fee check is not a guarantee of a fair fee.
 - **Whatever you choose to publish.** Data in an `OP_RETURN` is permanent and
-  public. There is no delete.
+  public once confirmed. The application cannot edit or delete confirmed posts.
 
 ## Reporting
 

@@ -86,12 +86,12 @@ function environment(wallet = true) {
     document,
     $: id => elements.get(id) || null,
     ovs: elements.get('ovs'), ovp: elements.get('ovp'), pcard: elements.get('pcard'),
-    BUSY: false, FILE: null, REPLY: null, MAXDATA: 100000, WAL: [activeWallet], RATE: null,
+    BUSY: false, ACTIVE_WALLET: null, FILE: null, REPLY: null, MAXDATA: 100000, WAL: [activeWallet], RATE: null,
     detected: () => wallet ? [activeWallet] : [],
     payload: () => 'Message for offline signing',
     hasDraft: () => !!String(ctx.payload()).trim(),
     captureDraft: () => ({}),
-    armFooter() {}, publish: (w, text) => publishCalls.push({ id: w.id, text }),
+    armFooter() {}, connectOnly: w => { ctx.ACTIVE_WALLET = w; }, publish: (w, text) => publishCalls.push({ id: w.id, text }),
     esc: value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     clearInterval: id => intervalsCleared.push(id),
     setTimeout: fn => { fn(); return 1; },
@@ -185,18 +185,27 @@ test('An installed wallet does not intercept the other wallet download', async (
   assert.deepEqual(e.publishCalls, []);
 });
 
-test('Empty drafts and in-progress sends do not start another signing flow', async () => {
+test('An empty draft connects without signing, and in-progress sends cannot start another flow', async () => {
   const e = environment(true);
   e.ctx.payload = () => '  ';
   await e.elements.get('wallet-xverse').click();
-  assert.match(e.elements.get('hint').textContent, /Write a message first/);
-  assert.equal(e.document.activeElement, e.elements.get('q'));
+  assert.equal(e.ctx.ACTIVE_WALLET.id, 'xverse');
+  assert.deepEqual(e.publishCalls, []);
   e.ctx.payload = () => 'Another message';
   e.ctx.BUSY = true;
   await e.elements.get('wallet-xverse').click();
   await e.elements.get('hoff').click();
   assert.deepEqual(e.publishCalls, []);
   assert.equal(e.elements.get('ovp').classList.contains('on'), false);
+});
+
+test('Enter sends through the wallet connected before typing', async () => {
+  const e = environment(true);
+  e.ctx.payload = () => '';
+  await e.elements.get('wallet-xverse').click();
+  e.ctx.payload = () => 'Hello from a connected wallet';
+  await e.ctx.send();
+  assert.deepEqual(e.publishCalls, [{ id: 'xverse', text: 'Hello from a connected wallet' }]);
 });
 
 test('Backdrop and Escape close the sheet', async () => {

@@ -11,7 +11,7 @@ const root = path.basename(__dirname) === 'tests' ? path.join(__dirname, '..') :
 const html = fs.readFileSync(process.argv[2] || path.join(root, 'index.html'), 'utf8');
 const script = html.slice(html.indexOf('<script>') + '<script>'.length, html.lastIndexOf('</script>'));
 const bootStart = script.indexOf('/* ---------------- boot ---------------- */');
-const bootEnd = script.indexOf('/* Signing choices appear', bootStart);
+const bootEnd = script.indexOf('function armFooter()', bootStart);
 assert.ok(bootStart >= 0 && bootEnd > bootStart, 'Identify the page boot before isolating it');
 const isolatedScript = (script.slice(0, bootStart) + script.slice(bootEnd)).replace(/^blockClock\(\);\s*$/m, '');
 
@@ -47,7 +47,7 @@ function runtime() {
     querySelectorAll: () => [], addEventListener() {},
     documentElement: element('documentElement'), head: {appendChild() {}}};
   const scope = vm.createContext({document, console, TextEncoder, TextDecoder, Uint8Array,
-    ArrayBuffer, DataView, crypto: webcrypto, atob, btoa, URL, innerHeight: 800,
+    ArrayBuffer, DataView, AbortController, crypto: webcrypto, atob, btoa, URL, innerHeight: 800,
     localStorage: {getItem: () => null, setItem() {}, removeItem() {}},
     addEventListener() {}, setInterval: () => 1, clearInterval() {},
     setTimeout: () => 1, clearTimeout() {}, requestAnimationFrame: () => 1,
@@ -112,7 +112,8 @@ test('Reply images and arbitrary binary retain their original complete body', ()
     assert.equal(classified.kind, data === png ? 'img' : 'data');
     if (data === png) {
       assert.equal(classified.mime, 'image/png');
-      assert.deepEqual(Buffer.from(classified.b64, 'base64'), bytes(png));
+      assert.deepEqual(bytes(classified.imageBytes), bytes(png));
+      assert.equal(classified.b64, undefined);
     }
   }
 });
@@ -388,10 +389,11 @@ test('Shipped builder and independent checker carry the full reply reference wit
   const address = 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
   const utxos = [{txid: THIRD, vout: 0, value: 1000000}];
   const home = (await core.decodeAddress(address)).script;
+  const sources = {script: home, coins: utxos.map(coin => ({...coin, script: home}))};
   for (const data of ['你好，Bitcoin! This is a reply.', png, new Uint8Array(1400).fill(0xa5)]) {
     const wire = app.scope.encodeReply(data, target);
     const built = await core.buildPsbt({address, publicKey: null, utxos, message: wire, feeRate: 2});
-    assert.equal(app.scope.checkPsbt(built.psbt, wire, 2, built.fee), built.fee);
+    assert.equal(app.scope.checkPsbt(built.psbt, wire, 2, built.fee, sources), built.fee);
     const transaction = app.scope.readPsbt(built.psbt);
     assert.equal(transaction.outs.length, 2);
     const messageOutputs = transaction.outs.filter(o => o.script[0] === 0x6a);
@@ -401,9 +403,9 @@ test('Shipped builder and independent checker carry the full reply reference wit
     assert.equal(paidOutputs.length, 1); assert.deepEqual(bytes(paidOutputs[0].script), bytes(home));
     assert.equal(paidOutputs[0].value + built.fee, 1000000);
     const body = typeof data === 'string' ? utf8(data) : data;
-    assert.throws(() => app.scope.checkPsbt(built.psbt, body, 2, built.fee), /message on the wire/);
+    assert.throws(() => app.scope.checkPsbt(built.psbt, body, 2, built.fee, sources), /message on the wire/);
     const other = app.scope.encodeReply(data, {txid: FIRST, vout: 3});
-    assert.throws(() => app.scope.checkPsbt(built.psbt, other, 2, built.fee), /message on the wire/);
+    assert.throws(() => app.scope.checkPsbt(built.psbt, other, 2, built.fee, sources), /message on the wire/);
     const plainBuilt = await core.buildPsbt({address, publicKey: null, utxos, message: body, feeRate: 2});
     assert.ok(built.fee > plainBuilt.fee, 'Reference bytes are included in the miner fee estimate');
   }

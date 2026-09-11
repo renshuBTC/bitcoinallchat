@@ -353,11 +353,12 @@ function sendingRuntime(options = {}) {
     sign: async () => {
       events.push('sign');
       if (options.signFails) throw new Error('Signature rejected');
-      return options.fallback ? {psbt: new Uint8Array([1])} : {txid: FIRST};
+      return options.txidOnly ? {txid: FIRST} : {psbt: new Uint8Array([1])};
     },
   };
   Object.assign(app.scope, {
-    BUSY: false, FILE: null, RATE: 3,
+    BUSY: false, FILE: null, RATE: 3, ACTIVE_WALLET: null, WALLET_EPOCH: 0,
+    OFFLINE_RUN: 1, OFFLINE_SENDING: false, ovp: {classList: {contains: () => true}},
     captureDraft: () => {events.push('captured-draft'); return draft;},
     clearSentDraft: snapshot => {events.push(['cleared-draft', snapshot]);},
     refreshComp: () => {}, drawAtt: () => {},
@@ -368,6 +369,11 @@ function sendingRuntime(options = {}) {
     lib: async () => L,
     getUtxos: async () => [{txid: SECOND, vout: 0, value: 10000}],
     checkPsbt: () => {events.push('checked'); return 100;},
+    preparePsbt: async () => {events.push('checked'); return L.buildPsbt();},
+    signedPsbtHex: (signed, expected) => {
+      assert.ok(signed && expected); events.push('checked-signature'); return L.extract(signed);
+    },
+    checkSignedTx: (raw, expected) => {assert.ok(expected); events.push('checked-signature'); return raw;},
     push: async () => {
       events.push('push');
       if (options.pushFails) throw new Error('Broadcast rejected');
@@ -376,22 +382,29 @@ function sendingRuntime(options = {}) {
     drop: () => {events.push('disconnected');},
     setTimeout: () => 1,
   });
-  vm.runInContext(declaration('publish') + '\n' + declaration('broadcastPasted'), app.scope);
+  vm.runInContext(declaration('requiredTxid') + '\n' + declaration('publish') + '\n' + declaration('broadcastPasted'), app.scope);
   return {...app, app, events, L, wallet, draft};
 }
 
-for (const fallback of [false, true]) {
-  test(`Successful ${fallback ? 'signed-PSBT broadcast' : 'wallet broadcast'} remembers the returned transaction`, async () => {
-    const run = sendingRuntime({fallback});
+  test('Successful checked signed-PSBT broadcast remembers the returned transaction', async () => {
+    const run = sendingRuntime();
     await run.scope.publish(run.wallet, 'yoyoyo');
     assert.equal(run.scope.isMine(FIRST), true);
     assert.deepEqual(JSON.parse(run.app.saved), [FIRST]);
     assert.ok(run.events.indexOf('checked') < run.events.indexOf('sign'));
-    assert.equal(run.events.includes('push'), fallback);
-    assert.ok(run.events.includes('disconnected'));
+    assert.ok(run.events.indexOf('checked-signature') < run.events.indexOf('push'));
+    assert.equal(run.events.includes('push'), true);
+    assert.equal(run.events.includes('disconnected'), false);
     assert.equal(run.events.find(event => Array.isArray(event) && event[0] === 'cleared-draft')?.[1], run.draft);
   });
-}
+
+test('A wallet txid without a checkable signed transaction cannot mark a message', async () => {
+  const run = sendingRuntime({txidOnly: true});
+  await run.scope.publish(run.wallet, 'yoyoyo');
+  assert.deepEqual(run.own(), []);
+  assert.equal(run.events.includes('push'), false);
+  assert.equal(run.events.some(event => Array.isArray(event) && event[0] === 'cleared-draft'), false);
+});
 
 for (const [label, flags] of [
   ['wallet connection', {connectFails: true}],
@@ -409,7 +422,7 @@ for (const [label, flags] of [
 
 test('Successful offline broadcasting remembers its returned transaction', async () => {
   const run = sendingRuntime();
-  await run.scope.broadcastPasted(run.L, run.draft);
+  await run.scope.broadcastPasted(run.L, run.draft, new Uint8Array([1]));
   assert.equal(run.scope.isMine(FIRST), true);
   assert.deepEqual(JSON.parse(run.app.saved), [FIRST]);
   assert.equal(run.events.find(event => Array.isArray(event) && event[0] === 'cleared-draft')?.[1], run.draft);
@@ -417,7 +430,7 @@ test('Successful offline broadcasting remembers its returned transaction', async
 
 test('Rejected offline broadcasting does not mark a transaction', async () => {
   const run = sendingRuntime({pushFails: true});
-  await run.scope.broadcastPasted(run.L);
+  await run.scope.broadcastPasted(run.L, run.draft, new Uint8Array([1]));
   assert.deepEqual(run.own(), []);
   assert.equal(run.app.saved, null);
   assert.equal(run.events.some(event => Array.isArray(event) && event[0] === 'cleared-draft'), false);
@@ -426,7 +439,7 @@ test('Rejected offline broadcasting does not mark a transaction', async () => {
 test('Invalid signed input does not broadcast or mark a transaction', async () => {
   const run = sendingRuntime({parseFails: true});
   run.elements.get('sig').value = 'not-a-valid-signed-psbt';
-  await run.scope.broadcastPasted(run.L);
+  await run.scope.broadcastPasted(run.L, run.draft, new Uint8Array([1]));
   assert.equal(run.events.includes('push'), false);
   assert.deepEqual(run.own(), []);
 });

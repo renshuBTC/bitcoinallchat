@@ -1,7 +1,7 @@
 # Bitcoin AllChat
 
-[bitcoinallchat.com](https://bitcoinallchat.com) — the OP_RETURN outputs of recent
-Bitcoin blocks, read as one conversation, and a composer for adding to it.
+[Bitcoin AllChat](https://bitcoinallchat.com/) is a browser app for reading Bitcoin
+OP_RETURN messages and images and publishing messages and replies with a Bitcoin wallet.
 
 There is no application backend or user account. The static page fetches raw
 blocks from mempool.space and parses them in your browser. Published data is on
@@ -18,11 +18,15 @@ whether the bytes are a message, a picture, or protocol noise.
 - **Multiple pushes are joined.** The composer splits data into pushes of up to
   520 bytes. Reading only the first push would truncate those long messages.
 - **Token data is skipped.** `OP_RETURN OP_13` is a token protocol, not writing.
-- **Short messages count.** Two words, an emoji, or bare punctuation like `:(`
-  reads as someone talking. A lone alphanumeric token — `MMSS`, `ordi`, `SATFLOW`
-  — reads as a protocol marker and stays hidden.
+- **Unicode messages are supported.** Letters, combining marks, joined scripts,
+  scripts written without spaces, and emoji are recognised. Messages and reply
+  previews follow their text direction, including Arabic and Hebrew. Repeated
+  greetings are treated equally across languages. Known protocol markers such as
+  `MMSS`, `ordi`, and `SATFLOW` remain in Everything.
 - **Pictures are recognised by magic bytes** and shown only when you click, because
   anyone can pay to put an image in a block.
+  Still-image previews are limited to 100 kB, 8,192 pixels per edge and 16 million
+  pixels overall. Animated, oversized or unsupported images link to their transaction.
 
 Conversation uses language and payload heuristics; it cannot verify human
 authorship. Everything also shows parsed protocol data, up to the latest 2,000
@@ -46,7 +50,10 @@ your bytes and change back to the address you are spending from, and your wallet
 signs it. The page does not request private keys or charge a service fee. Miner
 fees apply. Xverse and UniSat open their official download pages when the selected
 extension is unavailable; Offline supports signing on a separate device.
-The signing choices appear after Enter or the send arrow.
+The signing choices are always visible. Connect Xverse or UniSat before typing,
+then press Enter or the send arrow to prepare and sign a message. You can also
+type first and choose a wallet. Connections are held only for the current page;
+the site does not save wallet addresses or reconnect automatically on reload.
 
 Replies use AllChat's versioned payload format:
 
@@ -85,6 +92,12 @@ wallet unless:
 This parser is deliberately separate from `post-src.js` and duplicates the little
 it needs, so a swapped builder cannot both write a bad transaction and approve it.
 
+Selected funding transactions are also checked against their IDs, amounts and
+address scripts. Wallets return signed data without broadcasting; the app checks
+that inputs, outputs, amounts and message bytes still match before submission.
+Pasted offline results receive the same comparison. The API supplies current
+confirmation/unspent status and fee recommendations; this page is not a full node.
+
 ## Verifying what is served
 
 `post.js` is loaded with a Subresource Integrity hash, so an altered builder will
@@ -105,6 +118,10 @@ document. Compare it against this repository, and read the outputs your wallet
 shows you before approving anything.
 
 ## Running it
+
+After editing inline JavaScript, run `node scripts/update-csp.cjs` to update its
+Content-Security-Policy hash, then run `npm test`. The CSP rejects injected inline
+handlers and scripts that do not match the application hash.
 
 Any static server works, and the file has no build step of its own:
 

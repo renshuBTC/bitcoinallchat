@@ -54,7 +54,7 @@ function harness() {
   h.fail = async index => { h.requests[index].settled = true; h.requests[index].reject(new Error('offline')); await h.flush(); };
   h.runTimer = id => { const t = h.timers.get(id); assert.ok(t); if (t.kind === 'timeout') h.timers.delete(id); h.advance(t.delay); t.callback(); };
   h.stream = (price, event = h.now, socket = h.sockets.at(-1)) => socket.emit({ e: '24hrMiniTicker', s: 'BTCUSDT', E: event, c: price });
-  h.text = price => Number(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  h.text = price => '$' + Number(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return h;
 }
 

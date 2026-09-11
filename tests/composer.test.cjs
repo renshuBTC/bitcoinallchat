@@ -11,6 +11,7 @@ for (const [name, overrides, expected] of [
   ['Enter opens signing', {}, 1],
   ['Shift+Enter inserts a line break', {shiftKey: true}, 0],
   ['IME confirmation does not open signing', {isComposing: true}, 0],
+  ['Legacy IME confirmation does not open signing', {isComposing: false, keyCode: 229}, 0],
 ]) {
   test(name, () => {
     let sends = 0, prevented = 0, notices = 0, onCapture, onFooter;

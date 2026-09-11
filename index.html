@@ -7,13 +7,21 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-KPEJKB5cyCNW5bNGe4t1k1MUIjZQ6u6+FYPO5LRnB6o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
-<title>Bitcoin AllChat</title>
+<title>Bitcoin AllChat — Bitcoin OP_RETURN Chat</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><style>rect,path{stroke:%23111}@media(prefers-color-scheme:dark){rect,path{stroke:%23f2f1ec}}</style><rect x='5.5' y='5.5' width='21' height='21' rx='5' fill='none' stroke-width='2.6'/><path d='M11 13.5h10M11 18.5h6' fill='none' stroke-width='2.6' stroke-linecap='round'/></svg>">
 <meta name="description" content="Read messages and images from Bitcoin OP_RETURN data, or publish a message with your wallet. Parsed in your browser from mempool.space.">
+<link rel="canonical" href="https://bitcoinallchat.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bitcoinallchat.com/">
+<meta property="og:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
+<meta property="og:description" content="Read messages and images stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
+<meta name="twitter:description" content="Read messages and images stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@400;450;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -104,6 +112,8 @@ a{color:inherit}
 /* ---- chat bubbles ---- */
 .row{display:flex;gap:8px;margin:3px 0;align-items:flex-end}
 .row.grp{margin-top:12px}
+/* Offscreen messages retain their place without forcing immediate layout. */
+.row{content-visibility:auto;contain-intrinsic-size:auto 100px}
 .ava{width:34px;height:34px;border-radius:50%;flex:0 0 34px;display:flex;align-items:center;
   justify-content:center;font-size:12px;font-weight:600;color:#fff;font-family:var(--sans);user-select:none}
 .ava.hid{visibility:hidden}
@@ -144,7 +154,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   font-size:11px;color:var(--mut2);white-space:nowrap}
 .mst a{color:var(--mut2);text-decoration:none}
 .mst a:hover{color:var(--coral)}
-.mst .more{cursor:pointer;margin-right:auto;color:var(--coral)}
+.mst .more{cursor:pointer;margin-right:auto;color:var(--coral);background:none;border:0;padding:0;font:inherit}
+.mst .fulltext{font:inherit;white-space:normal}
 .mst .blk{font-family:var(--mono);font-size:10.5px}
 .daysep{text-align:center;margin:20px 0 12px}
 .daysep span{background:var(--pill);color:var(--mut);font-size:11.5px;padding:3px 12px;border-radius:12px}
@@ -201,7 +212,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   font-size:15px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:0 0 30px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
 .row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
-.ims{display:block;max-width:100%;border-radius:9px;margin:3px 0 2px}
+.ims{display:block;max-width:100%;height:auto;border-radius:9px;margin:3px 0 2px}
 .vsw{display:flex;gap:5px;margin:0}
 .vb{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--mut);white-space:nowrap;
   border-radius:7px;padding:4px 10px;font:inherit;font-size:12.4px;line-height:1.3;cursor:pointer}
@@ -377,12 +388,13 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 /* One language for the whole footer line. Nothing in it is coloured and nothing is
    underlined: what you can click is white, what you cannot is dimmed, and hovering lifts
    a soft chip behind it. Those are the only three states, as in Claude's own footer. */
-.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;
+.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
   gap:12px;padding:9px 2px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
-  color:var(--mut2);white-space:nowrap;overflow-x:auto;scrollbar-width:thin}
-.dfl,.dfr{display:flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:8px;min-width:0}
-.dfr{margin-left:auto}
-.vsw{display:flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:8px;margin:0}
+  color:var(--mut2);white-space:nowrap}
+.dfl,.dfr{display:flex;align-items:center;flex:0 0 auto;flex-wrap:wrap;gap:8px;min-width:0}
+.dfl,.dfr{max-width:100%}
+.dfr{margin-left:auto;flex-wrap:wrap}
+.vsw{display:flex;align-items:center;flex:0 1 auto;flex-wrap:wrap;gap:8px;margin:0}
 .vb,.dockfoot .dlink,.hint button,.wallets a,.wallets button{background:transparent;border:0;text-decoration:none;
   font:inherit;font-family:var(--sans);font-size:12.2px;line-height:1.5;white-space:nowrap;
   color:var(--mut);cursor:pointer;padding:3px 7px;margin:0 -3px;border-radius:7px}
@@ -391,11 +403,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 [data-theme=light] .hint button:hover,[data-theme=light] .wallets a:hover,
 [data-theme=light] .wallets button:hover{background:rgba(0,0,0,.055)}
 .vb.on,.hint button,.wallets a,.wallets button{color:var(--ink)}
-.wallets{display:none;align-items:center;flex:0 0 auto;gap:2px;color:var(--mut2)}
+.wallets{display:inline-flex;align-items:center;flex:0 1 auto;flex-wrap:wrap;gap:2px;color:var(--mut2)}
 .wallets.on{display:inline-flex}
 .wallets a,.wallets button{flex:0 0 auto}
-.hint{display:inline-flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:2px;padding:0;margin:0;min-height:0;
-  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;white-space:nowrap}
+.hint{display:block;padding:6px 6px 0;margin:0;min-height:0;
+  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;white-space:normal;overflow-wrap:anywhere}
 .hint:empty{display:none}
 .hint a,.hint a:hover{color:var(--ink);text-decoration:none}
 .dockfoot .bw{color:var(--mut2);font-size:12.2px}
@@ -446,8 +458,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .istats b{font-weight:700}
 .info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
-/* Reveal signing choices and the reminder together after Enter or Send. */
-.dockfoot .bw{display:none;flex:0 0 auto}
+/* Signing choices remain available before typing or pressing Enter. */
+.dockfoot .bw{display:inline;flex:0 0 auto}
 .dockfoot .bw.on{display:inline}
 .txt{font-size:var(--message-size)}
 .istats span{min-width:0}
@@ -455,6 +467,20 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .pal-t input{min-width:0}
 .hint.bad{color:var(--coral)}
 .hint:focus{outline:2px solid var(--coral);outline-offset:4px}
+/* Keyboard focus uses a soft fill without a ring around the control. */
+:is(button,[role="button"],summary,.wallets a,.dockfoot .dlink):focus{outline:none}
+:is(button,[role="button"],summary,.wallets a,.dockfoot .dlink):focus-visible{
+  background-image:linear-gradient(rgba(128,128,128,.22),rgba(128,128,128,.22))}
+/* Offline signing uses the same type and text colour as the chat. */
+#ovp .cbd,#ovp .cbd .k,#ovp .ti,#ovp .go{
+  font-family:var(--sans);font-size:var(--message-size);line-height:1.5;color:var(--ink)}
+#ovp .ti::placeholder{font-family:var(--sans);color:var(--mut)}
+#ovp .go{background:var(--pill);border:1px solid var(--line2)}
+#ovp .go:hover{background:var(--line2)}
+#ovp .frames canvas{max-width:100%;height:auto}
+/* Each message chooses its own direction without reversing transaction metadata. */
+.txt,.qx,.reply-excerpt,.it .tx,.pay .p,#q,#sq{unicode-bidi:plaintext;text-align:start}
+@media(max-width:600px){.dfr{margin-left:0}}
 </style>
 </head>
 <body>
@@ -486,7 +512,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       </div>
     </div>
     <div class="istats">
-      <div><span title="Bitcoin price in USDT">BTC/USDT</span><b id="s-price" title="Loading live Bitcoin price">…</b></div>
+      <div><span title="Bitcoin price quoted in USDT">Bitcoin Price</span><b id="s-price" title="Loading live Bitcoin price">…</b></div>
       <div><span>Chain Tip</span><b id="s-tip">…</b></div>
       <div><span>Blocks Scanned</span><b id="s-blocks">0</b></div>
       <div><span>OP_RETURN Seen</span><b id="s-or">0</b></div>
@@ -508,7 +534,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <div class="ov" id="ovs"><div class="pal">
   <div class="pal-t"><span class="ic">⌕</span>
-    <input id="sq" placeholder="Search messages, senders, txids…" autocomplete="off">
+    <input id="sq" dir="auto" placeholder="Search messages, senders, txids…" autocomplete="off">
     <button class="cl" id="scl" title="Close">✕</button></div>
   <div class="pal-l" id="sl"></div>
 </div></div>
@@ -522,12 +548,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <div class="reply-preview" id="reply-preview" hidden>
         <div class="reply-copy" role="status" aria-live="polite">
           <span class="reply-name" id="reply-name"></span>
-          <span class="reply-excerpt" id="reply-excerpt"></span>
+          <span class="reply-excerpt" id="reply-excerpt" dir="auto"></span>
         </div>
         <button class="reply-cancel" id="reply-cancel" type="button" aria-label="Cancel reply" title="Cancel reply">×</button>
       </div>
       <div class="att" id="att"></div>
-      <textarea id="q" rows="1" placeholder="Write a message onto Bitcoin…" autocomplete="off"></textarea>
+      <textarea id="q" rows="1" dir="auto" placeholder="Write a message onto Bitcoin…" autocomplete="off"></textarea>
       <div class="comp-r">
         <button class="plus" id="plusb" title="Attach a file or image">+</button>
       <span class="cnt" id="cnt"></span>
@@ -536,7 +562,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
       </div>
     </div>
-    <div class="dockfoot" tabindex="0" aria-label="Message views and signing options">
+    <div class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></div>
+    <div class="dockfoot" aria-label="Message views and signing options">
       <div class="dfl">
         <div class="vsw">
           <button class="vb on" data-v="talk" title="Starts with the latest 100 messages. Scroll up to load earlier messages.">Conversation (Latest 100 Messages)</button>
@@ -549,7 +576,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
           <a id="wallet-unisat" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer" title="Sign with UniSat, or download it if it is not installed">UniSat</a>
           <button id="hoff" title="Sign with an offline wallet">Offline</button>
         </span>
-        <span class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></span>
         <span class="bw">Burner wallet, not your main one.</span>
       </div>
     </div>
@@ -598,66 +624,117 @@ function updateOwnBubbles(){
 }
 
 /* ---------------- raw block parser ---------------- */
+const MAX_PARSE_BYTES=4000000;
 const h32=b=>{let h=2166136261;for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619)}return h>>>0};
-function parseBlock(buf){
-  const d=new Uint8Array(buf); const dv=new DataView(buf); let p=80;
-  const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
-    if(n===0xfd){const v=dv.getUint16(p,true);p+=2;return v}
-    if(n===0xfe){const v=dv.getUint32(p,true);p+=4;return v}
-    const v=Number(dv.getBigUint64(p,true));p+=8;return v};
-  const n=vi(); const out=[]; let total=0;
-  for(let i=0;i<n;i++){
-    const ts=p; p+=4;
-    const sw=d[p]===0x00; if(sw)p+=2;
-    const bodyStart=p;
-    const nin=vi();
-    for(let a=0;a<nin;a++){p+=36;const sl=vi();p+=sl;p+=4}
-    const nout=vi(); const outs=[];
-    for(let a=0;a<nout;a++){p+=8;const sl=vi();outs.push(d.subarray(p,p+sl));p+=sl}
-    const bodyEnd=p;
-    if(sw)for(let a=0;a<nin;a++){const ni=vi();for(let b=0;b<ni;b++){const l=vi();p+=l}}
-    const lockStart=p; p+=4;
-    const pay=[];
-    for(const spk of outs) if(!(spk.length&&spk[0]===0x6a)) pay.push(h32(spk));
-    for(const [vout,spk] of outs.entries()){
-      if(spk.length&&spk[0]===0x6a){
-        total++;
-        if(spk.length>1&&spk[1]===0x5d)continue;      /* OP_13 → token data, skipped */
-        /* An OP_RETURN can carry several pushes; anything over 520 bytes has to.
-           Join them all, or long messages and files get cut at the first chunk. */
-        let q=1,bad=false; const parts=[];
-        while(q<spk.length){
-          const op=spk[q]; let n=0;
-          if(op<0x4c){n=op;q+=1}
-          else if(op===0x4c){n=spk[q+1];q+=2}
-          else if(op===0x4d){n=spk[q+1]|(spk[q+2]<<8);q+=3}
-          else if(op===0x4e){n=(spk[q+1]|(spk[q+2]<<8)|(spk[q+3]<<16)|(spk[q+4]<<24))>>>0;q+=5}
-          else{bad=true;break}
-          if(q+n>spk.length){bad=true;break}
-          parts.push(spk.subarray(q,q+n)); q+=n;
+function blockReader(bytes,start=0,end=bytes.length){
+  if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end<start||end>bytes.length)
+    throw new Error('Invalid Bitcoin data range');
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);let p=start;
+  const need=n=>{
+    if(!Number.isSafeInteger(n)||n<0||n>end-p)throw new Error('Truncated or oversized Bitcoin data');
+  };
+  const skip=n=>{need(n);p+=n};
+  const take=n=>{need(n);const b=bytes.subarray(p,p+n);p+=n;return b};
+  const u8=()=>{need(1);return bytes[p++]};
+  const u16=()=>{need(2);const n=view.getUint16(p,true);p+=2;return n};
+  const u32=()=>{need(4);const n=view.getUint32(p,true);p+=4;return n};
+  const vi=()=>{
+    const first=u8();if(first<0xfd)return first;
+    let n;
+    if(first===0xfd){n=u16();if(n<0xfd)throw new Error('Non-canonical Bitcoin integer')}
+    else if(first===0xfe){n=u32();if(n<=0xffff)throw new Error('Non-canonical Bitcoin integer')}
+    else{
+      need(8);const big=view.getBigUint64(p,true);p+=8;
+      if(big>BigInt(Number.MAX_SAFE_INTEGER))throw new Error('Bitcoin integer exceeds safe range');
+      n=Number(big);if(n<=0xffffffff)throw new Error('Non-canonical Bitcoin integer');
+    }
+    return n;
+  };
+  return {skip,take,u8,u16,u32,vi,at:()=>p,remaining:()=>end-p};
+}
+function decodeOpReturn(script){
+  if(!script.length||script.length>MAX_PARSE_BYTES||script[0]!==0x6a||script[1]===0x5d)return null;
+  try{
+    /* First validate and count. Empty pushes allocate no views or temporary arrays. */
+    const walk=copy=>{
+      const r=blockReader(script,1);let size=0,parts=0,first=0,firstLength=0;
+      while(r.remaining()){
+        const op=r.u8();
+        const n=op<0x4c?op:op===0x4c?r.u8():op===0x4d?r.u16():op===0x4e?r.u32():-1;
+        if(n<0||n>r.remaining())throw new Error('Invalid OP_RETURN push');
+        if(n){
+          if(!parts){first=r.at();firstLength=n}parts++;
+          if(copy)copy.set(script.subarray(r.at(),r.at()+n),size);
+          size+=n;
         }
-        if(!bad&&parts.length){
-          let data=parts[0];
-          if(parts.length>1){ let tot=0; for(const x of parts) tot+=x.length;
-            data=new Uint8Array(tot); let o=0; for(const x of parts){data.set(x,o);o+=x.length} }
-          if(data.length) out.push({data,pay,vout,tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
-        }
+        r.skip(n);
       }
+      return {size,parts,first,firstLength};
+    };
+    const p=walk(null);if(!p.size)return null;
+    if(p.parts===1)return script.subarray(p.first,p.first+p.firstLength);
+    const out=new Uint8Array(p.size);walk(out);return out;
+  }catch(e){return null}
+}
+function parseBlock(buf){
+  const d=buf instanceof Uint8Array?buf:new Uint8Array(buf);
+  if(d.length<81||d.length>MAX_PARSE_BYTES)throw new Error('Invalid Bitcoin block size');
+  const dv=new DataView(d.buffer,d.byteOffset,d.byteLength),r=blockReader(d);
+  r.skip(80);const n=r.vi();
+  if(!n||n>Math.floor(r.remaining()/60))throw new Error('Invalid Bitcoin transaction count');
+  const out=[];let total=0;
+  for(let i=0;i<n;i++){
+    const ts=r.at();r.skip(4);
+    let sw=false;
+    if(d[r.at()]===0){
+      r.skip(1);
+      if(r.u8()!==1)throw new Error('Unsupported Bitcoin witness flag');
+      sw=true;
+    }
+    const bodyStart=r.at(),nin=r.vi();
+    if(!nin||nin>Math.floor(r.remaining()/41))throw new Error('Invalid Bitcoin input count');
+    for(let a=0;a<nin;a++){r.skip(36);r.skip(r.vi());r.skip(4)}
+    const nout=r.vi();
+    if(!nout||nout>Math.floor(r.remaining()/9))throw new Error('Invalid Bitcoin output count');
+    const pay=[],dataOutputs=[];
+    for(let vout=0;vout<nout;vout++){
+      r.skip(8);const script=r.take(r.vi());
+      if(script[0]===0x6a){total++;dataOutputs.push({script,vout})}
+      else pay.push(h32(script));
+    }
+    const bodyEnd=r.at();
+    if(sw){
+      let witnessed=false;
+      for(let a=0;a<nin;a++){
+        const count=r.vi();
+        if(count>r.remaining())throw new Error('Invalid Bitcoin witness item count');
+        if(count)witnessed=true;
+        for(let b=0;b<count;b++)r.skip(r.vi());
+      }
+      if(!witnessed)throw new Error('Superfluous Bitcoin witness record');
+    }
+    const lockStart=r.at();r.skip(4);
+    const tx={ver:ts,bodyStart,bodyEnd,lockStart,sw,end:r.at()};
+    for(const {script,vout} of dataOutputs){
+      const data=decodeOpReturn(script);
+      if(data)out.push({data,pay,vout,tx});
     }
   }
+  if(r.remaining())throw new Error('Unexpected bytes after Bitcoin block');
   return {outs:out,bytes:d,dv,total};
 }
-/* Spend links support the earlier inferred quotes; explicit replies carry a reference in their payload. */
-function inTxids(d,dv,bodyStart,max){
-  let p=bodyStart;
-  const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
-    if(n===0xfd){const v=dv.getUint16(p,true);p+=2;return v}
-    if(n===0xfe){const v=dv.getUint32(p,true);p+=4;return v}
-    const v=Number(dv.getBigUint64(p,true));p+=8;return v};
-  const n=vi(); const out=[];
+/* Spend links support earlier inferred quotes; explicit replies carry a payload reference. */
+function inTxids(d,dv,bodyStart,max=4){
+  if(!Number.isSafeInteger(max)||max<0)throw new Error('Invalid Bitcoin input limit');
+  const r=blockReader(d,bodyStart),n=r.vi(),out=[];
+  if(!n||n>Math.floor(r.remaining()/41))throw new Error('Invalid Bitcoin input count');
   for(let i=0;i<n;i++){
-    if(i<max){let s='';for(let j=p+31;j>=p;j--)s+=d[j].toString(16).padStart(2,'0');out.push(s)}
-    p+=36; const sl=vi(); p+=sl; p+=4;
+    if(i<max){
+      const prev=r.take(32);let s='';
+      for(let j=31;j>=0;j--)s+=prev[j].toString(16).padStart(2,'0');
+      out.push(s);
+    }else r.skip(32);
+    r.skip(4);r.skip(r.vi());r.skip(4);
   }
   return out;
 }
@@ -676,7 +753,7 @@ async function txidOf(d,t){
 }
 
 /* ---------------- classification ---------------- */
-const dec=new TextDecoder('utf-8',{fatal:false});
+const dec=new TextDecoder('utf-8',{fatal:true});
 const MAGIC=[[[0x89,0x50,0x4e,0x47],'image/png'],[[0xff,0xd8,0xff],'image/jpeg'],
              [[0x47,0x49,0x46,0x38],'image/gif'],[[0x42,0x4d],'image/bmp']];
 function imgType(b){
@@ -690,43 +767,158 @@ function b64(b){
   for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
   return btoa(s);
 }
+/* Image headers are untrusted. Keep only small, bounded still-image previews. */
+const IMAGE_PREVIEW_BYTES=100000, IMAGE_PREVIEW_EDGE=8192, IMAGE_PREVIEW_PIXELS=16000000;
+function imageDimensions(bytes,mime){
+  if(bytes.length>IMAGE_PREVIEW_BYTES)return null;
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),n=bytes.length;
+  const fits=(at,size)=>at>=0&&size>=0&&at+size<=n;
+  const tag=(at,text)=>fits(at,text.length)&&[...text].every((c,i)=>bytes[at+i]===c.charCodeAt(0));
+  const dimensions=(width,height)=>Number.isInteger(width)&&Number.isInteger(height)&&width>0&&height>0&&
+    width<=IMAGE_PREVIEW_EDGE&&height<=IMAGE_PREVIEW_EDGE&&width*height<=IMAGE_PREVIEW_PIXELS?{width,height}:null;
+  const u24=at=>bytes[at]+bytes[at+1]*256+bytes[at+2]*65536;
+  if(mime==='image/png'){
+    if(!fits(0,33)||![137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v)||
+      view.getUint32(8)!==13||!tag(12,'IHDR'))return null;
+    const size=dimensions(view.getUint32(16),view.getUint32(20));if(!size)return null;
+    for(let at=8;fits(at,12);){
+      const length=view.getUint32(at);if(!fits(at+12,length)||tag(at+4,'acTL')||(at!==8&&tag(at+4,'IHDR')))return null;
+      if(tag(at+4,'IEND'))return size;at+=12+length;
+    }
+    return null;
+  }
+  if(mime==='image/gif'){
+    if(!fits(0,13)||(!tag(0,'GIF87a')&&!tag(0,'GIF89a')))return null;
+    const size=dimensions(view.getUint16(6,true),view.getUint16(8,true));if(!size)return null;
+    let at=13+(bytes[10]&128?3*(1<<((bytes[10]&7)+1)):0),frames=0;
+    const skipBlocks=()=>{while(fits(at,1)){const length=bytes[at++];if(!length)return true;if(!fits(at,length))return false;at+=length}return false};
+    while(fits(at,1)){
+      const marker=bytes[at++];
+      if(marker===0x3b)return frames===1?size:null;
+      if(marker===0x21){if(!fits(at,1))return null;at++;if(!skipBlocks())return null;continue}
+      if(marker!==0x2c||!fits(at,9)||++frames>1)return null;
+      const x=view.getUint16(at,true),y=view.getUint16(at+2,true);
+      const frame=dimensions(view.getUint16(at+4,true),view.getUint16(at+6,true));
+      if(!frame||x+frame.width>size.width||y+frame.height>size.height)return null;
+      const packed=bytes[at+8];at+=9+(packed&128?3*(1<<((packed&7)+1)):0);
+      if(!fits(at,1))return null;at++;if(!skipBlocks())return null;
+    }
+    return null;
+  }
+  if(mime==='image/jpeg'){
+    if(!fits(0,4)||bytes[0]!==255||bytes[1]!==216)return null;
+    let at=2,size=null;
+    while(fits(at,1)){
+      if(bytes[at++]!==255)return null;
+      while(fits(at,1)&&bytes[at]===255)at++;
+      if(!fits(at,1))return null;const marker=bytes[at++];
+      if(marker===0xda||marker===0xd9)return size;
+      if(marker===0||marker===0xd8)return null;
+      if(marker===1||(marker>=0xd0&&marker<=0xd7))continue;
+      if(!fits(at,2))return null;const length=view.getUint16(at);
+      if(length<2||!fits(at,length))return null;
+      if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)){
+        if(size||length<8)return null;size=dimensions(view.getUint16(at+5),view.getUint16(at+3));if(!size)return null;
+      }
+      at+=length;
+    }
+    return null;
+  }
+  if(mime==='image/bmp'){
+    if(!fits(0,26)||!tag(0,'BM'))return null;const dib=view.getUint32(14,true);
+    if(dib===12)return dimensions(view.getUint16(18,true),view.getUint16(20,true));
+    return dib>=40&&fits(14,dib)?dimensions(view.getInt32(18,true),Math.abs(view.getInt32(22,true))):null;
+  }
+  if(mime==='image/webp'){
+    if(!fits(0,12)||!tag(0,'RIFF')||!tag(8,'WEBP'))return null;
+    const end=view.getUint32(4,true)+8;if(end>n||end<12)return null;
+    let canvas=null,size=null;
+    for(let at=12;at<end;){
+      if(at+8>end)return null;const length=view.getUint32(at+4,true),body=at+8;
+      if(body+length+(length&1)>end)return null;
+      if(tag(at,'VP8X')){
+        if(length!==10||(bytes[body]&2))return null;
+        canvas=dimensions(u24(body+4)+1,u24(body+7)+1);if(!canvas)return null;
+      }else if(tag(at,'VP8 ')){
+        if(size||length<10||!tag(body+3,'\x9d\x01\x2a'))return null;
+        size=dimensions(view.getUint16(body+6,true)&0x3fff,view.getUint16(body+8,true)&0x3fff);if(!size)return null;
+      }else if(tag(at,'VP8L')){
+        if(size||length<5||bytes[body]!==0x2f)return null;const bits=view.getUint32(body+1,true);
+        size=dimensions((bits&0x3fff)+1,((bits>>>14)&0x3fff)+1);if(!size)return null;
+      }else if(tag(at,'ANIM')||tag(at,'ANMF'))return null;
+      at=body+length+(length&1);
+    }
+    return size&&(!canvas||(canvas.width===size.width&&canvas.height===size.height))?size:null;
+  }
+  return null;
+}
+function classifyImage(bytes,mime){
+  const base={kind:'img',mime,text:'',bytes:bytes.length},size=imageDimensions(bytes,mime);
+  return size?{...base,imageBytes:bytes.slice(),imageWidth:size.width,imageHeight:size.height}:
+    {...base,previewUnavailable:true};
+}
+function imageTransactionLink(m){
+  const link=document.createElement('a');link.className='imh';
+  link.textContent='Image · View Transaction';link.href='https://mempool.space/tx/'+cleanTxid(m.txid);
+  link.target='_blank';link.rel='noopener';return link;
+}
+function showImagePreview(el,m){
+  const size=m.imageBytes&&imageDimensions(m.imageBytes,m.mime);
+  if(!size){el.replaceWith(imageTransactionLink(m));return}
+  const img=document.createElement('img');
+  img.className='ims';img.loading='lazy';img.decoding='async';img.alt='Image from block '+m.height;
+  img.width=size.width;img.height=size.height;
+  img.onerror=()=>img.replaceWith(imageTransactionLink(m));
+  img.src='data:'+m.mime+';base64,'+b64(m.imageBytes);el.replaceWith(img);
+}
+
+function trimPunctuation(text){
+  const chars=[...text];let start=0,end=chars.length;
+  while(start<end&&/\p{P}/u.test(chars[start]))start++;
+  while(end>start&&/\p{P}/u.test(chars[end-1]))end--;
+  return chars.slice(start,end).join('');
+}
 function classify(bytes){
   const mt=imgType(bytes);
-  if(mt) return {kind:'img',mime:mt,text:'',b64:b64(bytes),bytes:bytes.length};
+  if(mt) return classifyImage(bytes,mt);
   if(!bytes.length) return null;
   /* Nothing readable is thrown away any more. Whatever cannot be read as text is
      kept as its first bytes, so every OP_RETURN in a block is accounted for. */
   const raw={kind:'data',text:'',bytes:bytes.length,
     hex:Array.from(bytes.subarray(0,40),x=>x.toString(16).padStart(2,'0')).join('')+(bytes.length>40?'…':'')};
   let s; try{s=dec.decode(bytes)}catch(e){return raw}
-  if(s.indexOf('�')>=0) return raw;
-  const chars=[...s];
+  /* Ignore writing-system controls only when classifying; keep the original bytes/text. */
+  const probe=s.replace(/[\u200B\u0F0B\u0F0C\u1361]/gu,' ').replace(/\p{Cf}/gu,'');
+  const chars=[...probe];
   let pr=0,alpha=0;
   for(const ch of chars){const c=ch.codePointAt(0);
-    if((c>=32&&c<127)||c===10||c===13||c>0x9f)pr++;   /* emoji and accents count as printable */
-    if(/\p{L}/u.test(ch))alpha++;}
-  if(pr/chars.length<0.9) return raw;
+    if((c>=32&&c<127)||c===9||c===10||c===13||c>0x9f)pr++;
+    if(/[\p{L}\p{M}]/u.test(ch))alpha++;}
+  if(!chars.length||pr/chars.length<0.9) return raw;
   const t=s.trim();
   if(!t) return raw;
   if(/BEGIN PGP/i.test(t)) return {kind:'pgp',text:t};
-  if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&!/\s/.test(t)) return {kind:'bridge',text:t};
+  const visible=probe.trim();
+  if(!visible) return raw;
+  if(/:to:|^0x[a-f0-9]{40}/i.test(visible)&&!/\s/.test(visible)) return {kind:'bridge',text:t};
   /* A protocol object remains structured data even when a field contains prose. */
-  if(/^[{\[]/.test(t)){
-    try{JSON.parse(t);return {kind:'tag',text:t}}catch(e){}
+  if(/^[{\[]/.test(visible)){
+    try{JSON.parse(visible);return {kind:'tag',text:t}}catch(e){}
   }
+  if(/^[a-f0-9]{32,}$/i.test(visible)||
+     (/^[A-Za-z0-9+/]{32,}={0,2}$/.test(visible)&&/[A-Z]/.test(visible.slice(1))&&/[a-z]/.test(visible))) return {kind:'tag',text:t};
+  const emoji=/\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20E3/u.test(visible);
+  if(emoji) return {kind:'talk',text:t};
   /* Only long payloads have to look like prose; a short one has no ratio worth reading. */
   if(chars.length>=16&&alpha/chars.length<0.30) return {kind:'tag',text:t};
-  const words=t.split(/\s+/).filter(w=>/^\p{P}*\p{L}[\p{L}\p{M}'’\-]*\p{P}*$/u.test(w));
+  const words=visible.split(/\s+/).filter(w=>/^\p{L}[\p{L}\p{M}'’\-]*$/u.test(trimPunctuation(w)));
   /* These scripts do not need spaces between words to form a sentence. */
   const unspaced=/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u.test(t);
-  const emoji=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(t);
   /* Someone talking: two words, an emoji, or bare punctuation like ":(". */
-  if(words.length>=2||emoji||unspaced) return {kind:'talk',text:t};
-  if([...t].length<=12&&!/[\p{L}\p{N}]/u.test(t)) return {kind:'talk',text:t};
-  /* One word on its own is either a greeting or a protocol marker. Which one it
-     is cannot be told from the bytes, so it is decided later, once enough blocks
-     are in to see whether the chain repeats it. */
-  if(words.length===1&&t===words[0]&&[...t].length<=24) return {kind:'word',text:t};
+  if(words.length>=2||unspaced) return {kind:'talk',text:t};
+  if([...visible].length<=12&&/^[\p{P}\p{S}\s]+$/u.test(visible)) return {kind:'talk',text:t};
+  /* Single words can be valid messages in any language, at any word length. */
+  if(words.length===1&&visible===words[0]) return {kind:'word',text:t};
   return {kind:'tag',text:t};
 }
 
@@ -750,7 +942,9 @@ function decodeReply(bytes){
   const plain={body:bytes,replyTo:'',replyVout:null};
   const end=bytes.subarray(0,90).indexOf(10);
   if(end<0||end===bytes.length-1) return plain;
-  const match=/^BAC1:reply:([0-9a-fA-F]{64}):([0-9]{1,10})$/.exec(dec.decode(bytes.subarray(0,end)));
+  const head=bytes.subarray(0,end);
+  if(head.some(b=>b>127))return plain;
+  const match=/^BAC1:reply:([0-9a-fA-F]{64}):([0-9]{1,10})$/.exec(String.fromCharCode(...head));
   if(!match||!validVout(Number(match[2]))) return plain;
   return {body:bytes.subarray(end+1),replyTo:match[1].toLowerCase(),replyVout:Number(match[2])};
 }
@@ -759,23 +953,17 @@ function classifyPayload(bytes){
   return c?{...c,replyTo:decoded.replyTo,replyVout:decoded.replyVout}:null;
 }
 function readOpReturn(hex){
-  if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]+$/i.test(hex)) return null;
-  const data=Uint8Array.from(hex.match(/../g),s=>parseInt(s,16));
-  if(data[0]!==0x6a||data[1]===0x5d) return null;
-  let p=1;const parts=[];
-  while(p<data.length){
-    const op=data[p++];let n;
-    if(op<0x4c)n=op;
-    else if(op===0x4c){if(p>=data.length)return null;n=data[p++]}
-    else if(op===0x4d){if(p+2>data.length)return null;n=data[p]|(data[p+1]<<8);p+=2}
-    else if(op===0x4e){if(p+4>data.length)return null;n=new DataView(data.buffer).getUint32(p,true);p+=4}
-    else return null;
-    if(p+n>data.length)return null;
-    parts.push(data.subarray(p,p+n));p+=n;
+  if(typeof hex!=='string'||hex.length<2||hex.length%2||hex.length>MAX_PARSE_BYTES*2||hex.slice(0,2).toLowerCase()!=='6a')return null;
+  const data=new Uint8Array(hex.length/2);
+  const nibble=c=>{
+    if(c>=48&&c<=57)return c-48;
+    c|=32;return c>=97&&c<=102?c-87:-1;
+  };
+  for(let i=0;i<data.length;i++){
+    const hi=nibble(hex.charCodeAt(i*2)),lo=nibble(hex.charCodeAt(i*2+1));
+    if(hi<0||lo<0)return null;data[i]=(hi<<4)|lo;
   }
-  const out=new Uint8Array(parts.reduce((n,b)=>n+b.length,0));let pos=0;
-  for(const part of parts){out.set(part,pos);pos+=part.length}
-  return out.length?out:null;
+  return decodeOpReturn(data);
 }
 async function loadReplyParent(txid,vout){
   const id=cleanTxid(txid);if(!id||!validVout(vout))return null;
@@ -810,8 +998,10 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 function ago(ts){const s=Math.floor(Date.now()/1000-ts);
   if(s<90)return 'just now'; if(s<3600)return Math.floor(s/60)+' min ago';
   if(s<86400)return Math.floor(s/3600)+' hr ago'; return Math.floor(s/86400)+' d ago'}
+const TEXT_PREVIEW_LIMIT=340, TEXT_EXPAND_LIMIT=100000;
+function messageText(m,expanded=false){return String(m.text||'').slice(0,expanded?TEXT_EXPAND_LIMIT:TEXT_PREVIEW_LIMIT)}
 function turn(m,prev){
-  const long=m.text.length>340, mono=(m.kind==='pgp'||m.kind==='bridge');
+  const long=m.text.length>TEXT_PREVIEW_LIMIT, mono=(m.kind==='pgp'||m.kind==='bridge');
   const who=m.who||(m.txid?m.txid.slice(0,8):'unknown');
   const col=hue(who);
   const mine=isMine(m.txid);
@@ -826,9 +1016,9 @@ function turn(m,prev){
       ${same?'':nm}
       ${quote}
       ${m.kind==='img'
-        ? `<button class="imh" data-id="${esc(m.txid||'')}" data-vout="${validVout(m.vout)?m.vout:''}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
-        : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
-      <div class="mst">${long?'<span class="more">More</span>':''}<span class="mine-label" ${mine?'':'hidden'} title="Marked as yours in this browser">You</span><span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span>
+        ? m.previewUnavailable?`<a class="imh" href="https://mempool.space/tx/${cleanTxid(m.txid)}" target="_blank" rel="noopener">Image · ${(m.bytes/1024).toFixed(1)} KB · View Transaction</a>`:`<button class="imh" data-id="${esc(m.txid||'')}" data-vout="${validVout(m.vout)?m.vout:''}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
+        : `<div class="txt ${mono?'mono':''} ${long?'clip':''}" dir="auto">${esc(messageText(m))}</div>`}
+      <div class="mst">${long?`<button class="more" data-message="${esc(messageKey(m))}" aria-expanded="false">More</button>${m.text.length>TEXT_EXPAND_LIMIT?`<a class="fulltext" href="https://mempool.space/tx/${cleanTxid(m.txid)}" target="_blank" rel="noopener">View Full Transaction</a>`:''}`:''}<span class="mine-label" ${mine?'':'hidden'} title="Marked as yours in this browser">You</span><span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span>
         ${cleanTxid(m.txid)&&validVout(m.vout)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><button class="reply-action" data-txid="${m.txid}" data-vout="${m.vout}">Reply</button></details>`:''}</div>
     </div></div>`;
 }
@@ -840,34 +1030,16 @@ function quoteHTML(m){
   const local=par&&BYMSG.has(messageKey(par))&&speech(par)&&(!query||(par.text||'').toLowerCase().includes(query));
   const href=local?'#'+messageDomId(par):'https://mempool.space/tx/'+ref.txid;
   const missing=!par&&validVout(ref.vout);
-  return `<a class="qt" href="${href}" ${local?'':'target="_blank" rel="noopener"'} ${missing?`data-parent="${ref.txid}" data-vout="${ref.vout}" title="Load the original message"`:''} style="border-color:${hue(name)}"><span class="qn" style="color:${hue(name)}">${esc(name)}</span><span class="qx">${esc(par?messageExcerpt(par):'Reply · Click to load the original message')}</span></a>`;
+  return `<a class="qt" href="${href}" ${local?'':'target="_blank" rel="noopener"'} ${missing?`data-parent="${ref.txid}" data-vout="${ref.vout}" title="Load the original message"`:''} style="border-color:${hue(name)}"><span class="qn" style="color:${hue(name)}">${esc(name)}</span><span class="qx" dir="auto">${esc(par?messageExcerpt(par):'Reply · Click to load the original message')}</span></a>`;
 }
 let BYTX=new Map(), BYMSG=new Map(), REPLY_CACHE=new Map(), REPLY_REQUESTS=new Map();
-/* A lone word is the hard case: people write "hello", protocols write "ordi". A marker
-   is emitted by machines hundreds of times a day; a person's word is not. So a word is
-   speech unless it repeats at machine volume, and a short list of things people plainly
-   say is always let through, however often it appears. */
-const SAID=new Set(['hello','hi','hey','yo','gm','gn','sup','ok','okay','yes','no','maybe','thanks','thx',
-  'love','hope','sorry','help','stop','why','when','wen','soon','lol','haha','wow','nice','cool','good',
-  'bitcoin','btc','satoshi','freedom','hodl','test','testing','peace','truth','buy','sell','wagmi','gg']);
+/* Known protocol markers stay in Everything; repetition never decides which languages count. */
 const MARK=new Set(['ordi','ordis','mmss','satflow','cntrprty','brc20prog','lihg1','lihg2',
   'xsxs','cscs','thth','jsjs','xflkf','xxjps','silis']);
-const wordKey=t=>t.normalize('NFC').toLowerCase().replace(/^\p{P}+|\p{P}+$/gu,'');
-let WORDN=new Map();
-function wordIndex(list){
-  WORDN=new Map();
-  for(const m of list) if(m.kind==='word'){
-    const k=wordKey(m.text); WORDN.set(k,(WORDN.get(k)||0)+1);
-  }
-}
+const wordKey=t=>trimPunctuation(t.toLowerCase().replace(/\p{Cf}/gu,''));
 function loneWord(t){
   const k=wordKey(t);
-  if(SAID.has(k)) return true;
-  if(MARK.has(k)) return false;
-  if([...k].length<2) return false;
-  /* A rate, not a raw count, so a word cannot show now and vanish as more blocks
-     load. Machine markers repeat every few blocks; a person writes a word once. */
-  return (WORDN.get(k)||0)<=Math.max(3,scanned*0.4);
+  return !!k&&!MARK.has(k);
 }
 const speech=m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img'||(m.kind==='word'&&loneWord(m.text));
 
@@ -911,20 +1083,20 @@ function render(){
   /* Nothing is unreachable: this lists every OP_RETURN the parser kept, in order. */
   if(filter==='all'){
     const rows=msgs.filter(m=>!query||(m.text||m.hex||'').toLowerCase().includes(query)).slice(-2000);
-    t.innerHTML=`<div class="toploader">${rows.length.toLocaleString()} of ${msgs.length.toLocaleString()} payloads from ${scanned} blocks — newest last</div><div class="payl">`
+    t.innerHTML=`<div class="toploader" id="toploader">${LOAD_FAILED||LOAD_PAUSED?loadingRetryButton():`${rows.length.toLocaleString()} of ${msgs.length.toLocaleString()} payloads from ${scanned} blocks — newest last`}</div><div class="payl">`
       +rows.map(m=>{
         const txt=m.kind==='data'?(m.hex||''):(m.text||'').replace(/\s+/g,' ');
         return `<div class="pay">`
           +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
-          +`<span class="p">${esc(txt.slice(0,180))}</span>`
+          +`<span class="p" dir="auto">${esc(txt.slice(0,180))}</span>`
           +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${new Date(m.time*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></div>`;
       }).join('')+`</div>`;
     counts(); bind(); observeTop(); return;
   }
-  reindex(msgs); wordIndex(msgs);
+  reindex(msgs);
   const list=msgs.filter(m=>!query||(m.text||'').toLowerCase().includes(query));
   const talk=list.filter(speech);
-  let head=`<div class="toploader" id="toploader">${next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
+  let head=`<div class="toploader" id="toploader">${LOAD_FAILED||LOAD_PAUSED?loadingRetryButton():next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!talk.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
   /* Only what people wrote is drawn. Protocol payloads are still parsed and
@@ -938,6 +1110,7 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
+  const retry=$('retryblocks');if(retry)retry.onclick=()=>{LOAD_FAILED=false;LOAD_PAUSED=false;shown()<TARGET?loadInitial():loadOlder()};
   document.querySelectorAll('.reply-action').forEach(el=>el.onclick=()=>{
     el.closest('details').open=false;
     selectReply(el.dataset.txid,Number(el.dataset.vout));
@@ -964,17 +1137,17 @@ function bind(){
     render(); toBottom(false);
   });
   /* Anyone can put a picture on the chain, so nobody is shown one until they ask. */
-  document.querySelectorAll('.imh').forEach(el=>el.onclick=()=>{
+  document.querySelectorAll('button.imh').forEach(el=>el.onclick=()=>{
     const m=msgs.find(x=>x.txid===el.dataset.id&&x.kind==='img'&&(!el.dataset.vout||x.vout===Number(el.dataset.vout)));
     if(!m) return;
-    const i=document.createElement('img');
-    i.className='ims'; i.loading='lazy'; i.alt='image from block '+m.height;
-    i.src='data:'+m.mime+';base64,'+m.b64;
-    el.replaceWith(i);
+    showImagePreview(el,m);
   });
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
+    const m=BYMSG.get(el.dataset.message);if(!m)return;
     const t=el.closest('.bub').querySelector('.txt');
-    t.classList.toggle('clip'); el.textContent=t.classList.contains('clip')?'more':'less'});
+    const expanded=el.getAttribute('aria-expanded')!=='true';
+    t.textContent=messageText(m,expanded);t.classList.toggle('clip',!expanded);
+    el.setAttribute('aria-expanded',String(expanded));el.textContent=expanded?'Less':'More'});
 }
 
 /* ---------------- scroll: newest at the bottom, older loads as you scroll up ---------------- */
@@ -983,7 +1156,7 @@ function atBottom(){return window.innerHeight+window.scrollY>=document.documentE
 function toBottom(smooth){window.scrollTo({top:document.documentElement.scrollHeight,behavior:smooth?'smooth':'auto'})}
 function observeTop(){
   if(io)io.disconnect();
-  const el=$('toploader'); if(!el||filter==='liquid'||next<=0)return;
+  const el=$('toploader'); if(!el||filter==='liquid'||LOAD_FAILED||LOAD_PAUSED||next<=0)return;
   io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))loadOlder(3)},{rootMargin:'700px 0px 0px 0px'});
   io.observe(el);
 }
@@ -995,7 +1168,9 @@ window.addEventListener('scroll',updateJump,{passive:true});
 function placeJump(){
   const inn=document.querySelector('.dock-in'), b=$('jump');
   if(!inn||!b) return;
-  b.style.bottom=Math.round(innerHeight-inn.getBoundingClientRect().top+12)+'px';
+  const height=Math.round(innerHeight-inn.getBoundingClientRect().top);
+  b.style.bottom=(height+12)+'px';
+  const thread=$('thread');if(thread)thread.style.paddingBottom=(height+28)+'px';
 }
 addEventListener('resize',placeJump);
 if(window.ResizeObserver){const dn=document.querySelector('.dock-in');
@@ -1028,12 +1203,14 @@ function tickClock(){
   const m=Math.max(1,Math.round(TIMEAVG/60000));
   $('p-eta').textContent='In ~'+m+' minute'+(m===1?'':'s');
 }
+let CLOCK_LOADING=false;
 async function blockClock(){
+  if(CLOCK_LOADING)return;CLOCK_LOADING=true;
   try{
     const [bs,mp,da]=await Promise.all([
-      fetch(`${API}/v1/blocks`).then(r=>r.json()),
-      fetch(`${API}/v1/fees/mempool-blocks`).then(r=>r.json()),
-      fetch(`${API}/v1/difficulty-adjustment`).then(r=>r.json()).catch(()=>null)
+      readBlockResource(`${API}/v1/blocks`,'json'),
+      readBlockResource(`${API}/v1/fees/mempool-blocks`,'json'),
+      readBlockResource(`${API}/v1/difficulty-adjustment`,'json').catch(()=>null)
     ]);
     if(da&&da.timeAvg>0) TIMEAVG=da.timeAvg;
     if(bs&&bs.length){
@@ -1062,7 +1239,7 @@ async function blockClock(){
       $('p-btc').textContent=btcTxt(p.totalFees);
       $('p-tx').textContent=txTxt(p.nTx);
     }
-  }catch(e){}
+  }catch(e){}finally{CLOCK_LOADING=false}
   try{tickClock()}catch(e){}
 }
 setInterval(tickClock,10000);
@@ -1082,7 +1259,7 @@ function grow(){
 }
 if(QA){
   QA.addEventListener('input',grow);
-  QA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing) e.preventDefault() },true);
+  QA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229) e.preventDefault() },true);
   const sb=$('sendb'); if(sb) sb.addEventListener('click',()=>setTimeout(grow,60));
   addEventListener('resize',grow);
   grow();
@@ -1096,7 +1273,7 @@ function paintBitcoinPrice(value){
   const price=Number(value);if(!Number.isFinite(price)||price<=0)return false;
   PRICE_AT=Date.now();PRICE_SEQ++;
   const el=$('s-price');
-  el.textContent=price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  el.textContent='$'+price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   el.title='Bitcoin price in USDT · Updated '+new Date(PRICE_AT).toLocaleTimeString();
   return true;
 }
@@ -1182,57 +1359,110 @@ function liquidHTML(){
 }
 
 /* ---------------- scanning ---------------- */
+const TARGET=100, MAXBLOCKS=260, LANES=3;
+let LOAD_FAILED=false,LOAD_PAUSED=false,LOAD_ATTEMPTED=0;
+const BLOCK_RETRY=new Set();
+const yieldToBrowser=()=>new Promise(resolve=>setTimeout(resolve,0));
+function loadingRetryButton(){return '<button class="midb" id="retryblocks">'+(LOAD_FAILED?'Retry Loading Messages':'Load More Messages')+'</button>'}
+async function readBlockResource(url,format){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+  try{
+    const response=await fetch(url,{signal:controller.signal});
+    if(!response.ok)throw new Error('Block data unavailable');
+    const limit=format==='raw'?4000000:format==='json'?1000000:1024;
+    if(Number(response.headers?.get('content-length'))>limit)throw new Error('Block data exceeds the size limit');
+    if(response.body?.getReader){
+      const reader=response.body.getReader(),parts=[];let size=0;
+      try{
+        for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;
+          if(size>limit)throw new Error('Block data exceeds the size limit');if(value.byteLength)parts.push(value)}
+      }catch(e){await reader.cancel().catch(()=>{});throw e}
+      const bytes=new Uint8Array(size);let at=0;
+      for(const part of parts){bytes.set(part,at);at+=part.byteLength}
+      if(format==='raw')return bytes.buffer;
+      const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+      return format==='json'?JSON.parse(text):text;
+    }
+    if(format==='raw'){
+      const bytes=await response.arrayBuffer();
+      if(bytes.byteLength>4000000)throw new Error('Block data exceeds the size limit');return bytes;
+    }
+    const data=await (format==='json'?response.json():response.text());
+    if((format==='json'?JSON.stringify(data):data).length>limit)throw new Error('Block data exceeds the size limit');
+    return data;
+  }finally{clearTimeout(timer)}
+}
 async function scanBlock(height){
-  const hash=await (await fetch(`${API}/block-height/${height}`)).text();
-  const meta=await (await fetch(`${API}/block/${hash}`)).json();
-  const buf=await (await fetch(`${API}/block/${hash}/raw`)).arrayBuffer();
-  const {outs,bytes,dv,total}=parseBlock(buf);
-  orCount+=total; scanned++;
-  $('s-blocks').textContent=scanned; $('s-or').textContent=orCount.toLocaleString();
-  const found=[];
-  for(const o of outs){
-    const c=classifyPayload(o.data);
-    if(c){let txid='',ins=[];
-      try{txid=await txidOf(bytes,o.tx)}catch(e){}
-      try{ins=inTxids(bytes,dv,o.tx.bodyStart,4)}catch(e){}
-      found.push({...c,height,time:meta.timestamp,txid,vout:o.vout,ins,pay:o.pay,me:false})}
+  const hash=cleanTxid((await readBlockResource(`${API}/block-height/${height}`,'text')).trim());
+  if(!hash)throw new Error('Invalid block identifier');
+  const [meta,buf]=await Promise.all([
+    readBlockResource(`${API}/block/${hash}`,'json'),
+    readBlockResource(`${API}/block/${hash}/raw`,'raw')
+  ]);
+  if(!Number.isFinite(meta.timestamp)||meta.timestamp<0)throw new Error('Invalid block timestamp');
+  const {outs,bytes,dv,total}=parseBlock(buf),transactions=new Map(),found=[];
+  for(let index=0;index<outs.length;index++){
+    const o=outs[index],c=classifyPayload(o.data);
+    if(c){
+      let tx=transactions.get(o.tx.ver);
+      if(!tx){
+        const txid=await txidOf(bytes,o.tx),ins=inTxids(bytes,dv,o.tx.bodyStart,4);
+        tx={txid,ins};transactions.set(o.tx.ver,tx);
+      }
+      found.push({...c,height,time:meta.timestamp,txid:tx.txid,vout:o.vout,ins:tx.ins,pay:o.pay,me:false});
+    }
+    if((index&255)===255)await yieldToBrowser();
   }
+  orCount+=total;scanned++;
+  $('s-blocks').textContent=scanned;$('s-or').textContent=orCount.toLocaleString();
   return found;
 }
-/* older blocks: prepend above, holding the reader's place */
-async function loadOlder(count=LANES){
-  if(busy||next<=0)return; busy=true;
-  const before=document.documentElement.scrollHeight;
-  await loadBatch(count);
-  render();
-  const after=document.documentElement.scrollHeight;
-  if(after!==before) window.scrollTo(0,window.scrollY+(after-before));
-  busy=false; updateJump();
-}
-/* first fill: keep pulling blocks (in parallel) until the room holds TARGET messages */
-const TARGET=100, MAXBLOCKS=260, LANES=5;
-function shown(){wordIndex(msgs);return msgs.reduce((n,m)=>n+(speech(m)?1:0),0)}
+/* Failed heights remain retryable; automatic loading pauses instead of skipping them. */
 async function loadBatch(n){
-  const hs=[]; for(let i=0;i<n&&next>0;i++) hs.push(next--);
-  if(!hs.length) return;
-  const res=await Promise.all(hs.map(h=>scanBlock(h).catch(()=>[])));
-  for(const f of res) msgs=msgs.concat(f);
-  msgs.sort((a,b)=>a.height-b.height);
-}
-async function loadInitial(){
-  busy=true; toBottom();
-  while(shown()<TARGET && next>0 && scanned<MAXBLOCKS){
-    await loadBatch(LANES);
-    /* The first fill keeps pulling older blocks for a while after the page looks ready.
-       Those arrive above what is on screen, so hold the reader where they are; only
-       follow the newest message if they were already at the bottom. */
-    const stick=atBottom(), before=document.documentElement.scrollHeight;
-    render();
-    if(stick) toBottom();
-    else { const after=document.documentElement.scrollHeight;
-      if(after!==before) window.scrollTo(0,window.scrollY+(after-before)); }
+  const hs=Array.from(BLOCK_RETRY).slice(0,n);
+  while(hs.length<n&&next>0)hs.push(next--);
+  if(!hs.length)return {loaded:0,failed:0};
+  LOAD_ATTEMPTED+=hs.length;
+  const results=await Promise.all(hs.map(async height=>{
+    try{return {height,found:await scanBlock(height)}}catch(e){return {height,error:e}}
+  }));
+  const additions=[];let failed=0;
+  for(const result of results){
+    if(result.error){BLOCK_RETRY.add(result.height);failed++;continue}
+    BLOCK_RETRY.delete(result.height);additions.push(result.found);
   }
-  busy=false; updateJump();
+  msgs=msgs.concat(additions.flat());msgs.sort((a,b)=>a.height-b.height);
+  LOAD_FAILED=failed>0;return {loaded:hs.length-failed,failed};
+}
+/* Older blocks prepend above the current position; errors do not lock the reader. */
+async function loadOlder(count=LANES){
+  if(busy||LOAD_FAILED||LOAD_PAUSED||(next<=0&&!BLOCK_RETRY.size))return;
+  busy=true;const before=document.documentElement.scrollHeight;
+  try{
+    await loadBatch(count);render();
+    const after=document.documentElement.scrollHeight;
+    if(after!==before)window.scrollTo(0,window.scrollY+(after-before));
+  }finally{busy=false;updateJump();observeTop()}
+}
+function shown(){return msgs.reduce((n,m)=>n+(speech(m)?1:0),0)}
+async function loadInitial(){
+  if(busy)return;busy=true;const attempted=LOAD_ATTEMPTED;
+  try{
+    toBottom();let first=true;
+    while(shown()<TARGET&&(next>0||BLOCK_RETRY.size)&&LOAD_ATTEMPTED-attempted<MAXBLOCKS){
+      const count=Math.min(first?1:LANES,MAXBLOCKS-(LOAD_ATTEMPTED-attempted));first=false;
+      await loadBatch(count);
+      const stick=atBottom(),before=document.documentElement.scrollHeight;
+      render();
+      if(stick)toBottom();else{
+        const after=document.documentElement.scrollHeight;
+        if(after!==before)window.scrollTo(0,window.scrollY+(after-before));
+      }
+      if(LOAD_FAILED)break;
+      await yieldToBrowser();
+    }
+    LOAD_PAUSED=!LOAD_FAILED&&shown()<TARGET&&LOAD_ATTEMPTED-attempted>=MAXBLOCKS;
+  }finally{busy=false;render();updateJump();observeTop()}
 }
 
 /* ---------------- ui ---------------- */
@@ -1306,7 +1536,8 @@ async function estimateAttachment(){
 function drawAtt(cost){
   const a=$('att');
   if(!FILE){ a.className='att'; a.innerHTML=''; return }
-  const pic=/^image\//.test(FILE.type)?`<img src="data:${FILE.type};base64,${b64(FILE.bytes)}" alt="">`:'';
+  const mime=imgType(FILE.bytes),size=mime&&imageDimensions(FILE.bytes,mime);
+  const pic=size?`<img src="data:${mime};base64,${b64(FILE.bytes)}" alt="" decoding="async">`:'';
   a.className='att on';
   a.innerHTML=pic+`<span class="nm">${esc(FILE.name)}</span>`
     +`<span class="sz">${kb(FILE.bytes.length)}${cost?' · '+sats(cost):''}</span>`
@@ -1314,14 +1545,14 @@ function drawAtt(cost){
   $('attx').onclick=()=>{FILE=null;drawAtt();refreshComp()};
 }
 $('q').oninput=refreshComp;
-$('q').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!$('sendb').disabled){e.preventDefault();send()}};
+$('q').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229&&!$('sendb').disabled){e.preventDefault();send()}};
 $('sendb').onclick=()=>send();
 
 /* ---- search palette ---- */
 const ovs=$('ovs'), ovp=$('ovp'), pcard=$('pcard');
 function openSearch(){ovs.classList.add('on');$('sq').value='';fillSearch();$('sq').focus()}
 function closeSearch(){ovs.classList.remove('on')}
-function closeSheet(){ovp.classList.remove('on');stopAnim();stopCam();$('q').focus()}
+function closeSheet(){invalidateOffline();ovp.classList.remove('on');stopCam();$('q').focus()}
 $('searchb').onclick=openSearch;
 $('scl').onclick=closeSearch;
 $('sq').oninput=fillSearch;
@@ -1329,20 +1560,32 @@ ovs.onclick=e=>{if(e.target===ovs)closeSearch()};
 ovp.onclick=e=>{if(e.target===ovp)closeSheet()};
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch()}
-  else if(e.key==='Escape'&&!e.isComposing){
+  else if(e.key==='Escape'&&!e.isComposing&&e.keyCode!==229){
     if(ovs.classList.contains('on')||ovp.classList.contains('on')){closeSearch();closeSheet()}
     else if(REPLY){e.preventDefault();cancelReply()}
   }
 });
+function searchKey(value){
+  const text=String(value||''),parts=[];let start=0;
+  /* Canonical reordering can be quadratic on malicious combining-mark runs.
+     Normalize normal text, retaining unusually long runs exactly as written. */
+  for(const run of text.matchAll(/\p{M}+/gu)){
+    if(run[0].length<=64)continue;
+    parts.push(text.slice(start,run.index).normalize('NFC'),run[0]);
+    start=run.index+run[0].length;
+  }
+  parts.push(text.slice(start).normalize('NFC'));
+  return parts.join('').toLowerCase();
+}
 function fillSearch(){
-  const q=$('sq').value.trim().toLowerCase();
+  const q=searchKey($('sq').value.trim());
   /* Search covers only what is drawn, so every result can be jumped to. */
   const all=msgs.filter(speech);
-  const hits=(q?all.filter(m=>(m.text||'').toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q))
+  const hits=(q?all.filter(m=>searchKey(m.text).includes(q)||searchKey(m.who).includes(q)||(m.txid||'').startsWith(q))
                 :all).slice(-80).reverse();
   $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
       return `<div class="it" data-id="${messageDomId(m)}"><span class="d" style="background:${hue(w)}"></span>`
-        +`<span class="tx">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
+        +`<span class="tx" dir="auto">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
         +`<span class="h">${esc(w)} · ${m.height.toLocaleString()}</span></div>`}).join('')
     :`<div class="pal-e">Nothing matching “${esc($('sq').value)}” in the ${scanned} blocks loaded so far. Scroll up in the room to pull in older blocks, then search again.</div>`;
   $('sl').querySelectorAll('.it').forEach(el=>el.onclick=()=>{
@@ -1374,7 +1617,7 @@ async function push(hex){
   const r=await fetch(API+'/tx',{method:'POST',headers:{'content-type':'text/plain'},body:hex});
   const t=(await r.text()).trim();
   if(!r.ok) throw new Error(t||'the network rejected the transaction');
-  return t;
+  return requiredTxid(t);
 }
 async function prevTxs(inputs){
   const out={};
@@ -1389,11 +1632,11 @@ const WAL=[
  {id:'unisat',name:'UniSat',p:()=>window.unisat,
   async connect(p){const a=await p.requestAccounts();return{address:a[0],publicKey:await p.getPublicKey()}},
   async sign(p,psbt,addr,idx,L){const s=await p.signPsbt(L.bytesToHex(psbt),{autoFinalized:true});
-    try{return{txid:await p.pushPsbt(s)}}catch(e){return{psbt:L.hexToBytes(s)}}}},
+    return{psbt:transactionBytes(s)}}},
  {id:'okx',name:'OKX',p:()=>window.okxwallet&&window.okxwallet.bitcoin,
   async connect(p){const r=await p.connect();return{address:r.address,publicKey:r.publicKey||r.compressedPublicKey}},
   async sign(p,psbt,addr,idx,L){const s=await p.signPsbt(L.bytesToHex(psbt),{autoFinalized:true});
-    try{return{txid:await p.pushPsbt(s)}}catch(e){return{psbt:L.hexToBytes(s)}}}},
+    return{psbt:transactionBytes(s)}}},
  {id:'xverse',name:'Xverse',p:()=>window.XverseProviders&&window.XverseProviders.BitcoinProvider,
   async connect(p){let r;try{r=await p.request('wallet_connect',{addresses:['payment']})}
     catch(e){r=await p.request('getAccounts',{purposes:['payment']})}
@@ -1401,8 +1644,8 @@ const WAL=[
     const a=list.find(x=>!x.purpose||x.purpose==='payment')||list[0];
     return{address:a.address,publicKey:a.publicKey}},
   async sign(p,psbt,addr,idx,L){
-    const r=await p.request('signPsbt',{psbt:L.b64enc(psbt),signInputs:{[addr]:idx},broadcast:true});
-    if(r.result&&r.result.txid) return{txid:r.result.txid};
+    const r=await p.request('signPsbt',{psbt:L.b64enc(psbt),signInputs:{[addr]:idx},broadcast:false});
+    if(!r.result?.psbt)throw new Error("The wallet did not return a signed PSBT");
     return{psbt:L.b64dec(r.result.psbt)}}},
  {id:'leather',name:'Leather',p:()=>window.LeatherProvider,
   async connect(p){const r=await p.request('getAddresses');
@@ -1410,20 +1653,19 @@ const WAL=[
     const a=A.find(x=>/p2wpkh/i.test(x.type||''))||A[0];
     return{address:a.address,publicKey:a.publicKey}},
   async sign(p,psbt,addr,idx,L){
-    const r=await p.request('signPsbt',{hex:L.bytesToHex(psbt),network:'mainnet',broadcast:true});
-    if(r.result&&r.result.txid) return{txid:r.result.txid};
-    return{psbt:L.hexToBytes(r.result.hex)}}},
+    const r=await p.request('signPsbt',{hex:L.bytesToHex(psbt),network:'mainnet',broadcast:false});
+    if(!r.result?.hex)throw new Error("The wallet did not return a signed PSBT");
+    return{psbt:transactionBytes(r.result.hex)}}},
  {id:'phantom',name:'Phantom',p:()=>window.phantom&&window.phantom.bitcoin,
   async connect(p){const a=await p.requestAccounts();const x=a.find(y=>y.purpose==='payment')||a[0];
     return{address:x.address,publicKey:x.publicKey}},
   async sign(p,psbt,addr,idx,L){const s=await p.signPSBT(psbt,{inputsToSign:[{address:addr,signingIndexes:idx}]});
-    return{psbt:s instanceof Uint8Array?s:L.hexToBytes(s)}}},
+    return{psbt:s instanceof Uint8Array?s:transactionBytes(s)}}},
 ];
 const detected=()=>WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
-let BUSY=false;
+let BUSY=false,ACTIVE_WALLET=null,WALLET_EPOCH=0;
 
-/* Wallet connections are not persisted by this site. Only theme preferences and
-   the public transaction IDs marked as yours are remembered in this browser. */
+/* Wallet selection lasts only in this open page; addresses and keys are never stored. */
 try{localStorage.removeItem('bac_wallet')}catch(e){}
 async function drop(w){
   try{
@@ -1432,7 +1674,7 @@ async function drop(w){
     else if(typeof p.disconnect==='function') await p.disconnect();
   }catch(e){}
 }
-const dropAll=()=>{for(const w of WAL) drop(w)};
+const dropAll=()=>{WALLET_EPOCH++;const w=ACTIVE_WALLET;ACTIVE_WALLET=null;if(w)drop(w)};
 addEventListener('pagehide',dropAll);
 addEventListener('storage',syncOwn);
 
@@ -1466,90 +1708,310 @@ function opret(bytes){                       /* independent copy of the encoder 
   }
   return new Uint8Array(o);
 }
-function cursor(b){
-  let p=0;
-  const u32=()=>{const v=(b[p]|(b[p+1]<<8)|(b[p+2]<<16)|(b[p+3]<<24))>>>0;p+=4;return v};
-  const u64=()=>{let v=0n;for(let i=0;i<8;i++)v|=BigInt(b[p+i])<<BigInt(8*i);p+=8;return Number(v)};
-  const vi=()=>{const n=b[p++];
-    if(n<0xfd)return n;
-    if(n===0xfd){const v=b[p]|(b[p+1]<<8);p+=2;return v}
-    if(n===0xfe)return u32();
-    return u64()};
-  const take=n=>{const s=b.subarray(p,p+n);p+=n;return s};
-  return {u32,u64,vi,take,at:()=>p,end:()=>p>=b.length};
+function requiredTxid(value){
+  const id=cleanTxid(value);
+  if(!id) throw new Error('The network did not return a valid transaction ID');
+  return id;
 }
-function rawTx(R){                            /* only the parts this check needs */
-  const c=cursor(R);
-  c.take(4);
-  if(R[c.at()]===0x00&&R[c.at()+1]===0x01) c.take(2);
-  const nin=c.vi(), ins=[];
-  for(let i=0;i<nin;i++){ c.take(32); const vout=c.u32(); c.take(c.vi()); c.take(4); ins.push({vout}) }
-  const nout=c.vi(), outs=[];
-  for(let i=0;i<nout;i++){ const value=c.u64(); const script=c.take(c.vi()); outs.push({value,script}) }
-  return {ins,outs};
+function transactionBytes(hex){
+  if(typeof hex!=='string'||!hex.length||hex.length>4000000||hex.length%2||!/^[0-9a-f]+$/i.test(hex))
+    throw new Error('Invalid transaction encoding');
+  return Uint8Array.from(hex.match(/../g),x=>parseInt(x,16));
+}
+function cursor(b){
+  if(!(b instanceof Uint8Array)||b.length>2000000) throw new Error('Invalid transaction data');
+  let p=0;
+  const take=n=>{
+    if(!Number.isSafeInteger(n)||n<0||n>b.length-p) throw new Error('Truncated transaction data');
+    const s=b.subarray(p,p+n);p+=n;return s;
+  };
+  const u32=()=>{const a=take(4);return (a[0]|a[1]<<8|a[2]<<16|a[3]<<24)>>>0};
+  const u64=()=>{const a=take(8);let v=0n;for(let i=0;i<8;i++)v|=BigInt(a[i])<<BigInt(8*i);
+    if(v>BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('Transaction amount is out of range');return Number(v)};
+  const vi=()=>{const n=take(1)[0];if(n<0xfd)return n;
+    const v=n===0xfd?(()=>{const a=take(2);return a[0]|a[1]<<8})():n===0xfe?u32():u64();
+    if(v<(n===0xfd?0xfd:n===0xfe?0x10000:0x100000000))throw new Error('Non-canonical transaction length');
+    return v;};
+  return {u32,u64,vi,take,at:()=>p,end:()=>p===b.length,remaining:()=>b.length-p};
+}
+function rawTx(R){
+  const c=cursor(R),version=c.u32();
+  const segwit=R[c.at()]===0&&R[c.at()+1]===1;
+  if(segwit)c.take(2);
+  const nin=c.vi(),ins=[];
+  if(!nin||nin>Math.floor(c.remaining()/41))throw new Error('Invalid transaction inputs');
+  for(let i=0;i<nin;i++){
+    const txid=hx(c.take(32)),vout=c.u32(),scriptSig=c.take(c.vi()),sequence=c.u32();
+    ins.push({txid,vout,scriptSig,sequence,witness:[]});
+  }
+  const nout=c.vi(),outs=[];
+  if(!nout||nout>Math.floor(c.remaining()/9))throw new Error('Invalid transaction outputs');
+  for(let i=0;i<nout;i++){const value=c.u64(),script=c.take(c.vi());outs.push({value,script})}
+  if(segwit)for(const i of ins){
+    const count=c.vi();if(count>c.remaining())throw new Error('Invalid transaction witness');
+    for(let j=0;j<count;j++)i.witness.push(c.take(c.vi()));
+  }
+  const locktime=c.u32();
+  if(!c.end())throw new Error('Unexpected data after the transaction');
+  if(segwit&&!ins.some(i=>i.witness.length))throw new Error('Empty transaction witness');
+  return {version,locktime,segwit,ins,outs};
 }
 function readPsbt(b){
   const c=cursor(b);
-  if(hx(c.take(5))!=='70736274ff') throw new Error('not a transaction');
-  const map=()=>{const m=[];for(;;){const kl=c.vi();if(!kl)break;const k=c.take(kl);m.push([k,c.take(c.vi())])}return m};
-  const g=map();
-  const raw=(g.find(([k])=>k[0]===0x00)||[])[1];
-  if(!raw) throw new Error('the transaction is missing');
-  const {ins,outs}=rawTx(raw);
-  for(let i=0;i<ins.length;i++){
-    const m=map();
-    const wu=(m.find(([k])=>k[0]===0x01)||[])[1];
-    const nw=(m.find(([k])=>k[0]===0x00)||[])[1];
-    if(wu){ const w=cursor(wu); ins[i].value=w.u64(); ins[i].script=w.take(w.vi()) }
-    else if(nw){ const prev=rawTx(nw).outs[ins[i].vout];
-      if(prev){ ins[i].value=prev.value; ins[i].script=prev.script } }
-  }
-  for(let i=0;i<outs.length;i++) map();
-  return {ins,outs};
-}
-function checkPsbt(psbt,data,feeRate,claimed){
-  const {ins,outs}=readPsbt(psbt);
-  if(!ins.length) throw new Error('check failed: the transaction spends nothing');
-  const home=ins[0].script;
-  let inSum=0;
+  if(hx(c.take(5))!=='70736274ff')throw new Error('Not a PSBT transaction');
+  const map=()=>{const m=[],seen=new Set();for(;;){
+    const kl=c.vi();if(!kl)break;
+    const k=c.take(kl),key=hx(k);if(seen.has(key))throw new Error('Duplicate PSBT field');
+    seen.add(key);m.push([k,c.take(c.vi())]);
+  }return m};
+  const singleton=(m,type)=>{
+    const fields=m.filter(([k])=>k[0]===type);
+    if(fields.length>1||fields.some(([k])=>k.length!==1))throw new Error('Invalid PSBT field');
+    return fields[0]?.[1];
+  };
+  const global=map(),unsigned=singleton(global,0x00);
+  if(!unsigned)throw new Error('The unsigned transaction is missing');
+  const tx=rawTx(unsigned),{ins,outs}=tx;
+  if(tx.segwit||ins.some(i=>i.scriptSig.length))throw new Error('PSBT contains an invalid unsigned transaction');
   for(const i of ins){
-    if(!i.script) throw new Error('check failed: an input has no stated source');
-    if(!eqb(i.script,home)) throw new Error('check failed: it mixes coins from more than one address');
+    const m=map();i.map=m;
+    const wu=singleton(m,0x01),nw=singleton(m,0x00);
+    singleton(m,0x07);singleton(m,0x08);singleton(m,0x13);
+    if(wu){const w=cursor(wu);i.value=w.u64();i.script=w.take(w.vi());if(!w.end())throw new Error('Invalid source output')}
+    else if(nw){const prev=rawTx(nw).outs[i.vout];if(prev){i.value=prev.value;i.script=prev.script}}
+  }
+  const outputMaps=outs.map(()=>map());
+  if(!c.end())throw new Error('Unexpected data after the PSBT');
+  return {ins,outs,tx,unsigned,global,outputMaps};
+}
+function little32(n){return [n&255,(n>>>8)&255,(n>>>16)&255,n>>>24]}
+function little64(n){let v=BigInt(n);return Array.from({length:8},()=>{const b=Number(v&255n);v>>=8n;return b})}
+function transactionBase(tx){
+  const vb=b=>joinedBytes([compactBytes(b.length),b]);
+  return joinedBytes([little32(tx.version),compactBytes(tx.ins.length),
+    ...tx.ins.flatMap(i=>[transactionBytes(i.txid),little32(i.vout),vb(i.scriptSig),little32(i.sequence)]),
+    compactBytes(tx.outs.length),...tx.outs.flatMap(o=>[little64(o.value),vb(o.script)]),little32(tx.locktime)]);
+}
+async function doubleHash(bytes){return new Uint8Array(await crypto.subtle.digest('SHA-256',await crypto.subtle.digest('SHA-256',bytes)))}
+async function transactionId(raw){const digest=await doubleHash(transactionBase(rawTx(transactionBytes(raw))));return hx(digest.reverse())}
+/* Encode the supplied locking script independently from the builder's decoder. */
+async function scriptAddress(script){
+  const type=signatureType(script);
+  if(type==='p2pkh'){
+    const payload=joinedBytes([[0],script.subarray(3,23)]);
+    const full=joinedBytes([payload,(await doubleHash(payload)).subarray(0,4)]);
+    const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let n=BigInt('0x'+hx(full)),s='';while(n){s=alphabet[Number(n%58n)]+s;n/=58n}
+    for(const b of full){if(b)break;s='1'+s}return s;
+  }
+  const data=[type==='p2tr'?1:0];let acc=0,bits=0;
+  for(const b of script.subarray(2)){acc=(acc<<8)|b;bits+=8;while(bits>=5){bits-=5;data.push((acc>>>bits)&31)}}
+  if(bits)data.push((acc<<(5-bits))&31);
+  let chk=1;const generator=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];
+  for(const n of [3,3,0,2,3,...data,0,0,0,0,0,0]){
+    const top=chk>>>25;chk=((chk&0x1ffffff)<<5)^n;
+    for(let i=0;i<5;i++)if((top>>>i)&1)chk^=generator[i];
+  }
+  chk^=type==='p2tr'?0x2bc830a3:1;
+  for(let i=5;i>=0;i--)data.push((chk>>>(5*i))&31);
+  return 'bc1'+data.map(n=>'qpzry9x8gf2tvdw0s3jn54khce6mua7l'[n]).join('');
+}
+function coinSnapshot(utxos){
+  if(!Array.isArray(utxos)||utxos.length>10000)throw new Error('Invalid unspent-output response');
+  const seen=new Set();
+  return utxos.map(u=>{
+    const txid=cleanTxid(u?.txid),vout=u?.vout,value=u?.value,key=txid+':'+vout;
+    if(!txid||!Number.isInteger(vout)||vout<0||vout>0xffffffff||!Number.isSafeInteger(value)||value<0||value>2100000000000000||seen.has(key))
+      throw new Error('Invalid or duplicate unspent output');
+    seen.add(key);return {txid,vout,value};
+  });
+}
+async function preparePsbt(L,args){
+  const data=typeof args.message==='string'?new TextEncoder().encode(args.message):new Uint8Array(args.message);
+  const feeRate=args.feeRate,address=args.address?.trim();
+  if(!address||!Number.isFinite(feeRate)||feeRate<=0)throw new Error('Invalid address or fee rate');
+  const decoded=await L.decodeAddress(address),script=new Uint8Array(decoded.script),type=signatureType(script);
+  const canonical=/^bc1/i.test(address)?address.toLowerCase():address;
+  if(await scriptAddress(script)!==canonical)throw new Error('The address does not match its locking script');
+  const coins=coinSnapshot(args.utxos),available=new Map(coins.map(c=>[c.txid+':'+c.vout,c]));
+  const chosen=coinSnapshot(L.select(coins.map(c=>({...c})),feeRate,opret(data).length,type).inputs);
+  if(!chosen.length)throw new Error('No coins were selected');
+  for(const c of chosen){const known=available.get(c.txid+':'+c.vout);if(!known||known.value!==c.value)throw new Error('The builder selected an unknown coin')}
+  const prevTx={},verified=[];
+  const ids=[...new Set(chosen.map(c=>c.txid))];
+  /* Fetch only funding transactions that will be spent, with at most four requests at a time. */
+  for(let offset=0;offset<ids.length;offset+=4){
+    const batch=await Promise.all(ids.slice(offset,offset+4).map(async id=>{
+      const r=await fetch(`${API}/tx/${id}/hex`);
+      if(!r.ok)throw new Error('Could not verify the funding transaction');
+      const raw=(await r.text()).trim();
+      if(await transactionId(raw)!==id)throw new Error('The funding transaction ID does not match');
+      return {id,raw,tx:rawTx(transactionBytes(raw))};
+    }));
+    for(const {id,raw,tx} of batch){
+      prevTx[id]=raw;
+      for(const coin of chosen.filter(c=>c.txid===id)){
+        const output=tx.outs[coin.vout];
+        if(!output||output.value!==coin.value||!eqb(output.script,script))throw new Error('A funding output does not match your address and balance');
+        verified.push({...coin,script:new Uint8Array(script)});
+      }
+    }
+  }
+  const sources={script,coins:verified};
+  const b=await L.buildPsbt({address,publicKey:args.publicKey,utxos:chosen.map(c=>({...c})),message:new Uint8Array(data),feeRate,prevTx});
+  const fee=checkPsbt(b.psbt,data,feeRate,b.fee,sources);
+  const checked=readPsbt(b.psbt);
+  return {...b,fee,psbt:new Uint8Array(b.psbt),inputs:checked.ins.map(i=>({txid:hx(transactionBytes(i.txid).reverse()),vout:i.vout,value:i.value}))};
+}
+
+function checkPsbt(psbt,data,feeRate,claimed,sources){
+  if(!Number.isFinite(feeRate)||feeRate<=0||!Number.isSafeInteger(claimed)||claimed<0)
+    throw new Error('Invalid transaction fee');
+  const {ins,outs}=readPsbt(psbt),home=ins[0].script;
+  if(!sources?.script||!Array.isArray(sources.coins)||ins.length!==sources.coins.length)throw new Error('Verified funding outputs are required');
+  const verified=new Map(sources.coins.map(c=>[c.txid+':'+c.vout,c]));
+  if(!eqb(home,sources.script))throw new Error('The transaction source does not match your address');
+  let inSum=0;
+  const seen=new Set();
+  for(const i of ins){
+    if(!i.script||!Number.isSafeInteger(i.value)||i.value<0)throw new Error('Check failed: an input has no valid source');
+    if(!eqb(i.script,home))throw new Error('Check failed: it mixes coins from more than one address');
+    const source=verified.get(hx(transactionBytes(i.txid).reverse())+':'+i.vout);
+    if(!source||source.value!==i.value||!eqb(source.script,i.script))throw new Error('The transaction does not match the verified funding outputs');
+    const key=i.txid+':'+i.vout;if(seen.has(key))throw new Error('Check failed: duplicate input');seen.add(key);
     inSum+=i.value;
   }
-  let outSum=0, msg=null;
+  let outSum=0,msg=null;
   for(const o of outs){
     outSum+=o.value;
     if(o.script[0]===0x6a){
-      if(msg) throw new Error('check failed: more than one message output');
-      if(o.value!==0) throw new Error('check failed: the message output carries coins');
+      if(msg)throw new Error('Check failed: more than one message output');
+      if(o.value!==0)throw new Error('Check failed: the message output carries coins');
       msg=o.script;
-    }else if(!eqb(o.script,home)){
-      throw new Error('check failed: it would pay an address that is not yours');
-    }
+    }else if(!eqb(o.script,home))throw new Error('Check failed: it would pay an address that is not yours');
   }
-  if(!msg) throw new Error('check failed: there is no message in it');
-  if(!eqb(msg,opret(data))) throw new Error('check failed: the message on the wire is not the one you wrote');
+  if(!Number.isSafeInteger(inSum)||!Number.isSafeInteger(outSum))throw new Error('Transaction amount is out of range');
+  if(!msg||!eqb(msg,opret(data)))throw new Error('Check failed: the message on the wire is not the one you wrote');
   const fee=inSum-outSum;
-  if(fee<0) throw new Error('check failed: it spends more than it holds');
-  if(fee!==claimed) throw new Error(`check failed: the real fee is ${fee} sats, not the ${claimed} shown`);
+  if(fee<0)throw new Error('Check failed: it spends more than it holds');
+  if(fee!==claimed)throw new Error(`Check failed: the real fee is ${fee} sats, not the ${claimed} shown`);
   const cap=Math.max(50000,Math.ceil((data.length+250)*feeRate*3));
-  if(fee>cap) throw new Error(`check failed: ${fee.toLocaleString()} sats is far more than ${feeRate} sat/vB should cost`);
+  if(fee>cap)throw new Error(`Check failed: ${fee.toLocaleString()} sats is far more than ${feeRate} sat/vB should cost`);
   return fee;
 }
+function matchTransaction(actual,expected){
+  const bad=()=>{throw new Error('The signed transaction does not match the message and fee you prepared')};
+  if(actual.version!==expected.version||actual.locktime!==expected.locktime||actual.ins.length!==expected.ins.length||actual.outs.length!==expected.outs.length)bad();
+  actual.ins.forEach((a,j)=>{const e=expected.ins[j];if(a.txid!==e.txid||a.vout!==e.vout||a.sequence!==e.sequence)bad()});
+  actual.outs.forEach((a,j)=>{const e=expected.outs[j];if(a.value!==e.value||!eqb(a.script,e.script))bad()});
+}
+function signatureType(script){
+  if(script?.length===22&&script[0]===0&&script[1]===20)return 'p2wpkh';
+  if(script?.length===34&&script[0]===0x51&&script[1]===32)return 'p2tr';
+  if(script?.length===25&&script[0]===0x76&&script[1]===0xa9&&script[2]===20&&script[23]===0x88&&script[24]===0xac)return 'p2pkh';
+  throw new Error('This signing format is not supported');
+}
+function checkSignatureMaterial(input,source){
+  const type=signatureType(source.script);
+  let stack=input.witness;
+  if(type==='p2pkh'){
+    if(stack.length)throw new Error('Unexpected legacy transaction witness');
+    const c=cursor(input.scriptSig);stack=[];
+    while(!c.end()){const n=c.take(1)[0];if(!n||n>75)throw new Error('Invalid legacy signature');stack.push(c.take(n))}
+  }else if(input.scriptSig.length)throw new Error('Unexpected signature script');
+  if(type==='p2tr'){
+    if(stack.length!==1||(stack[0].length!==64&&!(stack[0].length===65&&stack[0][64]===1)))
+      throw new Error('Taproot signature must commit to the complete transaction');
+  }else if(stack.length!==2||stack[0].length<9||stack[0].length>73||stack[0][0]!==0x30||stack[0][stack[0].length-1]!==1||stack[1].length!==33||![2,3].includes(stack[1][0])){
+    throw new Error('The transaction needs a complete signature that commits to all outputs');
+  }
+}
+function checkSignedTx(hex,expected){
+  if(!expected)throw new Error('Prepare the transaction before signing it');
+  const raw=transactionBytes(hex),prepared=readPsbt(expected),signed=rawTx(raw);
+  matchTransaction(signed,prepared.tx);
+  signed.ins.forEach((i,j)=>checkSignatureMaterial(i,prepared.ins[j]));
+  return hx(raw);
+}
+function compactBytes(n){
+  if(n<253)return [n];
+  if(n<=0xffff)return [253,n&255,n>>8];
+  return [254,n&255,(n>>>8)&255,(n>>>16)&255,n>>>24];
+}
+function joinedBytes(parts){
+  const out=new Uint8Array(parts.reduce((n,b)=>n+b.length,0));let p=0;
+  for(const b of parts){out.set(b,p);p+=b.length}return out;
+}
+function signedPsbtHex(psbt,expected,L){
+  if(!expected)throw new Error('Prepare the transaction before signing it');
+  const signed=readPsbt(psbt),prepared=readPsbt(expected);
+  matchTransaction(signed.tx,prepared.tx);
+  const vb=b=>joinedBytes([compactBytes(b.length),b]);
+  const encodeMap=m=>joinedBytes([...m.flatMap(([k,v])=>[vb(k),vb(v)]),[0]]);
+  for(let j=0;j<signed.ins.length;j++){
+    const m=signed.ins[j].map;
+    if(m.some(([k])=>k.length===1&&(k[0]===7||k[0]===8)))continue;
+    const type=signatureType(prepared.ins[j].script);
+    let stack;
+    if(type==='p2tr'){
+      const sig=m.find(([k])=>k.length===1&&k[0]===0x13)?.[1];
+      if(!sig)throw new Error('The PSBT is not signed yet');stack=[sig];
+    }else{
+      const sigs=m.filter(([k])=>k[0]===2);
+      if(sigs.length!==1||sigs[0][0].length!==34)throw new Error('The PSBT needs one complete signature per input');
+      stack=[sigs[0][1],sigs[0][0].subarray(1)];
+    }
+    const input={scriptSig:new Uint8Array(),witness:stack};
+    if(type==='p2pkh'){input.scriptSig=joinedBytes(stack.flatMap(b=>[[b.length],b]));input.witness=[]}
+    checkSignatureMaterial(input,prepared.ins[j]);
+    m.push([new Uint8Array([type==='p2pkh'?7:8]),type==='p2pkh'?input.scriptSig:joinedBytes([compactBytes(stack.length),...stack.map(vb)])]);
+  }
+  const finalized=joinedBytes([transactionBytes('70736274ff'),encodeMap(signed.global),...signed.ins.map(i=>encodeMap(i.map)),...signed.outputMaps.map(encodeMap)]);
+  return checkSignedTx(L.extract(finalized),expected);
+}
+
 
 async function send(){
   const text=payload();
   if(BUSY||!hasDraft()||text.length>MAXDATA) return;
   armFooter();
   hint('');
+  if(ACTIVE_WALLET){
+    const w=detected().find(w=>w.id===ACTIVE_WALLET.id);
+    if(w)return publish(w,text);
+    ACTIVE_WALLET=null;
+  }
   $('wallet-xverse').focus();
+}
+
+async function connectOnly(w){
+  if(BUSY)return;
+  BUSY=true;refreshComp();const epoch=WALLET_EPOCH;
+  try{
+    hint(`Connecting to ${esc(w.name)}…`);
+    const acc=await w.connect(w.p());
+    if(epoch!==WALLET_EPOCH){drop(w);return}
+    if(!acc||typeof acc.address!=='string'||!acc.address)throw new Error(w.name+' did not return an address');
+    if(ACTIVE_WALLET&&ACTIVE_WALLET!==w)drop(ACTIVE_WALLET);
+    ACTIVE_WALLET=w;
+    hint(`Connected to ${esc(w.name)}. <button id="wallet-disconnect" type="button">Disconnect</button>`);
+    $('wallet-disconnect').onclick=()=>{
+      if(BUSY)return;
+      dropAll();hint('Disconnected.');
+    };
+    $('q').focus();
+  }catch(e){
+    const message=(e&&e.message)||String(e),cancelled=/reject|denied|cancel/i.test(message);
+    hint(esc(cancelled?'Cancelled':message),!cancelled);
+  }finally{BUSY=false;refreshComp()}
 }
 
 function chooseWallet(id){
   if(BUSY) return;
   const text=payload();
   if(!hasDraft()){
+    const w=detected().find(w=>w.id===id);
+    if(w)return connectOnly(w);
     hint('Write a message first.'); $('q').focus(); return;
   }
   if(text.length>MAXDATA){hint('Message and reply reference exceed the upload limit.',true);return}
@@ -1574,6 +2036,7 @@ bindWallets();
 
 async function publish(w,text){
   const draft=captureDraft();
+  const epoch=WALLET_EPOCH;
   BUSY=true; refreshComp();
   try{
     hint('Preparing…');
@@ -1585,47 +2048,60 @@ async function publish(w,text){
     const p=w.p();
     hint(`Waiting for ${esc(w.name)}…`);
     const acc=await w.connect(p);
+    if(epoch!==WALLET_EPOCH){drop(w);throw new Error('Wallet connection closed')}
     if(!acc||!acc.address) throw new Error(w.name+' did not return an address');
+    if(ACTIVE_WALLET&&ACTIVE_WALLET!==w)drop(ACTIVE_WALLET);
+    ACTIVE_WALLET=w;
     hint('Reading your coins…');
     const us=await getUtxos(acc.address);
     if(!us.length) throw new Error('no confirmed coins on '+acc.address);
     const args={address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE};
-    let b=await L.buildPsbt(args);
-    if(b.type==='p2pkh') b=await L.buildPsbt({...args,prevTx:await prevTxs(b.inputs)});
-    const bytes=typeof text==='string'?new TextEncoder().encode(text):text;
-    const fee=checkPsbt(b.psbt,bytes,RATE,b.fee);
+    const b=await preparePsbt(L,args),fee=b.fee;
     hint(`Checked · ${sats(fee)} to the miner, the rest back to you — confirm in ${esc(w.name)}`);
+    const expected=new Uint8Array(b.psbt);
+    if(epoch!==WALLET_EPOCH)throw new Error('Wallet connection closed');
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
-    const txid=r.txid||await push(L.extract(r.psbt));
+    if(!r?.psbt)throw new Error('The wallet did not return a signed transaction to check');
+    const raw=signedPsbtHex(r.psbt,expected,L);
+    if(epoch!==WALLET_EPOCH)throw new Error('Wallet connection closed');
+    const txid=requiredTxid(await push(raw));
     markMine(txid);
     clearSentDraft(draft);
     hint(`Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,12)}…</a> appears here at the next block.`);
     setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
   }catch(e){
     const m=((e&&e.message)||String(e)).replace(/^Error:\s*/,'');
-    hint(esc(/reject|denied|cancel/i.test(m)?'Cancelled':m),true);
-  }finally{ BUSY=false; refreshComp(); drop(w) }
+    const cancelled=/reject|denied|cancel/i.test(m);
+    hint(esc(cancelled?'Cancelled':m),!cancelled);
+  }finally{ BUSY=false; refreshComp() }
 }
 
 /* ---- offline signer route ---- */
-let ANIM=null, CAM=null;
+let ANIM=null, CAM=null, OFFLINE_RUN=0, OFFLINE_BUILDING=false, OFFLINE_SENDING=false;
 function stopAnim(){ if(ANIM){clearInterval(ANIM);ANIM=null} }
 function stopCam(){ if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null} }
+function invalidateOffline(){
+  OFFLINE_RUN++;OFFLINE_BUILDING=false;stopAnim();
+  const go=$('qgo'),fr=$('fr'),st=$('st');
+  if(go)go.disabled=false;if(fr)fr.innerHTML='';if(st)st.textContent='';
+}
 function drawQR(text){
   try{
+  invalidateOffline();
   const draft=captureDraft();
   stopAnim(); stopCam();
   pcard.innerHTML=`<div class="chd"><h2 id="publish-title">Sign Offline</h2><button class="cl" id="pcl" title="Close" aria-label="Close offline signing">✕</button></div>
   <div class="cbd">
-    <div class="k" id="offline-help">Enter the address you are spending from. Its unspent outputs are read from mempool.space and turned into an unsigned PSBT, shown below as a BBQr. Sign it on your own device and paste the signed result back. No key ever reaches this page.</div>
+    <div class="k" id="offline-help">Enter the Bitcoin address you want to spend from. Scan the transaction code with a compatible offline wallet, review and sign it, then paste the signed result here to publish. This page does not request private keys.</div>
     <input class="ti" id="qa" aria-label="Bitcoin address to spend from" aria-describedby="offline-help" placeholder="bc1q… or bc1p…" autocomplete="off" spellcheck="false">
-    <button class="go" id="qgo">Build PSBT</button>
+    <button class="go" id="qgo">Prepare Transaction</button>
     <div class="st" id="st" role="status" aria-live="polite"></div>
     <div class="frames" id="fr"></div>
   </div>`;
   $('pcl').onclick=closeSheet;
   $('qgo').onclick=()=>buildQR(text,draft);
-  $('qa').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();buildQR(text,draft)}};
+  $('qa').oninput=invalidateOffline;
+  $('qa').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();buildQR(text,draft)}};
   ovp.classList.add('on');
   $('qa').focus();
   }catch(e){
@@ -1635,26 +2111,29 @@ function drawQR(text){
   }
 }
 async function buildQR(text,draft=captureDraft()){
+  if(OFFLINE_BUILDING||!ovp.classList.contains('on'))return;
+  const run=++OFFLINE_RUN,addr=$('qa').value.trim();
+  const current=()=>run===OFFLINE_RUN&&ovp.classList.contains('on')&&$('qa')?.value.trim()===addr;
+  OFFLINE_BUILDING=true;$('qgo').disabled=true;stopAnim();$('fr').innerHTML='';
   try{
-    const addr=$('qa').value.trim();
     if(!addr) throw new Error('Enter an address first');
     setst('<span class="k">Loading the transaction builder…</span>');
-    const L=await lib();
+    const L=await lib();if(!current())return;
     setst('<span class="k">Reading unspent outputs…</span>');
-    const us=await getUtxos(addr);
+    const us=await getUtxos(addr);if(!current())return;
     if(!us.length) throw new Error('no confirmed unspent outputs on '+addr);
-    let b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3});
-    if(b.type==='p2pkh') b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3,prevTx:await prevTxs(b.inputs)});
-    checkPsbt(b.psbt,typeof text==='string'?new TextEncoder().encode(text):text,RATE||3,b.fee);
+    const b=await preparePsbt(L,{address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3});
+    if(!current())return;
+    const expected=new Uint8Array(b.psbt);
     const parts=L.bbqr(b.psbt,'P');
     stopAnim();
     const fr=$('fr');
     fr.innerHTML=`<div id="qrbox"></div>
       <div class="k" id="fno"></div>
       <textarea class="ti" id="sig" aria-label="Signed transaction or PSBT" rows="3" placeholder="Paste the signed transaction (hex), a signed PSBT (base64), or the BBQr lines"></textarea>
-      <button class="go" id="bcb">Broadcast Signed Result</button>`;
+      <button class="go" id="bcb">Publish Message</button>`;
     let i=0;
-    const show=()=>{const c=L.qrCanvas(parts[i],320);
+    const show=()=>{if(!current())return;const c=L.qrCanvas(parts[i],320);
       const box=$('qrbox'); if(!box){stopAnim();return}
       box.innerHTML=''; box.appendChild(c);
       $('fno').textContent=parts.length>1?`Frame ${i+1} of ${parts.length}`:'';
@@ -1663,30 +2142,41 @@ async function buildQR(text,draft=captureDraft()){
     if(parts.length>1) ANIM=setInterval(show,400);
     setst(`<span class="k">Fee ${sats(b.fee)} for ${b.vbytes} vB at ${RATE||3} sat/vB`
       +(b.overpay?`, including ${sats(b.overpay)} of remainder that also goes to the miner`:'')+`</span>`);
-    $('bcb').onclick=()=>broadcastPasted(L,draft);
-  }catch(e){ fail(e) }
+    $('bcb').onclick=()=>broadcastPasted(L,draft,expected,run);
+  }catch(e){if(current())fail(e)}
+  finally{if(run===OFFLINE_RUN){OFFLINE_BUILDING=false;if($('qgo'))$('qgo').disabled=false}}
 }
-async function broadcastPasted(L,draft=captureDraft()){
+async function broadcastPasted(L,draft=captureDraft(),expected,run=OFFLINE_RUN){
+  if(OFFLINE_SENDING)return;
+  const epoch=WALLET_EPOCH,current=()=>run===OFFLINE_RUN&&ovp.classList.contains('on');
+  const button=$('bcb');OFFLINE_SENDING=true;if(button)button.disabled=true;
   try{
+    if(!current())throw new Error('This offline signing session has closed');
+    if(!expected)throw new Error('Prepare the transaction before signing it');
     const v=$('sig').value.trim();
     if(!v) throw new Error('Paste the signed transaction or PSBT first');
     let raw;
     if(/^B\$/.test(v)){
       const j=L.bbqrJoin(v.split(/\s+/).filter(Boolean));
-      raw = j.fileType==='T' ? L.bytesToHex(j.raw) : L.extract(j.raw);
+      if(!['T','P'].includes(j.fileType))throw new Error('Paste a transaction or PSBT code');
+      raw = j.fileType==='T' ? L.bytesToHex(j.raw) : signedPsbtHex(j.raw,expected,L);
     } else if(/^[0-9a-fA-F\s]+$/.test(v)){
       const h=v.replace(/\s+/g,'');
-      raw = h.slice(0,10).toLowerCase()==='70736274ff' ? L.extract(L.hexToBytes(h)) : h;
+      raw = h.slice(0,10).toLowerCase()==='70736274ff' ? signedPsbtHex(transactionBytes(h),expected,L) : h;
     } else {
-      raw = L.extract(L.b64dec(v.replace(/\s+/g,'')));
+      raw = signedPsbtHex(L.b64dec(v.replace(/\s+/g,'')),expected,L);
     }
+    raw=checkSignedTx(raw,expected);
+    if(epoch!==WALLET_EPOCH||!current())throw new Error('Signing session closed');
     setst('<span class="k">Broadcasting…</span>');
-    const txid=await push(raw);
+    const txid=requiredTxid(await push(raw));
     markMine(txid);
     clearSentDraft(draft);
+    if(!current())return;
     setst(`<div class="ok">Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
       +`<br><span class="k">It appears in the room at the next block.</span></div>`);
-  }catch(e){ fail(e) }
+  }catch(e){if(current())fail(e)}
+  finally{OFFLINE_SENDING=false;if(current()&&button)button.disabled=false}
 }
 
 $('jump').onclick=()=>toBottom(true);
@@ -1694,32 +2184,58 @@ $('jump').onclick=()=>toBottom(true);
 try{localStorage.removeItem('bac_theme')}catch(e){}
 
 /* ---------------- boot ---------------- */
-(async()=>{
+let TIP_POLLING=false,TIP_READY=false;
+async function readChainTip(){
+  const value=(await readBlockResource(`${API}/blocks/tip/height`,'text')).trim();
+  if(!/^\d{1,10}$/.test(value)||Number(value)>2147483647)throw new Error('Invalid chain height');
+  return Number(value);
+}
+async function pollChainTip(){
+  if(TIP_POLLING||!TIP_READY||busy)return;
+  TIP_POLLING=true;busy=true;const stick=atBottom();let changed=false;
+  try{
+    const target=await readChainTip();$('s-tip').textContent='#'+target.toLocaleString();
+    if(target<TIP){
+      TIP=target;next=target;msgs=[];scanned=orCount=0;
+      BLOCK_RETRY.clear();LOAD_FAILED=LOAD_PAUSED=false;
+      busy=false;await loadInitial();return;
+    }
+    /* Advance only after a successful scan, and bound catch-up work per poll. */
+    const end=Math.min(target,TIP+6);
+    while(TIP<end){
+      const height=TIP+1,found=await scanBlock(height);
+      msgs=msgs.concat(found);TIP=height;changed=true;
+      await yieldToBrowser();
+    }
+  }catch(e){/* The failed height is retried at the next poll. */}
+  finally{
+    TIP_POLLING=false;busy=false;
+    if(changed){msgs.sort((a,b)=>a.height-b.height);render();if(stick)toBottom(true)}
+    updateJump();observeTop();
+  }
+}
+async function startApp(){
+  if(TIP_READY||TIP_POLLING)return;TIP_POLLING=true;
   render();
   startBitcoinPrice();
-  dropAll();
   try{
-    TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
-    $('s-tip').textContent='#'+TIP.toLocaleString(); next=TIP;
+    TIP=await readChainTip();
+    $('s-tip').textContent='#'+TIP.toLocaleString();next=TIP;TIP_READY=true;
     await loadInitial();
-    setInterval(async()=>{
-      try{const t=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);
-        if(t>TIP){const old=TIP,stick=atBottom();TIP=t;$('s-tip').textContent='#'+t.toLocaleString();
-          for(let h=old+1;h<=t;h++){const f=await scanBlock(h);msgs=msgs.concat(f)}
-          msgs.sort((a,b)=>a.height-b.height);render(); if(stick)toBottom(true); updateJump()}
-      }catch(e){}
-    },60000);
-  }catch(e){$('thread').innerHTML='<div class="mid">Could not reach mempool.space. Refresh to retry.</div>'}
-})();
-
-/* Signing choices appear after a valid send action, keeping the idle footer quiet. */
-function armFooter(){
-  if($('sendb').disabled) return;
-  document.querySelectorAll('.wallets,.bw').forEach(el=>el.classList.add('on'));
+    setInterval(pollChainTip,60000);
+  }catch(e){
+    TIP_READY=false;
+    $('thread').innerHTML='<div class="mid">Could not load Bitcoin messages.<br><button class="midb" id="retry-start">Retry</button></div>';
+    $('retry-start').onclick=startApp;
+  }finally{TIP_POLLING=false}
 }
+startApp();
+
+/* Kept as the send-event hook; signing controls are always visible. */
+function armFooter(){}
 try{
   const sb=$('sendb'); if(sb) sb.addEventListener('click',armFooter);
-  const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing) armFooter() });
+  const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229) armFooter() });
 }catch(e){}
 </script>
 </body>
