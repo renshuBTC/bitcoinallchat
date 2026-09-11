@@ -268,6 +268,17 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   .say{font-size:17px}
   .turn.me .inner{max-width:88%}
 }
+/* The how-this-works link and the wallet buttons under the composer are the same kind of
+   control, so one rule gives both the same family, size, colour and underline. */
+.hint button,.dockfoot .dlink{background:transparent;border:0;font:inherit;font-size:13.6px;
+  color:var(--coral);cursor:pointer;padding:0 3px;line-height:1.45;text-align:center;
+  text-decoration:underline;text-underline-offset:2px}
+.hint button:hover,.dockfoot .dlink:hover{color:var(--ink)}
+.dockfoot{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;
+  padding:7px 10px 0;font-family:var(--sans);font-size:13.6px;line-height:1.45;color:var(--mut2)}
+.dockfoot .bw{color:var(--mut2);font-size:13.6px;line-height:1.45}
+.dockfoot .icb{width:24px;height:24px;font-size:13.6px;border-radius:6px}
+.cbd .bwarn{border-left:2px solid var(--coral);padding-left:12px;color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -292,10 +303,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <div class="ifoot">
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
       built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
-      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a><br>
-      <button class="how" id="howb">how this works</button>
-      <button class="icb" id="theme" title="Theme">◐</button>
-    </div>
+      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a>
+    </div>    </div>
   </aside>
 
   <div class="main">
@@ -327,6 +336,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
     </div>
     <div class="hint" id="hint"></div>
+    <div class="dockfoot">
+      <button class="dlink" id="howb">how this works</button>
+      <span class="bw">Use a burner wallet, not the one holding your savings.</span>
+      <button class="icb" id="theme" title="Theme">◐</button>
+    </div>
   </div>
 </div>
 
@@ -1126,7 +1140,15 @@ function openInfo(){
       publish than a sentence. The size and the fee are shown on the chip before anything is signed.</p>
     <p style="margin:0 0 12px">Bitcoin Core v30 relays up to ${MAXDATA.toLocaleString()} bytes of OP_RETURN data by default;
       older nodes stop at ${LEGACY}, which is when the byte count in the composer starts showing.</p>
-    <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
+<p class="bwarn" style="margin:0 0 12px">Use a burner wallet. Connect one you keep a small amount of bitcoin in
+      for this, not the wallet holding your savings. The page never sees a key and never holds coins, but you are
+      signing real transactions from a real wallet and publishing to a public chain permanently, and nothing
+      published here can be taken back.</p>
+    <p style="margin:0 0 12px">This site is provided as is, with no warranty of any kind. Its authors accept no
+      liability for any loss of bitcoin, for fees paid, for anything you publish, or for anything anyone else
+      publishes here. Messages come from strangers on a public chain, so treat every link, address and instruction
+      in one as hostile until you have checked it yourself.</p>
+        <button class="lnk" id="qrb">Sign offline instead (Sparrow, Coldcard, Keystone, SeedSigner)</button>
   </div>`;
   $('pcl').onclick=closeSheet;
   $('qrb').onclick=()=>drawQR(payload());
