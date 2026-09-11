@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-pWMOkPdcM6BnR3v5YM1N1itBN9w/jV4I/j0BmZm0rrE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-nBAMKOJj/c/+IaR/53sDrk9ZZnT/zeuzTDoCYv1lSf0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -2540,7 +2540,7 @@ async function broadcastPasted(L,draft=captureDraft(),expected,run=OFFLINE_RUN){
   finally{if(OFFLINE_DECODING===decoding)OFFLINE_DECODING=null;decoding?.abort();OFFLINE_SENDING=false;if(current()&&button)button.disabled=false}
 }
 
-$('jump').onclick=()=>{ /* the thread can still be filling, so the document grows under the scroll and a single jump lands short; re-pin until the height stops changing */ if(filter==='all'&&typeof latestPayloads==='function'){latestPayloads()} const end=Date.now()+5000; let last=-1; const pin=()=>{ const h=document.documentElement.scrollHeight; window.scrollTo({top:h,behavior:last<0?'smooth':'auto'}); if(Date.now()<end&&h!==last){ last=h; setTimeout(pin,250) } }; pin(); };
+$('jump').onclick=()=>{ if(filter==='all') latestPayloads(); else if(filter==='liquid') toBottom(true); else latestMessages(true); if(typeof document==='undefined'||typeof window==='undefined') return; /* the thread can still be filling, so the document grows under the jump and it lands short of the newest message; keep correcting until the height settles, and stop if the reader scrolls up */ const end=Date.now()+6000; let prev=-1; const fix=()=>{ const d=document.documentElement, max=d.scrollHeight-window.innerHeight; if(prev>=0&&window.scrollY<prev-40) return; if(window.scrollY<max-8) window.scrollTo({top:d.scrollHeight,behavior:'auto'}); prev=window.scrollY; if(Date.now()<end) setTimeout(fix,300) }; setTimeout(fix,400); };
 // Dark mode is fixed; ignore and remove any preference saved by older versions.
 try{localStorage.removeItem('bac_theme')}catch(e){}
 
