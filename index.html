@@ -303,6 +303,35 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .mb.last .rgt{background:#145da4}
 .mb.last .face u{color:#ff9f43}
 .blk-x{align-self:stretch;width:0;border-left:1.5px dashed var(--line2);margin:14px 3px 0}
+/* The footer reads like the line under Claude's composer: one size, no boxes, no accent
+   colour. What you can click sits left in the brighter grey, the standing note sits right
+   in the dimmer one. Anything with its own border or colour has been taken out of it. */
+.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  gap:4px 16px;padding:9px 6px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
+  color:var(--mut2)}
+.dfl{display:flex;align-items:center;gap:16px}
+.dockfoot .bw{color:var(--mut2);font-size:12.2px}
+.vsw{display:flex;align-items:center;gap:16px;margin:0}
+.vb{flex:0 0 auto;background:transparent;border:0;padding:0;white-space:nowrap;
+  font:inherit;font-size:12.2px;color:var(--mut);cursor:pointer}
+.vb:hover,.vb.on{background:transparent;color:var(--ink2)}
+.dockfoot .dlink{background:transparent;border:0;padding:0;text-decoration:none;
+  font:inherit;font-size:12.2px;color:var(--mut);cursor:pointer}
+.dockfoot .dlink:hover{color:var(--ink2)}
+/* in the panel the blocks have the room the footer could not give them */
+.blocks{display:flex;align-items:flex-end;gap:6px;margin:22px 0 0}
+/* The box grows with the message rather than scrolling one line: the text sits on top at
+   full width and the controls sit on a row underneath, the way Claude's composer is laid
+   out. It stops growing at about ten lines and scrolls after that. */
+.comp{flex-direction:column;align-items:stretch;gap:7px;padding:11px 13px 9px;border-radius:18px}
+.comp textarea#q{width:100%;background:transparent;border:0;outline:none;resize:none;
+  font:inherit;font-family:var(--sans);font-size:16.6px;line-height:1.45;color:var(--ink);
+  padding:4px 3px 0;margin:0;max-height:242px;overflow-y:auto;display:block}
+.comp textarea#q::placeholder{color:var(--mut2)}
+.comp-r{display:flex;align-items:center;gap:8px}
+.comp-r .cnt{margin-left:auto}
+.comp .att{padding:2px 2px 0}
+.comp .att:empty{display:none}
 </style>
 </head>
 <body>
@@ -314,6 +343,21 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <p class="open-p">A Bitcoin transaction can carry arbitrary data in an OP_RETURN output. Most of it is
       protocol data. The rest is text people wrote.</p>
     <p class="open-s">Blocks are fetched raw from mempool.space and parsed in your browser. Nothing is stored.</p>
+    <div class="blocks" id="blocks">
+      <div class="mbw">
+        <div class="mbh">&nbsp;</div>
+        <div class="mb next"><div class="top"></div><div class="rgt"></div><div class="face">
+          <i id="p-med">~0 sat/vB</i><u id="p-rng">&nbsp;</u><b id="p-btc">0.000 BTC</b>
+          <i id="p-tx">&nbsp;</i><i id="p-eta">&nbsp;</i></div></div>
+      </div>
+      <span class="blk-x"></span>
+      <div class="mbw">
+        <div class="mbh" id="bk-h">&nbsp;</div>
+        <div class="mb last"><div class="top"></div><div class="rgt"></div><div class="face">
+          <i id="m-med">~0 sat/vB</i><u id="m-rng">&nbsp;</u><b id="m-btc">0.000 BTC</b>
+          <i id="m-tx">&nbsp;</i><i id="bk-a">&nbsp;</i></div></div>
+      </div>
+    </div>
     <div class="istats">
       <div><span>chain tip</span><b id="s-tip">…</b></div>
       <div><span>blocks scanned</span><b id="s-blocks">0</b></div>
@@ -346,38 +390,27 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <div class="dock">
   <div class="dock-in">
-    <div class="att" id="att"></div>
     <input type="file" id="fi" hidden>
     <div class="comp">
-      <button class="plus" id="plusb" title="Attach a file or image">+</button>
-      <input id="q" placeholder="Write a message onto Bitcoin…" autocomplete="off">
+      <div class="att" id="att"></div>
+      <textarea id="q" rows="1" placeholder="Write a message onto Bitcoin…" autocomplete="off"></textarea>
+      <div class="comp-r">
+        <button class="plus" id="plusb" title="Attach a file or image">+</button>
       <span class="cnt" id="cnt"></span>
       <button class="rb" id="searchb" title="Search messages (⌘K)"><svg viewBox="0 0 24 24" width="21" height="21"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16 16"/></svg></button>
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
+      </div>
     </div>
     <div class="hint" id="hint"></div>
     <div class="dockfoot">
-<div class="blocks" id="blocks">
-        <div class="mbw">
-          <div class="mbh">&nbsp;</div>
-          <div class="mb next"><div class="top"></div><div class="rgt"></div><div class="face">
-            <i id="p-med">~0 sat/vB</i><u id="p-rng">&nbsp;</u><b id="p-btc">0.000 BTC</b>
-            <i id="p-tx">&nbsp;</i><i id="p-eta">&nbsp;</i></div></div>
+      <div class="dfl">
+        <div class="vsw">
+          <button class="vb on" data-v="talk">conversation</button>
+          <button class="vb" data-v="all">everything</button>
         </div>
-        <span class="blk-x"></span>
-        <div class="mbw">
-          <div class="mbh" id="bk-h">&nbsp;</div>
-          <div class="mb last"><div class="top"></div><div class="rgt"></div><div class="face">
-            <i id="m-med">~0 sat/vB</i><u id="m-rng">&nbsp;</u><b id="m-btc">0.000 BTC</b>
-            <i id="m-tx">&nbsp;</i><i id="bk-a">&nbsp;</i></div></div>
-        </div>
+        <button class="dlink" id="howb">how this works</button>
       </div>
-      <div class="vsw">
-        <button class="vb on" data-v="talk">conversation</button>
-        <button class="vb" data-v="all">everything</button>
-      </div>
-      <button class="dlink" id="howb">how this works</button>
       <span class="bw">Burner wallet, not your main one.</span>
     </div>
   </div>
@@ -737,6 +770,25 @@ async function blockClock(){
 setInterval(tickClock,10000);
 setInterval(blockClock,60000);
 blockClock();
+
+/* ---------------- the growing composer ----------------
+   The box is a textarea now, so it has to be told its own height. Enter still publishes:
+   the newline is stopped in the capture phase, which leaves the existing send handler to
+   run untouched, and shift-Enter is left alone so a message can have paragraphs. */
+const QA=$('q');
+function grow(){
+  if(!QA) return;
+  QA.style.height='auto';
+  QA.style.height=Math.min(QA.scrollHeight,242)+'px';
+  try{placeJump()}catch(e){}
+}
+if(QA){
+  QA.addEventListener('input',grow);
+  QA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey) e.preventDefault() },true);
+  const sb=$('sendb'); if(sb) sb.addEventListener('click',()=>setTimeout(grow,60));
+  addEventListener('resize',grow);
+  grow();
+}
 
 /* ---------------- pinned ---------------- */
 const LIQUID=[
