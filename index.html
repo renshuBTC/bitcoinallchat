@@ -279,16 +279,17 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .dockfoot .bw{color:var(--mut2);font-size:13.6px;line-height:1.45}
 .dockfoot .icb{width:24px;height:24px;font-size:13.6px;border-radius:6px}
 .cbd .bwarn{border-left:2px solid var(--coral);padding-left:12px;color:var(--ink2)}
-/* the block clock: a message can only land in a block, so the wait is worth showing */
-.blocks{display:flex;align-items:stretch;justify-content:center;gap:8px;margin:0 auto 9px;
-  max-width:var(--col);font-family:var(--sans);font-size:12.4px;line-height:1.32}
-.blk-c{display:flex;flex-direction:column;gap:1px;padding:6px 12px;border-radius:9px;min-width:124px;
+/* the block clock rides in the footer row: a message can only land in a block, so the
+   wait sits beside the other footnotes rather than taking a row of its own */
+.blocks{display:flex;align-items:stretch;gap:6px;margin:0;font-family:var(--sans);
+  font-size:11.6px;line-height:1.3}
+.blk-c{display:flex;flex-direction:column;padding:4px 9px;border-radius:8px;white-space:nowrap;
   background:var(--comp);border:1px solid var(--line);text-align:center}
-.blk-c b{font-family:var(--mono);font-weight:400;font-size:12.6px;color:var(--ink2)}
+.blk-c b{font-family:var(--mono);font-weight:400;font-size:11.8px;color:var(--ink2)}
 .blk-c span{color:var(--mut2)}
 .blk-c.last{border-left:3px solid #7c5cff}
 .blk-c.next{border-left:3px solid #2ecc71}
-.blk-x{align-self:center;color:var(--mut2);font-size:12.4px}
+.blk-x{align-self:center;color:var(--mut2);font-size:11.6px}
 </style>
 </head>
 <body>
@@ -335,12 +336,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <div class="dock">
   <div class="dock-in">
-<div class="blocks" id="blocks">
-      <div class="blk-c last"><b id="bk-h">…</b><span id="bk-a">reading the chain</span></div>
-      <span class="blk-x">→</span>
-      <div class="blk-c next"><b>next block</b><span id="bk-n">…</span></div>
-    </div>
-        <div class="att" id="att"></div>
+    <div class="att" id="att"></div>
     <input type="file" id="fi" hidden>
     <div class="comp">
       <button class="plus" id="plusb" title="Attach a file or image">+</button>
@@ -352,6 +348,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     </div>
     <div class="hint" id="hint"></div>
     <div class="dockfoot">
+<div class="blocks" id="blocks">
+        <div class="blk-c last"><b id="bk-h">…</b><span id="bk-a">reading the chain</span></div>
+        <span class="blk-x">→</span>
+        <div class="blk-c next"><b>next block</b><span id="bk-n">…</span></div>
+      </div>
       <button class="dlink" id="howb">how this works</button>
       <span class="bw">Use a burner wallet, not the one holding your savings.</span>
       <button class="icb" id="theme" title="Theme">◐</button>
