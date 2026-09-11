@@ -134,7 +134,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 @keyframes pu{0%,100%{opacity:.45}50%{opacity:.85}}
 .mid{text-align:center;color:var(--mut);font-size:13.5px;padding:34px 0}
 .toploader{text-align:center;color:var(--mut2);font-size:12.5px;padding:16px 0 6px}
-.jump{position:fixed;left:var(--side-w);right:0;margin-inline:auto;bottom:104px;z-index:14;display:none;
+.jump{position:fixed;left:var(--side-w);right:0;margin-inline:auto;bottom:128px;z-index:14;display:none;
   align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
   background:var(--comp);border:1px solid var(--line2);color:var(--ink2);font-size:15px;
   box-shadow:0 2px 10px rgba(0,0,0,.28)}
@@ -631,6 +631,18 @@ function observeTop(){
 }
 function updateJump(){const b=$('jump'); if(b)b.style.display=atBottom()?'none':'flex'}
 window.addEventListener('scroll',updateJump,{passive:true});
+/* The jump button sits just above the composer, never over it. The composer block grows
+   when a hint line or an attachment chip appears, so its top edge is measured rather
+   than assumed, and re-measured whenever it changes size. */
+function placeJump(){
+  const inn=document.querySelector('.dock-in'), b=$('jump');
+  if(!inn||!b) return;
+  b.style.bottom=Math.round(innerHeight-inn.getBoundingClientRect().top+12)+'px';
+}
+addEventListener('resize',placeJump);
+if(window.ResizeObserver){const dn=document.querySelector('.dock-in');
+  if(dn) new ResizeObserver(placeJump).observe(dn)}
+placeJump();
 
 /* ---------------- pinned ---------------- */
 const LIQUID=[
