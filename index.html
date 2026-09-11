@@ -187,7 +187,9 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .vb.on{background:var(--comp);color:var(--ink);border-color:var(--line2)}
 .payl{margin:0 0 8px}
 .pay{display:flex;gap:11px;align-items:baseline;padding:3px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
-.pay a{color:var(--mut);text-decoration:none;flex:0 0 auto}
+.pay .h{flex:0 0 auto;width:68px;text-align:right}
+.pay .t{flex:0 0 auto;width:64px;text-align:right;color:var(--mut2)}
+.pay a{color:var(--mut);text-decoration:none;flex:0 0 auto;width:62px}
 .pay a:hover{color:var(--coral)}
 .pay .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
 .imh{display:block;margin:3px 0 2px;background:var(--pill);border:1px solid var(--line2);color:var(--ink2);
@@ -673,7 +675,7 @@ function render(){
         return `<div class="pay">`
           +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
           +`<span class="p">${esc(txt.slice(0,180))}</span>`
-          +`<span>#${m.height.toLocaleString()}</span></div>`;
+          +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${new Date(m.time*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></div>`;
       }).join('')+`</div>`;
     counts(); bind(); observeTop(); return;
   }
