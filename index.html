@@ -279,6 +279,16 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .dockfoot .bw{color:var(--mut2);font-size:13.6px;line-height:1.45}
 .dockfoot .icb{width:24px;height:24px;font-size:13.6px;border-radius:6px}
 .cbd .bwarn{border-left:2px solid var(--coral);padding-left:12px;color:var(--ink2)}
+/* the block clock: a message can only land in a block, so the wait is worth showing */
+.blocks{display:flex;align-items:stretch;justify-content:center;gap:8px;margin:0 auto 9px;
+  max-width:var(--col);font-family:var(--sans);font-size:12.4px;line-height:1.32}
+.blk-c{display:flex;flex-direction:column;gap:1px;padding:6px 12px;border-radius:9px;min-width:124px;
+  background:var(--comp);border:1px solid var(--line);text-align:center}
+.blk-c b{font-family:var(--mono);font-weight:400;font-size:12.6px;color:var(--ink2)}
+.blk-c span{color:var(--mut2)}
+.blk-c.last{border-left:3px solid #7c5cff}
+.blk-c.next{border-left:3px solid #2ecc71}
+.blk-x{align-self:center;color:var(--mut2);font-size:12.4px}
 </style>
 </head>
 <body>
@@ -325,7 +335,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <div class="dock">
   <div class="dock-in">
-    <div class="att" id="att"></div>
+<div class="blocks" id="blocks">
+      <div class="blk-c last"><b id="bk-h">…</b><span id="bk-a">reading the chain</span></div>
+      <span class="blk-x">→</span>
+      <div class="blk-c next"><b>next block</b><span id="bk-n">…</span></div>
+    </div>
+        <div class="att" id="att"></div>
     <input type="file" id="fi" hidden>
     <div class="comp">
       <button class="plus" id="plusb" title="Attach a file or image">+</button>
@@ -643,6 +658,40 @@ addEventListener('resize',placeJump);
 if(window.ResizeObserver){const dn=document.querySelector('.dock-in');
   if(dn) new ResizeObserver(placeJump).observe(dn)}
 placeJump();
+
+/* ---------------- block clock ----------------
+   A message is only in the room once a block carrying it is mined, so the strip above
+   the composer shows the last block and roughly when the next one is due. The estimate
+   is the average gap over the last dozen blocks, not a fixed ten minutes, and blocks
+   arrive irregularly however good the average is. */
+let BLKT=0, BLKAVG=600;
+function ago(sec){
+  if(sec<45) return 'mined just now';
+  const m=Math.round(sec/60);
+  if(m<60) return 'mined '+m+' minute'+(m===1?'':'s')+' ago';
+  const h=Math.round(m/60); return 'mined '+h+' hour'+(h===1?'':'s')+' ago';
+}
+function tickClock(){
+  if(!BLKT) return;
+  const now=Math.floor(Date.now()/1000);
+  $('bk-a').textContent=ago(now-BLKT);
+  const left=BLKT+BLKAVG-now;
+  $('bk-n').textContent=left>90?'in ~'+Math.round(left/60)+' min':'due any minute';
+}
+async function blockClock(){
+  try{
+    const bs=await (await fetch(`${API}/blocks`)).json();
+    if(!bs||!bs.length) return;
+    BLKT=bs[0].timestamp;
+    const n=Math.min(bs.length-1,11);
+    if(n>0) BLKAVG=Math.max(120,Math.round((bs[0].timestamp-bs[n].timestamp)/n));
+    $('bk-h').textContent='#'+bs[0].height.toLocaleString();
+  }catch(e){}
+  tickClock();
+}
+setInterval(tickClock,10000);
+setInterval(blockClock,60000);
+blockClock();
 
 /* ---------------- pinned ---------------- */
 const LIQUID=[
@@ -1134,7 +1183,10 @@ function openInfo(){
       Scrolling up pulls in older blocks. The conversation shows what people wrote. Protocol and token payloads,
       which are machine data and make up almost all OP_RETURN traffic, are kept out of it — switch the panel to
       everything to see every payload the parser kept, the binary ones included.</p>
-    <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
+<p style="margin:0 0 12px">A message is only here once a block carrying it has been mined, which is what the
+      strip above the composer shows: the last block, and roughly when the next one is due. That estimate is the
+      average gap over the last dozen blocks; real blocks arrive irregularly, so treat it as a rough guide.</p>
+        <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
       between two different wallets. That link is on the chain, not added by this site.</p>
     <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
       transaction with one OP_RETURN output carrying your text and change back to your own address, and your wallet
