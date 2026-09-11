@@ -1556,6 +1556,24 @@ async function loadInitial(){
   }finally{busy=false;render();updateJump();syncReaderScroll()}
 }
 
+/* The first fill kept redrawing the whole thread after every batch of blocks, so for the
+   first few seconds the page heaved as a hundred messages arrived and the reader watched
+   it build. It is drawn once now, when the fill is done, and only the counter moves while
+   it waits. Anything that asks to render during the fill is deferred to that final draw. */
+let FILLING=false;
+const _render=render;
+render=function(){ if(FILLING) return; return _render.apply(this,arguments) };
+const _loadInitial=loadInitial;
+loadInitial=async function(){
+  FILLING=true;
+  const tick=setInterval(()=>{
+    const el=document.getElementById('toploader');
+    if(el) el.textContent='Loading… '+shown()+' messages from '+scanned+' blocks';
+  },400);
+  try{ return await _loadInitial.apply(this,arguments) }
+  finally{ clearInterval(tick); FILLING=false; _render(); toBottom(); }
+};
+
 /* Explicit, cancellable history search. Only conversational payloads are retained;
    complete-block coverage is separate from address-based discovery. */
 const HISTORY_FLOOR=965818,HISTORY_SEED='c103de95817b43f2df635ec6f35ff126ca26a7c6d20570c4b01866b2b3e69a19';
@@ -2540,7 +2558,7 @@ async function broadcastPasted(L,draft=captureDraft(),expected,run=OFFLINE_RUN){
   finally{if(OFFLINE_DECODING===decoding)OFFLINE_DECODING=null;decoding?.abort();OFFLINE_SENDING=false;if(current()&&button)button.disabled=false}
 }
 
-$('jump').onclick=()=>filter==='all'?latestPayloads():filter==='liquid'?toBottom(true):latestMessages(true);
+$('jump').onclick=()=>{ try{ if(filter==='all'&&typeof latestPayloads==='function') latestPayloads() }catch(e){} toBottom(true) };
 // Dark mode is fixed; ignore and remove any preference saved by older versions.
 try{localStorage.removeItem('bac_theme')}catch(e){}
 
