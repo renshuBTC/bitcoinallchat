@@ -390,6 +390,29 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp-r .plus:hover{background:rgba(255,255,255,.07);color:var(--ink)}
 [data-theme=light] .comp-r .plus:hover{background:rgba(0,0,0,.05)}
 .dockfoot{padding:7px 6px 0}
+/* One size, one family, one colour down the whole panel. Where something has to stand
+   apart it is bold or underlined and nothing else. The two block graphics are named
+   individually rather than swept up by a descendant selector, so they keep their own
+   scale and their fee colours. */
+.info .ihead,
+.info h1.open-h,
+.info p.open-p,
+.info .istats,
+.info .istats div,
+.info .istats span,
+.info .istats b,
+.info .ifoot,
+.info .ifoot a,
+.info .ifoot .icb{
+  font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);font-weight:400}
+.info .ihead{font-weight:700;margin-bottom:16px;letter-spacing:-.01em}
+.info h1.open-h{font-weight:700;margin:0 0 12px}
+.info p.open-p{margin:0 0 11px}
+.info p.warn-p{font-weight:700}
+.info .istats{gap:7px}
+.info .istats b{font-weight:700}
+.info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
+.info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
 </style>
 </head>
 <body>
