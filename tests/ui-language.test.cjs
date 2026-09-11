@@ -1,10 +1,49 @@
-// Minimal DOM doubles exercise the real module without model downloads or a browser.
+// Minimal DOM doubles exercise bundled interface copy without a browser or translation service.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const assert=require('node:assert/strict'),{test}=require('node:test');
 const source=fs.readFileSync(path.join(__dirname,'..','ui-language.js'),'utf8');
 
-function app(translator=async text=>'Français: '+text){
-  const observers=new Set(),timers=new Map(),calls=[];let timerId=0;
+const SAMPLE_COPY={
+  'Messages on Bitcoin.':['Des messages sur Bitcoin.','رسائل على Bitcoin.'],
+  'Bitcoin Price':['Prix du Bitcoin','سعر Bitcoin'],
+  'OP_RETURN Seen':['OP_RETURN détectés','عمليات OP_RETURN المرصودة'],
+  'Conversation (Latest 100 Messages)':['Conversation (100 derniers messages)','المحادثة (أحدث 100 رسالة)'],
+  'Everything':['Tout','الكل'],
+  'Write a message onto Bitcoin…':['Écrivez un message sur Bitcoin…','اكتب رسالة على Bitcoin…'],
+  'The file above is what gets published':['Le fichier ci-dessus sera publié','الملف أعلاه هو ما سيُنشر'],
+  'Attach a file or image':['Joindre un fichier ou une image','إرفاق ملف أو صورة'],
+  'Publish onto Bitcoin':['Publier sur Bitcoin','النشر على Bitcoin'],
+  'Sign With':['Signer avec','التوقيع باستخدام'],
+  'Offline':['Hors ligne','دون اتصال'],
+  'Remove':['Retirer','إزالة'],
+  'Language':['Langue','اللغة'],
+  'Display Language':['Langue d’affichage','لغة العرض'],
+  'Close':['Fermer','إغلاق'],
+  'Apply Language':['Appliquer la langue','تطبيق اللغة'],
+  'Preparing…':['Préparation…','جارٍ التحضير…'],
+  'Reading your coins…':['Vérification de vos fonds…','جارٍ التحقق من أموالك…'],
+  'Reply':['Répondre','رد'],
+  'Translate':['Traduire','ترجمة'],
+  'Message options':['Options du message','خيارات الرسالة'],
+  'Replying to {name}':['Réponse à {name}','الرد على {name}'],
+  'Connecting to {wallet}…':['Connexion à {wallet}…','جارٍ الاتصال بـ {wallet}…'],
+  'Connected to {wallet}.':['Connecté à {wallet}.','تم الاتصال بـ {wallet}.'],
+  'Checked · {fee} to the miner, the rest back to you — confirm in {wallet}':['Vérifié · {fee} au mineur, le reste vous revient — confirmez dans {wallet}','تم التحقق · {fee} للمُعدّن، والباقي يُعاد إليك — أكّد في {wallet}'],
+  '{name} exceeds the {n}-byte upload limit.':['{name} dépasse la limite de téléversement de {n} octets.','يتجاوز {name} حد الرفع البالغ {n} بايت.'],
+  '{n} transactions':['{n} transactions','عدد المعاملات: {n}'],
+  'In ~{n} minutes':['Dans environ {n} minutes','خلال نحو {n} دقيقة'],
+  'Bitcoin price in USDT · Updated {time}':['Prix du Bitcoin en USDT · Mis à jour {time}','سعر Bitcoin بوحدة USDT · آخر تحديث {time}'],
+  'Could not open offline signing: {reason}':['Impossible d’ouvrir la signature hors ligne : {reason}','تعذّر فتح التوقيع دون اتصال: {reason}']
+};
+function sampleLocales(){
+  return {
+    en:Object.fromEntries(Object.keys(SAMPLE_COPY).map(key=>[key,key])),
+    fr:Object.fromEntries(Object.entries(SAMPLE_COPY).map(([key,values])=>[key,values[0]])),
+    ar:Object.fromEntries(Object.entries(SAMPLE_COPY).map(([key,values])=>[key,values[1]]))
+  };
+}
+function app(languages=sampleLocales()){
+  const observers=new Set(),timers=new Map(),calls=[];let timerId=0,notifications=0,callbacks=0;
   function simple(element,selector){
     if(selector.startsWith('#'))return element.id===selector.slice(1);
     if(selector.startsWith('.'))return element.className.split(/\s+/).includes(selector.slice(1));
@@ -25,9 +64,10 @@ function app(translator=async text=>'Français: '+text){
     });
   }
   function notify(record){
+    notifications++;
     for(const observer of observers){
       if(!observer.root.contains(record.target))continue;
-      if(record.type==='attributes'&&!observer.options.attributeFilter.includes(record.attributeName))continue;
+      if(record.type==='attributes'&&observer.options.attributeFilter&&!observer.options.attributeFilter.includes(record.attributeName))continue;
       observer.records.push(record);
     }
   }
@@ -73,14 +113,18 @@ function app(translator=async text=>'Français: '+text){
   const document={body:new Element('body'),documentElement:new Element('html')};
   document.querySelectorAll=selector=>document.body.querySelectorAll(selector);
   document.getElementById=id=>document.body.querySelector('#'+id);
+  document.createElement=tag=>new Element(tag);
   class Observer {
     constructor(callback){this.callback=callback;this.records=[];}
     observe(root,options){this.root=root;this.options=options;observers.add(this)}
     disconnect(){observers.delete(this);this.records=[];}
   }
-  const bridge={translateUI:async text=>{calls.push(text);return translator(text)}};
-  const window={BAC_TRANSLATE:bridge};
-  const context=vm.createContext({window,document,MutationObserver:Observer,
+  const forbidden=name=>(...args)=>{calls.push({name,args});throw Error(name+' must not run for bundled UI copy')};
+  const window={BAC_LOCALES:languages,fetch:forbidden('fetch'),
+    Translator:{create:forbidden('Translator.create'),availability:forbidden('Translator.availability')},
+    LanguageDetector:{create:forbidden('LanguageDetector.create'),availability:forbidden('LanguageDetector.availability')},
+    BAC_TRANSLATE:{translateUI:forbidden('old translation bridge')}};
+  const context=vm.createContext({window,document,MutationObserver:Observer,fetch:window.fetch,
     setTimeout:callback=>{const id=++timerId;timers.set(id,callback);return id},
     clearTimeout:id=>timers.delete(id)});
   vm.runInContext(source,context);
@@ -91,230 +135,178 @@ function app(translator=async text=>'Français: '+text){
     parent.appendChild(node);return node;
   }
   async function flush(){
-    for(let i=0;i<500;i++){
-      for(const observer of observers){if(observer.records.length)observer.callback(observer.records.splice(0));}
+    for(let i=0;i<100;i++){
+      for(const observer of observers){if(observer.records.length){callbacks++;observer.callback(observer.records.splice(0));}}
       if(timers.size){const [id,fn]=timers.entries().next().value;timers.delete(id);fn();}
       await Promise.resolve();
+      if(!timers.size&&[...observers].every(observer=>!observer.records.length))return;
     }
+    throw Error('UI mutation observer did not settle');
   }
   async function language(code){const done=window.BAC_UI_LANGUAGE.setLanguage(code);await flush();await done;}
-  return {window,document,api:window.BAC_UI_LANGUAGE,bridge,add,Text,calls,flush,language,observers};
+  return {window,document,api:window.BAC_UI_LANGUAGE,add,Text,Element,calls,flush,language,observers,timers,
+    stats:()=>({notifications,callbacks,pending:timers.size+[...observers].reduce((n,observer)=>n+observer.records.length,0)})};
 }
 
-test('UI copy and accessible attributes translate while drafts, links and wallet order stay unchanged',async()=>{
-  const a=app(),info=a.add(a.document.body,'aside',{className:'info'});
-  const label=a.add(info,'p',{text:'Messages on Bitcoin.'});
-  const brand=a.add(info,'div',{text:'Bitcoin AllChat'});
-  const outside=a.add(a.document.body,'div',{id:'thread',text:'A public message remains original'});
-  const dock=a.add(a.document.body,'div',{className:'dock'});
-  const q=a.add(dock,'textarea',{id:'q',value:'My unsent 中文 draft',attrs:{placeholder:'Write a message onto Bitcoin…','aria-label':'Your message'}});
-  const wallets=a.add(dock,'span',{className:'wallets',attrs:{dir:'ltr'}});
-  wallets.appendChild(new a.Text('Sign With '));
-  const wallet=a.add(wallets,'a',{text:'Xverse',attrs:{href:'https://www.xverse.app/download',title:'Sign with Xverse'}});
-  const other=a.add(wallets,'a',{text:'UniSat'});
-  const ovp=a.add(a.document.body,'div',{id:'ovp'});
-  const sig=a.add(ovp,'textarea',{id:'sig',value:'70736274ffPRIVATE_INPUT',attrs:{placeholder:'Paste a signed transaction'}});
-  await a.language('fr');
-  assert.equal(label.textContent,'Français: Messages on Bitcoin.');
-  assert.equal(label.getAttribute('dir'),'auto');
-  assert.equal(q.getAttribute('placeholder'),'Français: Write a message onto Bitcoin…');
-  assert.equal(q.getAttribute('aria-label'),'Français: Your message');
-  assert.equal(q.value,'My unsent 中文 draft');assert.equal(sig.value,'70736274ffPRIVATE_INPUT');
-  assert.equal(wallet.getAttribute('href'),'https://www.xverse.app/download');
-  assert.equal(wallet.textContent,'Xverse');assert.equal(other.textContent,'UniSat');
-  assert.equal(brand.textContent,'Bitcoin AllChat');
-  assert.equal(wallets.getAttribute('dir'),'ltr');
-  assert.deepEqual(wallets.children,[wallet,other]);
-  assert.equal(outside.textContent,'A public message remains original');
-  assert.equal(a.calls.some(text=>text.includes('PRIVATE_INPUT')||text.includes('My unsent')),false);
+test('Bundled dictionaries translate exact keys and preserve separators without native or network operations',async()=>{
+  const a=app();
+  for(const code of ['fr','ar']){
+    await a.language(code);
+    for(const [key,translated] of Object.entries(a.window.BAC_LOCALES[code])){
+      if(!key.includes('{'))assert.equal(a.api.t(key),translated,code+' '+key);
+    }
+    assert.equal(a.api.t('  · Messages on Bitcoin. \n'),'  · '+a.window.BAC_LOCALES[code]['Messages on Bitcoin.']+' \n');
+    assert.equal(a.api.t('Messages  on\nBitcoin.'),a.window.BAC_LOCALES[code]['Messages on Bitcoin.']);
+  }
+  assert.equal(a.api.t('Messages on Bitcoin.','en'),'Messages on Bitcoin.');
+  for(const text of ['Unknown text','Bitcoin AllChat','Xverse','UniSat','1,250 sats','BTC/USDT','https://mempool.space','f'.repeat(64)])assert.equal(a.api.t(text),text);
+  assert.equal(a.api.t('x'.repeat(4001)),'x'.repeat(4001));
+  assert.deepEqual(a.calls,[]);a.api.dispose();
 });
 
-test('Protected brands, full identifiers, amounts, units and displayed URLs survive translation exactly',async()=>{
-  const a=app(),root=a.add(a.document.body,'div',{className:'dock'});
-  const txid='abcdef12'.repeat(8),address='bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4';
-  const original='Waiting for Xverse. 1,250 sats at 2 sat/vB. '+address+' '+address.toUpperCase()+' https://mempool.space/tx/'+txid;
-  const hint=a.add(root,'div',{id:'hint',text:original});
-  await a.language('fr');
-  assert.equal(hint.textContent,'Français: '+original);
-  assert.ok(a.calls.every(text=>!text.includes('Xverse')&&!text.includes(txid)&&!text.includes(address)&&!text.includes(address.toUpperCase())&&!text.includes('1,250')));
-  assert.equal(hint.textContent.includes('__BAC_UI_KEEP_'),false);
+test('All template placeholders retain literal names, wallets, fees, counts, times and reasons',async()=>{
+  const a=app();await a.language('ar');
+  const values={name:'RenshuBTC <script>$&</script>',wallet:'Xverse $1',fee:'1,250 sats',n:'100,000',time:'14:32 UTC',reason:'Refused: $& <img src=x>'};
+  const fill=template=>template.replace(/\{([a-z]+)\}/g,(_token,name)=>values[name]);
+  for(const [key,translation] of Object.entries(a.window.BAC_LOCALES.ar)){
+    if(key.includes('{'))assert.equal(a.api.t(fill(key)),fill(translation),key);
+  }
+  assert.equal(a.api.t('1 transaction'),'عدد المعاملات: 1');
+  assert.equal(a.api.t(' · Connecting to UniSat… '),' · جارٍ الاتصال بـ UniSat… ');
+  assert.deepEqual(a.calls,[]);a.api.dispose();
 });
 
-test('Only allowlisted thread controls translate; metadata and original public content remain intact',async()=>{
-  const a=app(),thread=a.add(a.document.body,'div',{className:'thread'});
-  a.document.documentElement.setAttribute('dir','ltr');
-  const body=a.add(thread,'div',{className:'txt',text:'Keep this public message unchanged'});
-  const quote=a.add(thread,'a',{className:'qt',text:'Keep this quoted message unchanged'});
-  const payload=a.add(thread,'div',{className:'pay'});
-  const payloadText=a.add(payload,'span',{className:'more',text:'Keep this payload unchanged'});
-  const metadata=a.add(thread,'div',{className:'mst'});
-  const time=a.add(metadata,'span',{text:'2 minutes ago'});
-  const address=a.add(metadata,'a',{text:'bc1qoriginaladdress'});
-  const more=a.add(metadata,'button',{className:'more',text:'More'});
-  const mine=a.add(metadata,'span',{className:'mine-label',text:'You'});
-  const options=a.add(metadata,'details',{className:'msgopts'});
-  const summary=a.add(options,'summary',{text:'⋯',attrs:{title:'Message options'}});
-  const reply=a.add(options,'button',{className:'reply-action',text:'Reply'});
-  const nav=a.add(thread,'nav',{className:'payload-nav',attrs:{'aria-label':'Payload pages'}});
-  const next=a.add(nav,'button',{text:'Next'});
-  const loader=a.add(thread,'div',{className:'toploader',text:'Loading earlier messages…'});
-  await a.language('ar');
-  assert.equal(a.document.documentElement.getAttribute('lang'),'ar');
-  assert.equal(a.document.documentElement.getAttribute('dir'),'ltr');
-  for(const [node,value] of [[body,'Keep this public message unchanged'],[quote,'Keep this quoted message unchanged'],[payloadText,'Keep this payload unchanged'],[time,'2 minutes ago'],[address,'bc1qoriginaladdress']])assert.equal(node.textContent,value);
-  for(const [node,value] of [[more,'More'],[mine,'You'],[reply,'Reply'],[next,'Next'],[loader,'Loading earlier messages…']])assert.equal(node.textContent,'Français: '+value);
-  assert.equal(summary.getAttribute('title'),'Français: Message options');
-  assert.equal(nav.getAttribute('aria-label'),'Français: Payload pages');
-  assert.equal(a.calls.some(text=>text.includes('Keep this')||text.includes('minutes ago')||text.includes('originaladdress')),false);
-  await a.language('off');
-  assert.equal(a.document.documentElement.getAttribute('lang'),'en');
-  assert.equal(more.textContent,'More');
-});
-
-test('User quotes, search results, attachment names, pool names and native language choices stay original',async()=>{
-  const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
-  const reply=a.add(dock,'span',{id:'reply-excerpt',text:'Hello from the original user'});
-  const replyName=a.add(dock,'span',{id:'reply-name',text:'Replying to RenshuBTC'});
-  const att=a.add(dock,'div',{className:'att'});
-  const filename=a.add(att,'span',{className:'nm',text:'My photo final.png'});
-  const remove=a.add(att,'button',{text:'×',attrs:{title:'Remove attachment'}});
-  const ovs=a.add(a.document.body,'div',{id:'ovs'});
-  const result=a.add(ovs,'div',{className:'it',text:'A matching public message'});
-  const ovl=a.add(a.document.body,'div',{id:'ovl'});
-  const select=a.add(ovl,'select',{attrs:{'aria-label':'Choose language'}});
-  const option=a.add(select,'option',{text:'日本語',attrs:{value:'ja'}});
-  const pool=a.add(a.add(a.document.body,'aside',{className:'info'}),'div',{id:'m-pool',text:'SpiderPool'});
-  await a.language('fr');
-  assert.equal(reply.textContent,'Hello from the original user');
-  assert.equal(replyName.textContent,'Français: Replying to RenshuBTC');
-  assert.equal(filename.textContent,'My photo final.png');
-  assert.equal(result.textContent,'A matching public message');
-  assert.equal(option.textContent,'日本語');assert.equal(option.getAttribute('value'),'ja');
-  assert.equal(pool.textContent,'SpiderPool');
-  assert.equal(remove.getAttribute('title'),'Français: Remove attachment');
-  assert.equal(select.getAttribute('aria-label'),'Français: Choose language');
-});
-
-test('New English status text and placeholders retranslate without observing their own writes forever',async()=>{
-  const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
-  const hint=a.add(dock,'div',{id:'hint',text:'Preparing…'});
-  const input=a.add(dock,'textarea',{id:'q',attrs:{placeholder:'Write a message'}});
-  await a.language('fr');
-  hint.textContent='Reading your coins…';
-  input.setAttribute('placeholder','The file above is what gets published');
-  await a.flush();
-  assert.equal(hint.textContent,'Français: Reading your coins…');
-  assert.equal(input.getAttribute('placeholder'),'Français: The file above is what gets published');
-  const count=a.calls.length;await a.flush();assert.equal(a.calls.length,count);
-  await a.language('en');
-  assert.equal(hint.textContent,'Reading your coins…');
-  assert.equal(input.getAttribute('placeholder'),'The file above is what gets published');
-  assert.equal(hint.getAttribute('dir'),null);assert.equal(hint.getAttribute('lang'),null);
-});
-
-test('Unsupported, unavailable and failed fragment fallbacks leave English and can retry on ready',async()=>{
-  let mode='unavailable';
-  const a=app(async text=>mode==='unavailable'?text:mode==='broken'?(text.includes('__BAC_UI_KEEP_')?'Lost protected content':text):'Traduit: '+text);
-  const info=a.add(a.document.body,'aside',{className:'info'});
-  const p=a.add(info,'p',{text:'Sign with Xverse'});
-  await a.language('fr');assert.equal(p.textContent,'Sign with Xverse');
-  mode='broken';let done=a.api.refresh();await a.flush();await done;
-  assert.equal(p.textContent,'Sign with Xverse');
-  mode='ready';done=a.api.refresh();await a.flush();await done;
-  assert.equal(p.textContent,'Traduit: Sign with Xverse');
-  await a.language('off');assert.equal(p.textContent,'Sign with Xverse');
-});
-
-test('Mangled model placeholders fall back to translated fragments with exact values and separators',async()=>{
-  const translated=new Map([
-    ['data from','数据来自'],['decoded in your browser','在您的浏览器中解码'],
-    ['Use a burner wallet','请使用临时钱包'],['To the extent permitted by law','在法律允许的范围内'],
-    ['and its creator accept no liability for Bitcoin losses','及其创建者对比特币损失不承担责任'],
-    ['theft','盗窃'],['or security breaches','或安全漏洞'],
-    ['Conversation','对话'],['Latest','最新'],['Messages','条消息'],['In','在'],['minutes','分钟'],
-    ['transactions','笔交易'],['Seen','已见'],['Waiting for','正在等待'],['at','以'],
-  ]);
-  const a=app(async text=>text.includes('__BAC_UI_KEEP_')?text.replace(/__BAC_UI_KEEP_\d+__/g,'被错误翻译的标记'):translated.get(text)||text);
-  const info=a.add(a.document.body,'aside',{className:'info'});
-  const samples=[
-    ['  OP_RETURN data from mempool.space, decoded in your browser.\n','  OP_RETURN 数据来自 mempool.space, 在您的浏览器中解码.\n'],
-    ['Use a burner wallet. To the extent permitted by law, Bitcoin AllChat and its creator accept no liability for Bitcoin losses, theft, or security breaches.','请使用临时钱包. 在法律允许的范围内, Bitcoin AllChat 及其创建者对比特币损失不承担责任, 盗窃, 或安全漏洞.'],
-    ['Conversation (Latest 100 Messages)','对话 (最新 100 条消息)'],
-    ['In ~10 minutes','在 ~10 分钟'],['4,787 transactions','4,787 笔交易'],['OP_RETURN Seen','OP_RETURN 已见'],
-    ['Waiting for Xverse at 2 sat/vB','正在等待 Xverse 以 2 sat/vB'],
+test('Sidebar, dock, language modal and message options translate while all other content stays original',async()=>{
+  const a=app(),info=a.add(a.document.body,'aside',{className:'info'}),dock=a.add(a.document.body,'div',{className:'dock'});
+  const translated=[
+    a.add(info,'p',{text:'Messages on Bitcoin.'}),
+    a.add(dock,'button',{text:'Everything'}),
+    a.add(a.add(a.document.body,'div',{id:'ovl'}),'h2',{text:'Display Language'}),
+    a.add(a.add(a.document.body,'details',{className:'msgopts'}),'button',{text:'Reply'})
   ];
-  const labels=samples.map(([text])=>a.add(info,'p',{text}));
-  await a.language('zh');
-  samples.forEach(([,expected],i)=>assert.equal(labels[i].textContent,expected));
-  assert.equal(a.calls.some(text=>text.includes('Xverse')||text.includes('Bitcoin AllChat')||text.includes('mempool.space')||text.includes('sat/vB')||text.includes('4,787')||text.includes('100')),false);
-  const count=a.calls.length;await a.flush();assert.equal(a.calls.length,count);
-  await a.language('off');samples.forEach(([original],i)=>assert.equal(labels[i].textContent,original));
-});
-
-test('Fragment fallbacks commit atomically, preserve source separators and stop after language changes',async()=>{
-  const pending=[];
-  const a=app(text=>new Promise(resolve=>pending.push({text,resolve})));
-  const dock=a.add(a.document.body,'div',{className:'dock'});
-  const label=a.add(dock,'span',{text:'Waiting for Xverse.'});
-  a.api.setLanguage('fr');await a.flush();
-  pending.shift().resolve('Placeholder mangled');await a.flush();
-  assert.equal(pending[0].text,'Waiting for');assert.equal(label.textContent,'Waiting for Xverse.');
-  a.api.setLanguage('ar');pending.shift().resolve('Ancienne traduction.');await a.flush();
-  assert.equal(label.textContent,'Waiting for Xverse.');
-  pending.shift().resolve('Placeholder mangled again');await a.flush();
-  pending.shift().resolve('  جار الانتظار.  ');await a.flush();
-  assert.equal(label.textContent,'جار الانتظار Xverse.');
-});
-
-test('A problematic or excessively fragmented fallback leaves the full original paragraph intact',async()=>{
-  const a=app(async text=>text.includes('__BAC_UI_KEEP_')?'Bad placeholder translation':text==='Second'?null:'Traduction');
-  const dock=a.add(a.document.body,'div',{className:'dock'});
-  const paragraph=a.add(dock,'p',{text:'First 10 Second.'});
-  const tooMany='Word 10 '.repeat(25);
-  const bounded=a.add(dock,'p',{text:tooMany});
+  // Known dictionary keys prove these are exclusions, not simply missing translations.
+  const protectedNodes=[
+    a.add(a.document.body,'p',{text:'Messages on Bitcoin.'}),
+    a.add(a.add(a.document.body,'div',{id:'ovs'}),'p',{text:'Everything'}),
+    a.add(a.add(a.document.body,'div',{id:'ovp'}),'h2',{text:'Offline'}),
+    a.add(dock,'div',{className:'txt',text:'Messages on Bitcoin.'}),
+    a.add(dock,'div',{className:'qt',text:'Reply'}),
+    a.add(dock,'div',{className:'pay',text:'Everything'}),
+    a.add(dock,'span',{id:'reply-excerpt',text:'Messages on Bitcoin.'}),
+    a.add(dock,'span',{className:'reply-excerpt',text:'Messages on Bitcoin.'}),
+    a.add(a.add(dock,'div',{className:'att'}),'span',{className:'nm',text:'Everything'}),
+    a.add(info,'div',{id:'m-pool',text:'Messages on Bitcoin.'}),
+    a.add(dock,'span',{text:'Reply',attrs:{translate:'no'}}),
+    a.add(dock,'span',{text:'Reply',attrs:{'data-no-translate':''}}),
+    ...['script','style','svg','canvas','code','pre'].map(tag=>a.add(dock,tag,{text:'Everything'}))
+  ];
+  const before=protectedNodes.map(node=>node.textContent);
+  const thread=a.add(a.document.body,'div',{id:'thread'});
+  const body=a.add(thread,'div',{className:'txt',text:'Messages on Bitcoin.'});
+  const quote=a.add(thread,'div',{className:'qt',text:'Reply'});
+  const draft=a.add(dock,'textarea',{value:'Everything',text:'Reply',attrs:{placeholder:'Write a message onto Bitcoin…'}});
+  const select=a.add(a.document.getElementById('ovl'),'select',{attrs:{'aria-label':'Display Language'}});
+  const option=a.add(select,'option',{text:'Reply',attrs:{value:'fr'}});
   await a.language('fr');
-  assert.equal(paragraph.textContent,'First 10 Second.');
-  assert.equal(bounded.textContent,tooMany);
-  assert.ok(a.calls.length<=4);
+  assert.deepEqual(translated.map(node=>node.textContent),['Des messages sur Bitcoin.','Tout','Langue d’affichage','Répondre']);
+  assert.deepEqual(protectedNodes.map(node=>node.textContent),before);
+  assert.equal(body.textContent,'Messages on Bitcoin.');assert.equal(quote.textContent,'Reply');
+  assert.equal(draft.value,'Everything');assert.equal(draft.textContent,'Reply');
+  assert.equal(draft.getAttribute('placeholder'),'Écrivez un message sur Bitcoin…');
+  assert.equal(select.getAttribute('aria-label'),'Langue d’affichage');assert.equal(option.textContent,'Reply');assert.equal(option.getAttribute('value'),'fr');
+  assert.deepEqual(a.calls,[]);a.api.dispose();
 });
 
-test('Language changes and external English updates invalidate pending translations',async()=>{
-  const pending=[];
-  const a=app(text=>new Promise(resolve=>pending.push({text,resolve})));
-  const root=a.add(a.document.body,'aside',{className:'info'});
-  const label=a.add(root,'p',{text:'Preparing…'});
-  a.api.setLanguage('fr');await a.flush();assert.equal(pending.length,1);
-  a.api.setLanguage('ar');pending.shift().resolve('Old French result');await a.flush();
-  assert.equal(label.textContent,'Preparing…');assert.equal(pending.length,1);
-  label.textContent='Reading your coins…';
-  pending.shift().resolve('Outdated Arabic status');await a.flush();
-  assert.equal(label.textContent,'Reading your coins…');assert.equal(pending.length,1);
-  pending.shift().resolve('الحالة الجديدة');await a.flush();
-  assert.equal(label.textContent,'الحالة الجديدة');
-  await a.language('en');assert.equal(label.textContent,'Reading your coins…');
+test('RTL labels preserve wallet order, links and original element direction on restoration',async()=>{
+  const a=app(),dock=a.add(a.document.body,'div',{className:'dock',attrs:{dir:'ltr'}});
+  a.document.documentElement.setAttribute('dir','ltr');
+  const wallets=a.add(dock,'span',{className:'wallets',attrs:{dir:'ltr'}});
+  const sign=new a.Text('Sign With ');wallets.appendChild(sign);
+  const xverse=a.add(wallets,'a',{text:'Xverse',attrs:{href:'https://www.xverse.app/download'}});
+  const unisat=a.add(wallets,'a',{text:'UniSat',attrs:{href:'https://unisat.io/download'}});
+  const offline=a.add(wallets,'button',{text:'Offline',attrs:{lang:'en-US',dir:'ltr'}});
+  offline.style.textAlign='right';offline.style.unicodeBidi='isolate';
+  await a.language('ar');
+  assert.equal(sign.nodeValue,'التوقيع باستخدام ');assert.equal(offline.textContent,'دون اتصال');
+  assert.equal(offline.getAttribute('dir'),'auto');assert.equal(offline.style.textAlign,'start');
+  assert.equal(a.document.documentElement.getAttribute('lang'),'ar');
+  assert.equal(a.document.documentElement.getAttribute('dir'),'ltr');assert.equal(dock.getAttribute('dir'),'ltr');assert.equal(wallets.getAttribute('dir'),'ltr');
+  assert.deepEqual(wallets.children,[xverse,unisat,offline]);assert.equal(xverse.textContent,'Xverse');assert.equal(unisat.textContent,'UniSat');
+  assert.equal(xverse.getAttribute('href'),'https://www.xverse.app/download');assert.equal(unisat.getAttribute('href'),'https://unisat.io/download');
+  await a.language('en');
+  assert.equal(sign.nodeValue,'Sign With ');assert.equal(offline.textContent,'Offline');
+  assert.equal(offline.getAttribute('lang'),'en-US');assert.equal(offline.getAttribute('dir'),'ltr');assert.equal(offline.style.textAlign,'right');assert.equal(offline.style.unicodeBidi,'isolate');
+  assert.equal(wallets.getAttribute('lang'),null);a.api.dispose();
 });
 
-test('New settings roots are observed and engine output is always inserted as literal text',async()=>{
-  const a=app(async text=>'<img src=x onerror=alert(1)> '+text);
+test('Changing language and disabling it restore original text and accessible attributes exactly',async()=>{
+  const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
+  const paragraph=a.add(dock,'p',{text:'  Messages on Bitcoin.\n'});
+  const input=a.add(dock,'textarea',{value:'Unsent 中文 draft',attrs:{placeholder:'Write a message onto Bitcoin…',title:'Attach a file or image','aria-label':'Publish onto Bitcoin'}});
+  await a.language('fr');await a.language('ar');
+  assert.equal(paragraph.textContent,'  رسائل على Bitcoin.\n');
+  assert.equal(input.getAttribute('title'),'إرفاق ملف أو صورة');assert.equal(input.getAttribute('aria-label'),'النشر على Bitcoin');
+  await a.language('off');
+  assert.equal(a.api.getLanguage(),'en');assert.equal(paragraph.textContent,'  Messages on Bitcoin.\n');
+  assert.equal(input.getAttribute('placeholder'),'Write a message onto Bitcoin…');assert.equal(input.getAttribute('title'),'Attach a file or image');assert.equal(input.getAttribute('aria-label'),'Publish onto Bitcoin');
+  assert.equal(input.value,'Unsent 中文 draft');assert.equal(paragraph.getAttribute('lang'),null);assert.equal(paragraph.getAttribute('dir'),null);
+  a.api.dispose();
+});
+
+test('Dynamic statuses, text-node updates and changed placeholders use their latest English source',async()=>{
+  const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
+  const hint=a.add(dock,'div',{text:'Preparing…'}),input=a.add(dock,'textarea',{attrs:{placeholder:'Write a message onto Bitcoin…'}});
   await a.language('fr');
-  const modal=a.add(a.document.body,'div',{id:'ovl'});
-  const heading=a.add(modal,'h2',{text:'Language settings'});
-  await a.flush();
-  assert.equal(heading.children.length,0);
-  assert.equal(heading.textContent,'<img src=x onerror=alert(1)> Language settings');
-  const count=a.calls.length;await a.flush();assert.equal(a.calls.length,count);
-  a.api.dispose();assert.equal(heading.textContent,'Language settings');
-  heading.textContent='A later English setting';await a.flush();
-  assert.equal(heading.textContent,'A later English setting');assert.equal(a.observers.size,0);
+  hint.textContent='Connecting to Xverse…';input.setAttribute('placeholder','The file above is what gets published');await a.flush();
+  assert.equal(hint.textContent,'Connexion à Xverse…');assert.equal(input.getAttribute('placeholder'),'Le fichier ci-dessus sera publié');
+  hint.childNodes[0].nodeValue='Connected to UniSat.';await a.flush();assert.equal(hint.textContent,'Connecté à UniSat.');
+  await a.language('ar');assert.equal(hint.textContent,'تم الاتصال بـ UniSat.');
+  await a.language('en');assert.equal(hint.textContent,'Connected to UniSat.');assert.equal(input.getAttribute('placeholder'),'The file above is what gets published');
+  a.api.dispose();
 });
 
-test('Translation work stays bounded even when many labels arrive together',async()=>{
-  const pending=[];let current=0,peak=0;
-  const a=app(text=>new Promise(resolve=>{current++;peak=Math.max(peak,current);pending.push(()=>{current--;resolve('T: '+text)})}));
-  const info=a.add(a.document.body,'aside',{className:'info'});
-  for(let i=0;i<12;i++)a.add(info,'p',{text:'Message label '+i});
-  a.api.setLanguage('fr');await a.flush();assert.equal(pending.length,3);
-  for(let step=0;step<12;step++){pending.shift()?.();await a.flush();}
-  assert.ok(peak<=3);assert.equal(current,0);
-  assert.ok(info.children.every(node=>node.textContent.startsWith('T: ')));
+test('New scoped roots and nested controls are translated once without a mutation self-loop',async()=>{
+  const a=app();await a.language('fr');
+  const modal=a.add(a.document.body,'div',{id:'ovl'}),heading=a.add(modal,'h2',{text:'Display Language'});
+  const nested=a.add(modal,'div',{className:'dock'}),button=a.add(nested,'button',{text:'Apply Language'});
+  await a.flush();assert.equal(heading.textContent,'Langue d’affichage');assert.equal(button.textContent,'Appliquer la langue');
+  const settled=a.stats();assert.equal(settled.pending,0);assert.equal(a.observers.size,1);
+  await a.flush();assert.deepEqual(a.stats(),settled);
+  a.api.setLanguage('fr');await a.flush();assert.equal(a.observers.size,1);
+  const stable=a.stats();await a.flush();assert.deepEqual(a.stats(),stable);
+  a.api.dispose();assert.equal(heading.textContent,'Display Language');assert.equal(a.observers.size,0);assert.equal(a.timers.size,0);
+  heading.textContent='Apply Language';await a.flush();assert.equal(heading.textContent,'Apply Language');
+});
+
+test('Unknown and prototype-named language codes fall back to English without changing prototypes',async()=>{
+  const languages=sampleLocales();Object.setPrototypeOf(languages,{hidden:{'Reply':'Inherited value'}});
+  const a=app(languages),dock=a.add(a.document.body,'div',{className:'dock'}),reply=a.add(dock,'button',{text:'Reply'});
+  await a.language('fr');
+  for(const code of ['__proto__','constructor','toString','hidden','<img src=x onerror=alert(1)>','xx',null,undefined]){
+    await a.language(code);assert.equal(a.api.getLanguage(),'en');assert.equal(reply.textContent,'Reply');
+    assert.equal(a.document.documentElement.getAttribute('lang'),'en');
+  }
+  assert.equal({}.polluted,undefined);assert.deepEqual(a.calls,[]);a.api.dispose();
+});
+
+test('HTML-like dictionary values and placeholder data remain literal text and attributes',async()=>{
+  const languages=sampleLocales(),html='<img src=x onerror=alert(1)>';
+  languages.fr['Reply']=html;languages.fr['Display Language']='<svg onload=alert(1)>Language</svg>';
+  const a=app(languages),dock=a.add(a.document.body,'div',{className:'dock'});
+  const reply=a.add(dock,'button',{text:'Reply'}),select=a.add(dock,'select',{attrs:{title:'Display Language'}});
+  const hint=a.add(dock,'div',{text:'Replying to '+html});
+  await a.language('fr');assert.equal(reply.textContent,html);assert.equal(reply.children.length,0);
+  assert.equal(select.getAttribute('title'),'<svg onload=alert(1)>Language</svg>');
+  assert.equal(hint.textContent,'Réponse à '+html);assert.equal(hint.children.length,0);
+  assert.deepEqual(a.calls,[]);a.api.dispose();
+});
+
+test('Missing locale entries and oversized dynamic values retain their English source',async()=>{
+  const languages=sampleLocales();delete languages.fr['Messages on Bitcoin.'];delete languages.fr['Connecting to {wallet}…'];
+  const a=app(languages);await a.language('fr');
+  assert.equal(a.api.t('Messages on Bitcoin.'),'Messages on Bitcoin.');
+  assert.equal(a.api.t('Connecting to Xverse…'),'Connecting to Xverse…');
+  const oversized='Replying to '+'A'.repeat(513);assert.equal(a.api.t(oversized),oversized);
+  assert.equal(a.api.t('Unlisted status: Reply'),'Unlisted status: Reply');
+  assert.deepEqual(a.calls,[]);a.api.dispose();
 });

@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-qS10reTfEgcjDDK9EMrBYCztPk4YGibp4vNquv1vEEw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-ftg+YphFvCEfS8vEkaG5Wv24ZuZrufc2IPg9eiUrr1o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -23,9 +23,10 @@
 <meta name="twitter:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
 <meta name="twitter:description" content="Read messages and images stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<script src="translate.js" integrity="sha384-xBgIBGiG5hSoAuNr+VJJCL1YkpGul2GfL0I2RyT6ldCpjPHUkPk5UNllZ3d5bfWg" defer></script>
-<script src="ui-language.js" integrity="sha384-SwmYY9exg15BUqZHsig3O8y/O15tYWLfEiCNZP4zsqpAaBWeQiLsmC4QMULjcI4c" defer></script>
-<script src="language-settings.js" integrity="sha384-PXKSmlAdpCPaTmI/SiC9LWlpzTRsbI8rvySM3QNICpZjmYoVNUrQ7zZ/Fum2F1lO" defer></script>
+<script src="locales.js" integrity="sha384-edqGy+3qlGF4/X5Rap+Vggy0Es5qD7XL5RumuwZLmZCyGnW/6IZ723RDsI/WEInK" defer></script>
+<script src="translate.js" integrity="sha384-/qdDU9ulf951n6wD7Gx0WIttBOK8KokcfR+pNCMNdZc9x5hm53hUWEZ7LhFX/W71" defer></script>
+<script src="ui-language.js" integrity="sha384-Rb1/JPU4kFuSspM9AjwvGVyKN9OkxQySFoKlpSqRVA0Jv9sCa0drn4aPEB+glshA" defer></script>
+<script src="language-settings.js" integrity="sha384-mx69nI7K/3wHhgUlgw7gN+//XGyVms2wfA2pN+R6v28FJG1FnRu0I7aIDc2ou/82" defer></script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@400;450;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -33,7 +34,7 @@
   color-scheme:dark;
   --bg:#1B1B19; --side:#141413; --pill:#2F2F2D; --line:#302F2C; --line2:#3C3B37;
   --ink:#F2F1EC; --ink2:#E4E2DB; --mut:#8F8D85; --mut2:#6F6D66;
-  --coral:#E0805F; --code:#E8956F; --codebg:rgba(255,255,255,.055);
+  --coral:#F7931A; --code:#F7931A; --codebg:rgba(255,255,255,.055);
   --comp:#232321;
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
@@ -43,7 +44,7 @@
 [data-theme=light]{
   --bg:#FAF9F5; --side:#F0EEE6; --pill:#EDEAE1; --line:#E6E2D8; --line2:#D9D5C9;
   --ink:#1F1E1D; --ink2:#2E2D2B; --mut:#75736C; --mut2:#93918A;
-  --coral:#C2603F; --code:#B4552F; --codebg:rgba(0,0,0,.05); --comp:#FFFFFF;
+  --coral:#F7931A; --code:#F7931A; --codebg:rgba(0,0,0,.05); --comp:#FFFFFF;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
@@ -135,10 +136,13 @@ a{color:inherit}
 .msgopts summary{list-style:none;cursor:pointer;color:var(--mut);font-size:17px;line-height:18px;padding:0 3px;border-radius:4px}
 .msgopts summary::-webkit-details-marker{display:none}
 .msgopts summary:hover,.msgopts summary:focus-visible{background:var(--line2);color:var(--ink)}
-.reply-action{position:absolute;right:0;bottom:24px;z-index:10;padding:8px 12px;white-space:nowrap;
+.message-actions{position:absolute;right:0;bottom:24px;z-index:10;min-width:100px;padding:4px;white-space:nowrap;
   border:1px solid var(--line2);border-radius:8px;background:var(--pill);color:var(--ink);
-  font-family:var(--sans);font-size:12.2px;box-shadow:0 3px 12px rgba(0,0,0,.2);cursor:pointer}
-.reply-action:hover{color:var(--coral)}
+  font-family:var(--sans);font-size:12.2px;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.message-actions button,.message-actions a{display:block;width:100%;padding:7px 10px;border:0;border-radius:5px;background:none;color:var(--ink);font:inherit;text-decoration:none;text-align:start;cursor:pointer}
+.message-actions button:hover,.message-actions a:hover{background:var(--line2)}
+.message-actions a:focus{outline:none}
+.message-actions a:focus-visible{background-image:linear-gradient(rgba(128,128,128,.22),rgba(128,128,128,.22))}
 .snd{display:inline-block;font-size:14px;font-weight:600;line-height:1.35;margin-bottom:1px;
   text-decoration:none;font-family:var(--mono);letter-spacing:-.02em}
 a.snd:hover{text-decoration:underline;text-underline-offset:2px}
@@ -152,10 +156,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .row{scroll-margin-top:20px}
 .txt{font-size:16.6px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-break:break-word}
 .txt.mono{font-family:var(--mono);font-size:13.6px;line-height:1.5;color:var(--ink2)}
-.translation{border-top:1px solid var(--line2);margin-top:8px;padding-top:7px;color:var(--ink)}
-.translation-label,.translation-status{font-size:11.5px;line-height:1.45;color:var(--mut)}
-.translation-text{font-size:16.6px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:start}
-.translation-label{margin-bottom:3px}
 .txt.clip{max-height:9em;overflow:hidden}
 .mst{display:flex;align-items:center;gap:9px;justify-content:flex-end;margin-top:1px;
   font-size:11px;color:var(--mut2);white-space:nowrap}
@@ -495,9 +495,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .language-select{display:block;width:100%;margin:10px 0 14px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--pill);color:var(--ink);font:inherit}
 .language-help,.language-status{font-size:14px;line-height:1.5;color:var(--mut)}
 .language-status{margin:14px 0 10px;overflow-wrap:anywhere}
-.translation-notice{padding:8px;font-size:12px;line-height:1.5;text-align:center;color:var(--mut);overflow-wrap:anywhere}
-.translation-notice button{border:0;background:none;color:var(--ink2);padding:0 3px;font:inherit;text-decoration:underline;text-underline-offset:3px}
-#ovl [hidden],.translation-notice[hidden]{display:none}
+#ovl [hidden]{display:none}
 #languageb[aria-pressed=true]{color:var(--ink)}
 </style>
 </head>
@@ -564,11 +562,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <div class="cbd">
     <label for="language-select">Display Language</label>
     <select id="language-select" class="language-select" translate="no"></select>
-    <p>Use this language for the interface and message translations. Original messages stay visible.</p>
-    <p class="language-help">Translation runs on your device. Language packs may download. Availability depends on your browser and device.</p>
+    <p>Applies to the sidebar and chat controls.</p>
+    <p class="language-help">Use Translate in a message’s options to open Google Translate in a new tab.</p>
+    <p class="language-help">No language packs or extensions are needed.</p>
     <button class="midb" id="language-apply" type="button">Apply Language</button>
     <div id="language-status" class="language-status" role="status" aria-live="polite"></div>
-    <button class="midb" id="language-enable" type="button" hidden>Enable Translation</button>
   </div>
 </div></div>
 
@@ -595,7 +593,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       </div>
     </div>
     <div class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></div>
-    <div id="translation-notice" class="translation-notice" hidden><span id="translation-notice-text"></span> <button id="translation-enable" type="button">Enable Translation</button></div>
     <div class="dockfoot" aria-label="Message views and signing options">
       <div class="dfl">
         <div class="vsw">
@@ -1025,7 +1022,7 @@ async function loadReplyParent(txid,vout){
 /* ---------------- render ---------------- */
 const NAMES={talk:'Chat',pgp:'Signed & encrypted',bridge:'Bridge orders',tag:'Tags & signals',all:'Everything',liquid:'The Liquid negotiation'};
 const VERB={talk:'wrote into the chain',pgp:'signed a message on-chain',bridge:'placed a bridge order',tag:'left a tag'};
-const PAL=['#E0805F','#7FB069','#6FA8DC','#C58AC5','#D9A441','#5FB0A8','#CF7B7B','#8E8BD0'];
+const PAL=['#F7931A','#7FB069','#6FA8DC','#C58AC5','#D9A441','#5FB0A8','#CF7B7B','#8E8BD0'];
 function hue(seed){let h=0;for(let i=0;i<seed.length;i++)h=(h*31+seed.charCodeAt(i))>>>0;return PAL[h%PAL.length]}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function ago(ts){const s=Math.floor(Date.now()/1000-ts);
@@ -1052,7 +1049,7 @@ function turn(m,prev){
         ? m.previewUnavailable?`<a class="imh" href="https://mempool.space/tx/${cleanTxid(m.txid)}" target="_blank" rel="noopener">Image · ${(m.bytes/1024).toFixed(1)} KB · View Transaction</a>`:`<button class="imh" data-id="${esc(m.txid||'')}" data-vout="${validVout(m.vout)?m.vout:''}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}" dir="auto">${esc(messageText(m))}</div>`}
       <div class="mst">${long?`<button class="more" data-message="${esc(messageKey(m))}" aria-expanded="false">More</button>${m.text.length>TEXT_EXPAND_LIMIT?`<a class="fulltext" href="https://mempool.space/tx/${cleanTxid(m.txid)}" target="_blank" rel="noopener">View Full Transaction</a>`:''}`:''}<span class="mine-label" ${mine?'':'hidden'} title="Marked as yours in this browser">You</span><span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span>
-        ${cleanTxid(m.txid)&&validVout(m.vout)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><button class="reply-action" data-txid="${m.txid}" data-vout="${m.vout}">Reply</button></details>`:''}</div>
+        ${cleanTxid(m.txid)&&validVout(m.vout)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><div class="message-actions"><button class="reply-action" data-txid="${m.txid}" data-vout="${m.vout}">Reply</button>${m.kind!=='img'&&m.text.trim()?`<a class="translate-action" data-txid="${m.txid}" data-vout="${m.vout}" href="https://translate.google.com/" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="Translate this message in Google Translate (opens a new tab)">Translate</a>`:''}</div></details>`:''}</div>
     </div></div>`;
 }
 function quoteHTML(m){
@@ -1191,6 +1188,18 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
+  document.querySelectorAll('.translate-action').forEach(el=>{
+    const link=()=>{
+      const m=BYMSG.get(messageKey({txid:el.dataset.txid,vout:Number(el.dataset.vout)}));
+      return m&&window.BAC_MESSAGE_TRANSLATE?.url(m.text,window.BAC_UI_LANGUAGE?.getLanguage()||'en');
+    };
+    el.href=link()||'https://translate.google.com/';
+    el.onclick=e=>{
+      const url=link();
+      if(!url){e.preventDefault();hint('This message is too long to open in Google Translate. Copy its text to translate it.');return}
+      el.href=url;el.closest('details').open=false;
+    };
+  });
   document.querySelectorAll('.all-earlier').forEach(el=>el.onclick=earlierPayloads);
   document.querySelectorAll('.all-latest').forEach(el=>el.onclick=latestPayloads);
   const retry=$('retryblocks');if(retry)retry.onclick=()=>{LOAD_FAILED=false;LOAD_PAUSED=false;shown()<TARGET?loadInitial():loadOlder()};
@@ -1416,29 +1425,27 @@ addEventListener('pageshow',startBitcoinPrice);
 
 /* ---------------- pinned ---------------- */
 const LIQUID=[
- {h:965822,t:'91271efcbb5ab29abfc38ae635f0644e3ba042aad56f92d40136e1dde4742fe8',who:'Blockstream Security',k:'talk',me:false,
+ {h:965822,time:1788723107,t:'91271efcbb5ab29abfc38ae635f0644e3ba042aad56f92d40136e1dde4742fe8',who:'Blockstream Security',k:'talk',me:false,
   m:'Please contact security@blockstream.com'},
- {h:965865,t:'bd81219691eb1e22475c5985d847fa888c38f1b6d2cb2b7193f54d0cfa72394c',who:'Blockstream Security',k:'pgp',me:false,
-  m:'Encrypted to the key behind bc1ql4mfu6aundtkksxklfajs2h3t9nzcd6gyqjlte (Electrum BIE1 ECIES), carrying a detached signature that verifies against blockstream.com/pgp.txt'},
- {h:965869,t:'3a3eac4a26395b8c2563aaf1eb8b1b77798c81c7d6337f51321827a244a480aa',who:'The white hats',k:'talk',me:true,
+ {h:965865,time:1788745789,t:'bd81219691eb1e22475c5985d847fa888c38f1b6d2cb2b7193f54d0cfa72394c',who:'Blockstream Security',k:'pgp',me:false,
+  m:'Encrypted to the key behind bc1ql4mfu6aundtkksxklfajs2h3t9nzcd6gyqjlte (Electrum BIE1 ECIES), with a detached signature and verification instructions referring to blockstream.com/pgp.txt'},
+ {h:965869,time:1788747618,t:'3a3eac4a26395b8c2563aaf1eb8b1b77798c81c7d6337f51321827a244a480aa',who:'The white hats',k:'talk',me:true,
   m:'sending most back to bc1qdlld6antmv4xug242ed83q7k4rqw50cwfns38szx4qu2f4jwaxxsuhwxxr, is that ok'},
- {h:965875,t:'83825b2135dd0abac12c9dfe17f29ab81b3427e1ae864947b0bebce5e47c3c4b',who:'The white hats',k:'talk',me:true,
+ {h:965875,time:1788751805,t:'83825b2135dd0abac12c9dfe17f29ab81b3427e1ae864947b0bebce5e47c3c4b',who:'The white hats',k:'talk',me:true,
   m:'Please fix the bug first. The chain is under risk at latest commit right now. Make sure every node is patched. Then we will transfer the money back safely after confirming the fix. The detail is as follows (encrypted using https://blockstream.com/pgp.txt).\n-----BEGIN PGP MESSAGE-----'},
- {h:965875,t:'8a444eed65c4584f138e08ee138f61490ef73e84f71e14dac3ca66c230cf7e97',who:'Blockstream Security',k:'pgp',me:false,
+ {h:965875,time:1788751805,t:'8a444eed65c4584f138e08ee138f61490ef73e84f71e14dac3ca66c230cf7e97',who:'Blockstream Security',k:'pgp',me:false,
   m:'-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\nYes, thank you.\n-----BEGIN PGP SIGNATURE-----'},
 ];
 function liquidHTML(){
-  const base=Math.floor(Date.now()/1000)-86400;
   return `<div class="open-h">The Liquid negotiation</div>
-  <p class="open-p">September 6–7, 2026. Around 4,000 BTC left Liquid. The thief and Blockstream then
-  exchanged messages inside Bitcoin blocks, at about one satoshi per byte.</p>
-  <div class="open-s">Five messages, blocks 965,822 – 965,875. Read in order.</div>`
-  + (()=>{const built=LIQUID.map((x,i)=>({kind:x.k,text:x.m,height:x.h,txid:x.t,time:base+i*600,who:x.who,
-      ins:i?[LIQUID[i-1].t]:[]}));
+  <p class="open-p">Selected on-chain messages from September 6–7, 2026.
+  Sender labels and excerpts are editorial; times show Bitcoin block confirmations.</p>
+  <div class="open-s">Selected messages in block order · Blocks 965,822 – 965,875.</div>`
+  + (()=>{const built=LIQUID.map(x=>({kind:x.k,text:x.m,height:x.h,txid:x.t,time:x.time,who:x.who}));
     reindex(built);
     return built.map((m,i)=>turn(m,i?built[i-1]:null)).join('')})()
-  + `<div class="note">The last message, Blockstream's PGP-signed “Yes, thank you.”, sits in block 965,875,
-     three outputs from the ransom note.</div>`;
+  + `<div class="note">The final two messages share a confirmation time.
+     Their order in the block does not establish a reply relationship.</div>`;
 }
 
 /* ---------------- scanning ---------------- */
@@ -2151,7 +2158,8 @@ async function publish(w,text){
     markMine(txid);
     clearSentDraft(draft);
     hint(`Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,12)}…</a> appears here at the next block.`);
-    setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
+    const sentHint=$('hint').firstChild;
+    setTimeout(()=>{if($('hint').firstChild===sentHint)hint('')},20000);
   }catch(e){
     const m=((e&&e.message)||String(e)).replace(/^Error:\s*/,'');
     const cancelled=/reject|denied|cancel/i.test(m);
@@ -2313,6 +2321,7 @@ async function startApp(){
   }finally{TIP_POLLING=false}
 }
 startApp();
+addEventListener('bac-language-change',bind);
 
 /* Kept as the send-event hook; signing controls are always visible. */
 function armFooter(){}

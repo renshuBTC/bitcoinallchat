@@ -37,15 +37,17 @@ of successfully sent transactions are stored locally for message colours. These
 labels are display preferences, not proof of authorship. Message drafts, wallet
 addresses and private keys are not saved by the app.
 
-**Translation stays on device.** The browser may download native language packs,
-but the app does not send message text to a translation server. Translations are
-inserted as text, never HTML. The original message and transaction bytes remain
-unchanged. UI translation excludes draft values, addresses, amounts and IDs. If
-a protected placeholder is altered, bounded text fragments are translated around
-the unchanged values; an invalid result leaves the original in place. Only the
-chosen language code is saved. Work, text lengths and in-memory caches are bounded;
-changing languages cancels stale jobs. The translation modules also use integrity
-hashes. Translations are reading aids and can be inaccurate.
+**Interface translations are bundled.** The local dictionaries and translation
+modules are integrity-pinned. They insert text and attributes, never HTML, and
+exclude original message bodies, drafts, transaction bytes, addresses and amounts.
+Only the chosen language code is stored. No browser translation models are used.
+
+**Message translation requires a click.** The Translate link opens a fixed
+`https://translate.google.com/` destination in a new tab with the selected
+message encoded as a URL parameter. It uses `noopener noreferrer` and does not
+send a referrer. Google receives the selected text when that link is opened.
+Message and URL lengths are bounded; oversized messages are not truncated or
+automatically submitted. Translations never alter the original on-chain data.
 
 **Connection and spending are separate.** Connecting requests an account from the
 wallet. Publishing requires a signed Bitcoin transaction. Review the outputs and

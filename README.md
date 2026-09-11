@@ -47,29 +47,27 @@ between tabs, not different browsers, and disappear when site storage is cleared
 
 ## Languages and translation
 
-The globe button beside Search opens **Language** settings. Choose a display
-language and apply it to the sidebar, composer, dialogs and visible messages.
-The menu offers 39 target languages from the browser's documented translation
-list; support for a particular pair depends on the browser and device.
+The globe button beside Search opens **Language** settings. The 39 bundled
+language dictionaries translate the sidebar, chat controls and language settings.
+They work immediately without language packs, extensions, a translation API key,
+or native browser translation support.
 
-Translation uses the browser's on-device `Translator` and `LanguageDetector`
-APIs. Chrome supports these APIs on desktop, not mobile; other browsers may not
-provide them. See the [browser documentation](https://developer.chrome.com/docs/ai/translator-api).
-The first use can download language resources. **Enable Translation** supplies
-another user action when the browser requires it for an additional language pack.
-Unavailable or failed translations leave the original text visible.
+Message bubbles keep their original text. **⋯ → Translate** opens Google Translate
+in a separate tab, with automatic source-language detection and the target language
+selected in settings. Only the chosen message is included in that link; no message
+text is sent to Google by this page automatically. Opening the link shares its text
+with Google, and it may appear in browser history. The new tab cannot control this
+page through an opener reference.
 
-Translated messages appear below the unchanged original with an **Auto-translated**
-label. Only visible text messages are queued, with two concurrent translation
-jobs, bounded caches and a 5,000-character limit per message. Large messages use
-the currently expanded text; protocol data and attachments are not translated.
-Automatic language detection and translation can be inaccurate, especially for
-short or mixed-language messages.
+The link uses the full original message, not its shortened preview. Text longer
+than 5,000 characters or an encoded URL longer than 8,000 characters must be copied
+manually; the app does not silently truncate it. Image-only messages have no
+Translate action.
 
-The site sends no message text to a translation service and stores no translations.
-Choosing **Original (No Translation)** restores English controls and removes
-translations. Drafts, signed transaction bytes, wallet addresses, transaction IDs,
-amounts and attachment names are kept out of interface translation.
+Choosing **English** restores English controls. Drafts, message text, signed
+transaction bytes, wallet addresses, transaction IDs, amounts and attachment names
+are not changed by interface translation. Only the chosen language code is saved.
+The dictionaries are reading aids and translations can be imperfect.
 
 ## Writing
 
