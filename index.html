@@ -25,7 +25,7 @@
   --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --serif:'Newsreader',Georgia,'Times New Roman',serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-  --side-w:281px; --col:752px;
+  --side-w:281px; --col:752px; --message-size:16.6px;
 }
 [data-theme=light]{
   --bg:#FAF9F5; --side:#F0EEE6; --pill:#EDEAE1; --line:#E6E2D8; --line2:#D9D5C9;
@@ -293,7 +293,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .mbp{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px;height:16px;
   font-family:var(--sans);font-size:11.6px;font-weight:600;line-height:16px;color:var(--ink2)}
 .mbp img{width:13px;height:13px;border-radius:50%;flex:0 0 13px}
-.mb{position:relative;width:100px;height:100px;margin:9px 9px 0 0}
+.mb{position:relative;width:100px;height:100px;margin:17px 9px 0 0}
 .mb .top{position:absolute;left:0;width:100%;height:9px;top:-9px;
   transform:skewX(-45deg);transform-origin:bottom left}
 .mb .rgt{position:absolute;top:0;height:100%;width:9px;right:-9px;
@@ -352,8 +352,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
   gap:4px 14px;padding:9px 2px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
   color:var(--mut2)}
-.dfl,.dfr{display:flex;align-items:center;gap:10px;min-width:0}
-.vsw{display:flex;align-items:center;gap:10px;margin:0}
+.dfl,.dfr{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-width:0;max-width:100%}
+.vsw{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:0}
 .vb,.dockfoot .dlink,.hint button{background:transparent;border:0;text-decoration:none;
   font:inherit;font-family:var(--sans);font-size:12.2px;line-height:1.5;white-space:nowrap;
   color:var(--mut);cursor:pointer;padding:3px 7px;margin:0 -3px;border-radius:7px}
@@ -361,8 +361,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 [data-theme=light] .vb:hover,[data-theme=light] .dockfoot .dlink:hover,
 [data-theme=light] .hint button:hover{background:rgba(0,0,0,.055)}
 .vb.on,.hint button{color:var(--ink)}
-.hint{display:inline-flex;align-items:center;gap:2px;padding:0;margin:0;min-height:0;
-  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left}
+.hint{display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px;padding:0;margin:0;min-height:0;
+  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;overflow-wrap:anywhere}
 .hint:empty{display:none}
 .hint a,.hint a:hover{color:var(--ink);text-decoration:none}
 .dockfoot .bw{color:var(--mut2);font-size:12.2px}
@@ -404,7 +404,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot,
 .info .ifoot a,
 .info .ifoot .icb{
-  font-family:var(--sans);font-size:14px;line-height:1.55;color:var(--ink);font-weight:400}
+  font-family:var(--sans);font-size:var(--message-size);line-height:1.55;color:var(--ink);font-weight:400}
 .info .ihead{font-weight:700;margin-bottom:16px;letter-spacing:-.01em}
 .info h1.open-h{font-weight:700;margin:0 0 12px}
 .info p.open-p{margin:0 0 11px}
@@ -418,6 +418,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
    removed, so the footer does not shift when it arrives. */
 .dockfoot .bw{visibility:hidden}
 .dockfoot .bw.on{visibility:visible}
+.txt{font-size:var(--message-size)}
+.istats span{min-width:0}
+.istats b{flex-shrink:0}
+.pal-t input{min-width:0}
+.hint.bad{color:var(--coral)}
+.hint:focus{outline:2px solid var(--coral);outline-offset:4px}
 </style>
 </head>
 <body>
@@ -450,16 +456,16 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       </div>
     </div>
     <div class="istats">
-      <div><span>chain tip</span><b id="s-tip">…</b></div>
-      <div><span>blocks scanned</span><b id="s-blocks">0</b></div>
-      <div><span>OP_RETURN seen</span><b id="s-or">0</b></div>
-      <div><span>messages</span><b id="foot-n">0</b></div>
+      <div><span>Chain Tip</span><b id="s-tip">…</b></div>
+      <div><span>Blocks Scanned</span><b id="s-blocks">0</b></div>
+      <div><span>OP_RETURN Seen</span><b id="s-or">0</b></div>
+      <div><span>Messages</span><b id="foot-n">0</b></div>
     </div>
     <div class="ifoot">
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
-      built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
-      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a>
-      · <button class="icb" id="theme" title="Switch between dark and light">theme</button>
+      Built By <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
+      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">Source</a>
+      · <button class="icb" id="theme" title="Switch between dark and light">Theme</button>
     </div>
   </aside>
 
@@ -477,7 +483,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <div class="pal-l" id="sl"></div>
 </div></div>
 
-<div class="ov" id="ovp"><div class="pal" id="pcard"></div></div>
+<div class="ov" id="ovp"><div class="pal" id="pcard" role="dialog" aria-modal="true" aria-labelledby="publish-title"></div></div>
 
 <div class="dock">
   <div class="dock-in">
@@ -496,12 +502,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <div class="dockfoot">
       <div class="dfl">
         <div class="vsw">
-          <button class="vb on" data-v="talk">conversation</button>
-          <button class="vb" data-v="all">everything</button>
+          <button class="vb on" data-v="talk" title="Starts with the latest 100 messages. Scroll up to load earlier messages.">Conversation (Latest 100 Messages)</button>
+          <button class="vb" data-v="all">Everything</button>
         </div>
       </div>
       <div class="dfr">
-        <span class="hint" id="hint"></span>
+        <span class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></span>
         <span class="bw">Burner wallet, not your main one.</span>
       </div>
     </div>
@@ -620,23 +626,29 @@ function classify(bytes){
   let pr=0,alpha=0;
   for(const ch of chars){const c=ch.codePointAt(0);
     if((c>=32&&c<127)||c===10||c===13||c>0x9f)pr++;   /* emoji and accents count as printable */
-    if(/[a-zA-Z]/.test(ch))alpha++;}
+    if(/\p{L}/u.test(ch))alpha++;}
   if(pr/chars.length<0.9) return raw;
   const t=s.trim();
   if(!t) return raw;
   if(/BEGIN PGP/i.test(t)) return {kind:'pgp',text:t};
   if(/:to:|^0x[a-f0-9]{40}/i.test(t)&&!/\s/.test(t)) return {kind:'bridge',text:t};
+  /* A protocol object remains structured data even when a field contains prose. */
+  if(/^[{\[]/.test(t)){
+    try{JSON.parse(t);return {kind:'tag',text:t}}catch(e){}
+  }
   /* Only long payloads have to look like prose; a short one has no ratio worth reading. */
   if(chars.length>=16&&alpha/chars.length<0.30) return {kind:'tag',text:t};
-  const words=t.split(/\s+/).filter(w=>/^[A-Za-z][A-Za-z'.,!?-]*$/.test(w));
+  const words=t.split(/\s+/).filter(w=>/^\p{P}*\p{L}[\p{L}\p{M}'’\-]*\p{P}*$/u.test(w));
+  /* These scripts do not need spaces between words to form a sentence. */
+  const unspaced=/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u.test(t);
   const emoji=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u.test(t);
   /* Someone talking: two words, an emoji, or bare punctuation like ":(". */
-  if(words.length>=2||emoji) return {kind:'talk',text:t};
-  if(t.length<=12&&!/[A-Za-z0-9]/.test(t)) return {kind:'talk',text:t};
+  if(words.length>=2||emoji||unspaced) return {kind:'talk',text:t};
+  if([...t].length<=12&&!/[\p{L}\p{N}]/u.test(t)) return {kind:'talk',text:t};
   /* One word on its own is either a greeting or a protocol marker. Which one it
      is cannot be told from the bytes, so it is decided later, once enough blocks
      are in to see whether the chain repeats it. */
-  if(words.length===1&&t===words[0]&&t.length<=24) return {kind:'word',text:t};
+  if(words.length===1&&t===words[0]&&[...t].length<=24) return {kind:'word',text:t};
   return {kind:'tag',text:t};
 }
 
@@ -666,16 +678,13 @@ function turn(m,prev){
       ${same?'':nm}
       ${quote}
       ${m.kind==='img'
-        ? `<button class="imh" data-id="${esc(m.txid||'')}">image · ${(m.bytes/1024).toFixed(1)} KB · show</button>`
+        ? `<button class="imh" data-id="${esc(m.txid||'')}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
-      <div class="mst">${long?'<span class="more">more</span>':''}<span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span></div>
+      <div class="mst">${long?'<span class="more">More</span>':''}<span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span></div>
     </div></div>`;
 }
 /* find the message this one answers: first by spend-link, then by a txid quoted in the text */
 let BYTX=new Map();
-/* Markers arrive in their hundreds; a person says a word once. A lone word is
-   shown when it is not shouted, has a vowel in it, and is not something the
-   loaded blocks keep repeating. */
 /* A lone word is the hard case: people write "hello", protocols write "ordi". A marker
    is emitted by machines hundreds of times a day; a person's word is not. So a word is
    speech unless it repeats at machine volume, and a short list of things people plainly
@@ -685,19 +694,19 @@ const SAID=new Set(['hello','hi','hey','yo','gm','gn','sup','ok','okay','yes','n
   'bitcoin','btc','satoshi','freedom','hodl','test','testing','peace','truth','buy','sell','wagmi','gg']);
 const MARK=new Set(['ordi','ordis','mmss','satflow','cntrprty','brc20prog','lihg1','lihg2',
   'xsxs','cscs','thth','jsjs','xflkf','xxjps','silis']);
+const wordKey=t=>t.normalize('NFC').toLowerCase().replace(/^\p{P}+|\p{P}+$/gu,'');
 let WORDN=new Map();
 function wordIndex(list){
   WORDN=new Map();
   for(const m of list) if(m.kind==='word'){
-    const k=m.text.toLowerCase(); WORDN.set(k,(WORDN.get(k)||0)+1);
+    const k=wordKey(m.text); WORDN.set(k,(WORDN.get(k)||0)+1);
   }
 }
 function loneWord(t){
-  const k=t.toLowerCase();
+  const k=wordKey(t);
   if(SAID.has(k)) return true;
   if(MARK.has(k)) return false;
-  if(k.length<2) return false;
-  if(!/[aeiou]/.test(k)) return false;
+  if([...k].length<2) return false;
   /* A rate, not a raw count, so a word cannot show now and vanish as more blocks
      load. Machine markers repeat every few blocks; a person writes a word once. */
   return (WORDN.get(k)||0)<=Math.max(3,scanned*0.4);
@@ -888,7 +897,7 @@ function grow(){
 }
 if(QA){
   QA.addEventListener('input',grow);
-  QA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey) e.preventDefault() },true);
+  QA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing) e.preventDefault() },true);
   const sb=$('sendb'); if(sb) sb.addEventListener('click',()=>setTimeout(grow,60));
   addEventListener('resize',grow);
   grow();
@@ -990,7 +999,7 @@ function refreshComp(){
   $('cnt').textContent=(!FILE&&n>LEGACY)?n+' B':'';   /* only speaks up past the old relay limit */
   $('cnt').style.color=n>MAXDATA?'var(--coral)':'var(--code)';
   $('sendb').disabled=(!FILE&&!n)||n>MAXDATA||BUSY;
-  $('q').placeholder=FILE?'the file above is what gets published':'Write a message onto Bitcoin…';
+  $('q').placeholder=FILE?'The file above is what gets published':'Write a message onto Bitcoin…';
 }
 
 /* A file goes into the same OP_RETURN output as text would. One transaction can
@@ -1029,14 +1038,14 @@ function drawAtt(cost){
   $('attx').onclick=()=>{FILE=null;drawAtt();refreshComp()};
 }
 $('q').oninput=refreshComp;
-$('q').onkeydown=e=>{if(e.key==='Enter'&&!$('sendb').disabled){e.preventDefault();send()}};
+$('q').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!$('sendb').disabled){e.preventDefault();send()}};
 $('sendb').onclick=()=>send();
 
 /* ---- search palette ---- */
 const ovs=$('ovs'), ovp=$('ovp'), pcard=$('pcard');
 function openSearch(){ovs.classList.add('on');$('sq').value='';fillSearch();$('sq').focus()}
 function closeSearch(){ovs.classList.remove('on')}
-function closeSheet(){ovp.classList.remove('on');stopAnim();stopCam()}
+function closeSheet(){ovp.classList.remove('on');stopAnim();stopCam();$('q').focus()}
 $('searchb').onclick=openSearch;
 $('scl').onclick=closeSearch;
 $('sq').oninput=fillSearch;
@@ -1255,14 +1264,14 @@ async function send(){
   if(BUSY||(!FILE&&!String(text).trim())) return;
   const av=detected();
   if(!av.length){
-    hint('No Bitcoin wallet in this browser. <button id="hoff">Sign offline instead</button>');
-    $('hoff').onclick=()=>{ovp.classList.add('on');drawQR(text)};
+    hint('No Bitcoin wallet in this browser. <button id="hoff">Sign Offline Instead</button>');
+    $('hoff').onclick=()=>drawQR(text);
     return;
   }
   if(true){
-    hint((av.length?'sign with ':'sign ')
+    hint((av.length?'Sign With ':'Sign ')
       +av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('')
-      +'<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">offline</button>');
+      +'<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">Offline</button>');
     armFooter();
     $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>
       b.dataset.w==='__off' ? drawQR(text) : publish(WAL.find(x=>x.id===b.dataset.w),text));
@@ -1274,17 +1283,17 @@ async function send(){
 async function publish(w,text){
   BUSY=true; refreshComp();
   try{
-    hint('preparing…');
+    hint('Preparing…');
     const L=await lib();
     if(RATE==null){
       try{FEES=await (await fetch(API+'/v1/fees/recommended')).json()}catch(e){}
       RATE=FEES.halfHourFee||3;
     }
     const p=w.p();
-    hint(`waiting for ${esc(w.name)}…`);
+    hint(`Waiting for ${esc(w.name)}…`);
     const acc=await w.connect(p);
     if(!acc||!acc.address) throw new Error(w.name+' did not return an address');
-    hint('reading your coins…');
+    hint('Reading your coins…');
     const us=await getUtxos(acc.address);
     if(!us.length) throw new Error('no confirmed coins on '+acc.address);
     const args={address:acc.address,publicKey:acc.publicKey,utxos:us,message:text,feeRate:RATE};
@@ -1292,7 +1301,7 @@ async function publish(w,text){
     if(b.type==='p2pkh') b=await L.buildPsbt({...args,prevTx:await prevTxs(b.inputs)});
     const bytes=typeof text==='string'?new TextEncoder().encode(text):text;
     const fee=checkPsbt(b.psbt,bytes,RATE,b.fee);
-    hint(`checked · ${sats(fee)} to the miner, the rest back to you — confirm in ${esc(w.name)}`);
+    hint(`Checked · ${sats(fee)} to the miner, the rest back to you — confirm in ${esc(w.name)}`);
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
     const txid=r.txid||await push(L.extract(r.psbt));
     $('q').value=''; FILE=null; drawAtt();
@@ -1300,7 +1309,7 @@ async function publish(w,text){
     setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
   }catch(e){
     const m=((e&&e.message)||String(e)).replace(/^Error:\s*/,'');
-    hint(esc(/reject|denied|cancel/i.test(m)?'cancelled':m),true);
+    hint(esc(/reject|denied|cancel/i.test(m)?'Cancelled':m),true);
   }finally{ BUSY=false; refreshComp(); drop(w) }
 }
 
@@ -1309,26 +1318,34 @@ let ANIM=null, CAM=null;
 function stopAnim(){ if(ANIM){clearInterval(ANIM);ANIM=null} }
 function stopCam(){ if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null} }
 function drawQR(text){
+  try{
   stopAnim(); stopCam();
-  pcard.innerHTML=`<div class="chd"><h2>Sign offline</h2><button class="cl" id="pcl">✕</button></div>
+  pcard.innerHTML=`<div class="chd"><h2 id="publish-title">Sign Offline</h2><button class="cl" id="pcl" title="Close" aria-label="Close offline signing">✕</button></div>
   <div class="cbd">
-    <div class="k">Enter the address you are spending from. Its unspent outputs are read from mempool.space and turned into an unsigned PSBT, shown below as a BBQr. Sign it on your own device and paste or scan the signed result back. No key ever reaches this page.</div>
-    <input class="ti" id="qa" placeholder="bc1q… or bc1p…" autocomplete="off" spellcheck="false">
-    <button class="go" id="qgo">Build the PSBT</button>
-    <div class="st" id="st"></div>
+    <div class="k" id="offline-help">Enter the address you are spending from. Its unspent outputs are read from mempool.space and turned into an unsigned PSBT, shown below as a BBQr. Sign it on your own device and paste the signed result back. No key ever reaches this page.</div>
+    <input class="ti" id="qa" aria-label="Bitcoin address to spend from" aria-describedby="offline-help" placeholder="bc1q… or bc1p…" autocomplete="off" spellcheck="false">
+    <button class="go" id="qgo">Build PSBT</button>
+    <div class="st" id="st" role="status" aria-live="polite"></div>
     <div class="frames" id="fr"></div>
   </div>`;
   $('pcl').onclick=closeSheet;
   $('qgo').onclick=()=>buildQR(text);
-  $('qa').onkeydown=e=>{if(e.key==='Enter')buildQR(text)};
+  $('qa').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();buildQR(text)}};
+  ovp.classList.add('on');
+  $('qa').focus();
+  }catch(e){
+    ovp.classList.remove('on');
+    hint('Could not open offline signing: '+esc((e&&e.message)||String(e)),true);
+    $('hint').focus();
+  }
 }
 async function buildQR(text){
   try{
     const addr=$('qa').value.trim();
-    if(!addr) throw new Error('enter an address first');
-    setst('<span class="k">loading the transaction builder…</span>');
+    if(!addr) throw new Error('Enter an address first');
+    setst('<span class="k">Loading the transaction builder…</span>');
     const L=await lib();
-    setst('<span class="k">reading unspent outputs…</span>');
+    setst('<span class="k">Reading unspent outputs…</span>');
     const us=await getUtxos(addr);
     if(!us.length) throw new Error('no confirmed unspent outputs on '+addr);
     let b=await L.buildPsbt({address:addr,publicKey:null,utxos:us,message:text,feeRate:RATE||3});
@@ -1339,17 +1356,17 @@ async function buildQR(text){
     const fr=$('fr');
     fr.innerHTML=`<div id="qrbox"></div>
       <div class="k" id="fno"></div>
-      <textarea class="ti" id="sig" rows="3" placeholder="paste the signed transaction (hex), a signed PSBT (base64), or the BBQr lines"></textarea>
-      <button class="go" id="bcb">Broadcast the signed result</button>`;
+      <textarea class="ti" id="sig" aria-label="Signed transaction or PSBT" rows="3" placeholder="Paste the signed transaction (hex), a signed PSBT (base64), or the BBQr lines"></textarea>
+      <button class="go" id="bcb">Broadcast Signed Result</button>`;
     let i=0;
     const show=()=>{const c=L.qrCanvas(parts[i],320);
       const box=$('qrbox'); if(!box){stopAnim();return}
       box.innerHTML=''; box.appendChild(c);
-      $('fno').textContent=parts.length>1?`frame ${i+1} of ${parts.length}`:'';
+      $('fno').textContent=parts.length>1?`Frame ${i+1} of ${parts.length}`:'';
       i=(i+1)%parts.length};
     show();
     if(parts.length>1) ANIM=setInterval(show,400);
-    setst(`<span class="k">fee ${sats(b.fee)} for ${b.vbytes} vB at ${RATE||3} sat/vB`
+    setst(`<span class="k">Fee ${sats(b.fee)} for ${b.vbytes} vB at ${RATE||3} sat/vB`
       +(b.overpay?`, including ${sats(b.overpay)} of remainder that also goes to the miner`:'')+`</span>`);
     $('bcb').onclick=()=>broadcastPasted(L);
   }catch(e){ fail(e) }
@@ -1357,7 +1374,7 @@ async function buildQR(text){
 async function broadcastPasted(L){
   try{
     const v=$('sig').value.trim();
-    if(!v) throw new Error('paste the signed transaction or PSBT first');
+    if(!v) throw new Error('Paste the signed transaction or PSBT first');
     let raw;
     if(/^B\$/.test(v)){
       const j=L.bbqrJoin(v.split(/\s+/).filter(Boolean));
@@ -1368,7 +1385,7 @@ async function broadcastPasted(L){
     } else {
       raw = L.extract(L.b64dec(v.replace(/\s+/g,'')));
     }
-    setst('<span class="k">broadcasting…</span>');
+    setst('<span class="k">Broadcasting…</span>');
     const txid=await push(raw);
     $('q').value=''; refreshComp();
     setst(`<div class="ok">Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
@@ -1407,7 +1424,7 @@ try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.set
 function armFooter(){ const b=document.querySelector('.bw'); if(b) b.classList.add('on'); }
 try{
   const sb=$('sendb'); if(sb) sb.addEventListener('click',armFooter);
-  const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey) armFooter() });
+  const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing) armFooter() });
 }catch(e){}
 </script>
 </body>

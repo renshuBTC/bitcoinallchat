@@ -84,6 +84,12 @@ Any static server works, and the file has no build step of its own:
 Fonts come from Google Fonts and message data from mempool.space; both are
 declared in the Content-Security-Policy and nothing else is allowed to be reached.
 
+## Checks
+
+Run `npm test` (Node.js 20 or newer) for the conversation-classifier, offline-dialog,
+and composer-keyboard regression tests. They exercise the page's actual functions
+with local fixtures; they do not connect a wallet or broadcast a transaction.
+
 ## Credit
 
 Data from [mempool.space](https://mempool.space). Built by
