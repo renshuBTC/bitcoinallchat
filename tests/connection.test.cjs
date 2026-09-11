@@ -83,9 +83,9 @@ test('Empty, whitespace, oversized and busy drafts cannot reveal choices or star
   assert.equal(h.nodes.get('signing-options').hidden,true);assert.deepEqual(h.events,[]);
 });
 
-test('Without an installed wallet, Send reveals download and offline choices without connecting',async()=>{
+test('Without an installed wallet, Send reveals choices and keeps focus in the composer without connecting',async()=>{
   const h=app();h.available=[];h.draft='Hello';await h.scope.send();
-  assert.equal(h.nodes.get('signing-options').hidden,false);assert.equal(h.focus,'wallet-xverse');
+  assert.equal(h.nodes.get('signing-options').hidden,false);assert.equal(h.focus,'q');
   assert.deepEqual(h.events,[]);
 });
 
@@ -105,3 +105,4 @@ test('A disappeared active provider cannot block the remaining installed provide
   const h=app();h.scope.ACTIVE_WALLET={id:'unisat'};h.draft='Hello';await h.scope.send();
   assert.equal(h.scope.ACTIVE_WALLET,null);assert.deepEqual(h.events,[['publish','xverse','Hello']]);
 });
+

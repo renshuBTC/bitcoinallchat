@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-AEIVPXTg3xavtXJEmgRiNGznxeE7lyYzudwutyP/6YE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-LvKSgUs1tTEsSwLGvEiZj/xy3yDufc+trW0fWUBYrWU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -459,7 +459,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .istats b{font-weight:700}
 .info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
-/* Signing choices remain available before typing or pressing Enter. */
+/* Keep the revealed signing choices within the composer width. */
 .dockfoot .bw{display:inline;flex:0 0 auto}
 .dockfoot .bw.on{display:inline}
 .dockfoot .vb,.dockfoot .bw{max-width:100%;white-space:normal;overflow-wrap:anywhere}
@@ -474,6 +474,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 :is(button,[role="button"],summary,.wallets a,.dockfoot .dlink):focus{outline:none}
 :is(button,[role="button"],summary,.wallets a,.dockfoot .dlink):focus-visible{
   background-image:linear-gradient(rgba(128,128,128,.22),rgba(128,128,128,.22))}
+.dockfoot .wallets :is(a,button):focus-visible{background-image:none}
 /* Offline signing uses the same type and text colour as the chat. */
 #ovp .cbd,#ovp .cbd .k,#ovp .ti,#ovp .go{
   font-family:var(--sans);font-size:var(--message-size);line-height:1.5;color:var(--ink)}
@@ -2331,7 +2332,7 @@ async function send(){
   if(ACTIVE_WALLET&&!preferred)ACTIVE_WALLET=null;
   const w=preferred||installed[0];
   if(w)return publish(w,text);
-  $('wallet-xverse').focus();
+  $('q').focus();
 }
 
 async function connectOnly(w){
@@ -2617,3 +2618,4 @@ try{
 </script>
 </body>
 </html>
+
