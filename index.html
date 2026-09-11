@@ -11,6 +11,7 @@
   font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://mempool.space;
   base-uri 'none'; form-action 'none'">
 <title>Bitcoin AllChat</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><style>rect,path{stroke:%23111}@media(prefers-color-scheme:dark){rect,path{stroke:%23f2f1ec}}</style><rect x='5.5' y='5.5' width='21' height='21' rx='5' fill='none' stroke-width='2.6'/><path d='M11 13.5h10M11 18.5h6' fill='none' stroke-width='2.6' stroke-linecap='round'/></svg>">
 <meta name="description" content="Every message ever written into a Bitcoin block, read as one conversation. Parsed live from raw blocks.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -80,7 +81,10 @@ a{color:inherit}
 .istats b{font-family:var(--mono);font-weight:400;font-size:15.4px;color:var(--ink2)}
 .ifoot{margin-top:auto;padding-top:20px;border-top:1px solid var(--line);color:var(--ink2);position:relative}
 .ifoot a{color:var(--ink2);text-decoration:underline;text-underline-offset:2px}
-.ifoot .icb{width:24px;height:24px;font-size:13px;vertical-align:-7px;margin-left:2px}
+.ifoot .icb{width:auto;height:auto;padding:0;margin:0;background:transparent;border:0;
+  font:inherit;font-size:inherit;color:var(--ink2);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px}
+.ifoot .icb:hover{background:transparent;color:var(--ink)}
 .dockfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 .pill{font-size:11px;color:var(--mut2);font-family:var(--mono);white-space:nowrap}
 .pill b{color:var(--mut);font-weight:400}
@@ -361,7 +365,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 <div class="app">
 
   <aside class="info">
-    <div class="ihead"><span class="mark">₿</span> Bitcoin AllChat</div>
+    <div class="ihead">Bitcoin AllChat</div>
     <h1 class="open-h">Text written into Bitcoin blocks.</h1>
     <p class="open-p">Every message here is an OP_RETURN output from a recent block, read raw from
       mempool.space and parsed in your browser. Nothing is stored.</p>
@@ -392,7 +396,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
       built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
       <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a>
-      <button class="icb" id="theme" title="Theme">◐</button>
+      · <button class="icb" id="theme" title="Switch between dark and light">theme</button>
     </div>
   </aside>
 
