@@ -520,7 +520,9 @@ function loneWord(t){
   if(MARK.has(k)) return false;
   if(k.length<2) return false;
   if(!/[aeiou]/.test(k)) return false;
-  return (WORDN.get(k)||0)<=30;
+  /* A rate, not a raw count, so a word cannot show now and vanish as more blocks
+     load. Machine markers repeat every few blocks; a person writes a word once. */
+  return (WORDN.get(k)||0)<=Math.max(3,scanned*0.4);
 }
 const speech=m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img'||(m.kind==='word'&&loneWord(m.text));
 
