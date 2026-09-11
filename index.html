@@ -8,16 +8,18 @@
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
   script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space; connect-src https://mempool.space;
+  font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
+  connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
 <title>Bitcoin AllChat</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><style>rect,path{stroke:%23111}@media(prefers-color-scheme:dark){rect,path{stroke:%23f2f1ec}}</style><rect x='5.5' y='5.5' width='21' height='21' rx='5' fill='none' stroke-width='2.6'/><path d='M11 13.5h10M11 18.5h6' fill='none' stroke-width='2.6' stroke-linecap='round'/></svg>">
-<meta name="description" content="Every message ever written into a Bitcoin block, read as one conversation. Parsed live from raw blocks.">
+<meta name="description" content="Read messages and images from Bitcoin OP_RETURN data, or publish a message with your wallet. Parsed in your browser from mempool.space.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@400;450;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
+  color-scheme:dark;
   --bg:#1B1B19; --side:#141413; --pill:#2F2F2D; --line:#302F2C; --line2:#3C3B37;
   --ink:#F2F1EC; --ink2:#E4E2DB; --mut:#8F8D85; --mut2:#6F6D66;
   --coral:#E0805F; --code:#E8956F; --codebg:rgba(255,255,255,.055);
@@ -120,10 +122,10 @@ a{color:inherit}
 .msgopts summary{list-style:none;cursor:pointer;color:var(--mut);font-size:17px;line-height:18px;padding:0 3px;border-radius:4px}
 .msgopts summary::-webkit-details-marker{display:none}
 .msgopts summary:hover,.msgopts summary:focus-visible{background:var(--line2);color:var(--ink)}
-.markmine{position:absolute;right:0;bottom:24px;z-index:10;padding:8px 12px;white-space:nowrap;
+.reply-action{position:absolute;right:0;bottom:24px;z-index:10;padding:8px 12px;white-space:nowrap;
   border:1px solid var(--line2);border-radius:8px;background:var(--pill);color:var(--ink);
   font-family:var(--sans);font-size:12.2px;box-shadow:0 3px 12px rgba(0,0,0,.2);cursor:pointer}
-.markmine:hover{color:var(--coral)}
+.reply-action:hover{color:var(--coral)}
 .snd{display:inline-block;font-size:14px;font-weight:600;line-height:1.35;margin-bottom:1px;
   text-decoration:none;font-family:var(--mono);letter-spacing:-.02em}
 a.snd:hover{text-decoration:underline;text-underline-offset:2px}
@@ -362,6 +364,16 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp-r .cnt{margin-left:auto}
 .comp .att{padding:2px 2px 0}
 .comp .att:empty{display:none}
+.reply-preview{display:flex;align-items:center;gap:10px;min-width:0;margin:2px 3px 0;
+  border-left:3px solid var(--coral);padding:5px 0 5px 10px}
+.reply-preview[hidden]{display:none}
+.reply-copy{flex:1;min-width:0}
+.reply-name,.reply-excerpt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reply-name{font-size:13px;font-weight:600;line-height:1.5;color:var(--coral)}
+.reply-excerpt{font-size:13.6px;line-height:1.5;color:var(--ink2)}
+.reply-cancel{flex:0 0 30px;width:30px;height:30px;border:0;border-radius:6px;
+  background:transparent;color:var(--mut);font-size:20px}
+.reply-cancel:hover{background:var(--line);color:var(--ink)}
 /* One language for the whole footer line. Nothing in it is coloured and nothing is
    underlined: what you can click is white, what you cannot is dimmed, and hovering lifts
    a soft chip behind it. Those are the only three states, as in Claude's own footer. */
@@ -455,7 +467,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <p class="open-p">Conversation filters for messages and images. Everything includes parsed protocol data.</p>
     <p class="open-p">Publish text or attach a file with +. Your wallet signs the transaction; miner fees apply.
       This site does not request private keys.</p>
-    <p class="open-p">This browser remembers your theme and messages marked as yours.</p>
     <p class="open-p warn-p">Use a burner wallet. Posts are public. Confirmed posts cannot be edited or deleted.</p>
     <div class="blocks" id="blocks">
       <div class="mbw">
@@ -475,6 +486,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       </div>
     </div>
     <div class="istats">
+      <div><span title="Bitcoin price in USDT">BTC/USDT</span><b id="s-price" title="Loading live Bitcoin price">…</b></div>
       <div><span>Chain Tip</span><b id="s-tip">…</b></div>
       <div><span>Blocks Scanned</span><b id="s-blocks">0</b></div>
       <div><span>OP_RETURN Seen</span><b id="s-or">0</b></div>
@@ -484,7 +496,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
       Built By <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
       <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">Source</a>
-      · <button class="icb" id="theme" title="Switch between dark and light">Theme</button>
     </div>
   </aside>
 
@@ -508,6 +519,13 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <div class="dock-in">
     <input type="file" id="fi" hidden>
     <div class="comp">
+      <div class="reply-preview" id="reply-preview" hidden>
+        <div class="reply-copy" role="status" aria-live="polite">
+          <span class="reply-name" id="reply-name"></span>
+          <span class="reply-excerpt" id="reply-excerpt"></span>
+        </div>
+        <button class="reply-cancel" id="reply-cancel" type="button" aria-label="Cancel reply" title="Cancel reply">×</button>
+      </div>
       <div class="att" id="att"></div>
       <textarea id="q" rows="1" placeholder="Write a message onto Bitcoin…" autocomplete="off"></textarea>
       <div class="comp-r">
@@ -543,8 +561,8 @@ const API='https://mempool.space/api';
 const $=id=>document.getElementById(id);
 let TIP=0,next=0,scanned=0,orCount=0,msgs=[],filter='talk',query='',busy=false;
 
-/* Ownership is a local display preference, never inferred from public text or
-   transaction links. No account, address, or private key is stored. */
+/* Sent-message colours use full transaction IDs recorded after successful sends,
+   never public text or inferred transaction links. No wallet identity is stored. */
 function cleanTxid(value){return typeof value==='string'&&/^[0-9a-f]{64}$/i.test(value)?value.toLowerCase():''}
 function readOwn(fallback=new Set()){
   try{
@@ -576,7 +594,6 @@ function updateOwnBubbles(){
     const mine=isMine(row.dataset.txid);
     row.classList.toggle('own',mine);
     const label=row.querySelector('.mine-label'); if(label) label.hidden=!mine;
-    const button=row.querySelector('.markmine'); if(button) button.textContent=mine?'Unmark as Mine':'Mark as Mine';
   });
 }
 
@@ -602,7 +619,7 @@ function parseBlock(buf){
     const lockStart=p; p+=4;
     const pay=[];
     for(const spk of outs) if(!(spk.length&&spk[0]===0x6a)) pay.push(h32(spk));
-    for(const spk of outs){
+    for(const [vout,spk] of outs.entries()){
       if(spk.length&&spk[0]===0x6a){
         total++;
         if(spk.length>1&&spk[1]===0x5d)continue;      /* OP_13 → token data, skipped */
@@ -623,14 +640,14 @@ function parseBlock(buf){
           let data=parts[0];
           if(parts.length>1){ let tot=0; for(const x of parts) tot+=x.length;
             data=new Uint8Array(tot); let o=0; for(const x of parts){data.set(x,o);o+=x.length} }
-          if(data.length) out.push({data,pay,tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
+          if(data.length) out.push({data,pay,vout,tx:{ver:ts,bodyStart,bodyEnd,lockStart,sw,end:p}});
         }
       }
     }
   }
   return {outs:out,bytes:d,dv,total};
 }
-/* a reply on Bitcoin = a tx that spends an output of the message it answers */
+/* Spend links support the earlier inferred quotes; explicit replies carry a reference in their payload. */
 function inTxids(d,dv,bodyStart,max){
   let p=bodyStart;
   const vi=()=>{const n=d[p];p++;if(n<0xfd)return n;
@@ -713,6 +730,77 @@ function classify(bytes){
   return {kind:'tag',text:t};
 }
 
+/* ---------------- explicit replies ----------------
+   The reference is part of the OP_RETURN bytes, followed by the original text
+   or file bytes. It adds no payment output and requires no parent spending key. */
+function validVout(value){return Number.isInteger(value)&&value>=0&&value<=0xffffffff}
+function messageKey(m){return cleanTxid(m.txid)+':'+(validVout(m.vout)?m.vout:'')}
+function messageDomId(m){return 'm-'+cleanTxid(m.txid)+(validVout(m.vout)?'-'+m.vout:'')}
+function messageExcerpt(m){return m.kind==='img'?'Image':(m.text||m.hex||'File').replace(/\s+/g,' ').slice(0,180)}
+function encodeReply(data,target){
+  const body=typeof data==='string'?new TextEncoder().encode(data):new Uint8Array(data);
+  if(!target) return body;
+  const id=cleanTxid(target.txid);
+  if(!id||!validVout(target.vout)) throw new Error('The reply target is invalid');
+  const head=new TextEncoder().encode(`BAC1:reply:${id}:${target.vout}\n`);
+  const out=new Uint8Array(head.length+body.length);out.set(head);out.set(body,head.length);
+  return out;
+}
+function decodeReply(bytes){
+  const plain={body:bytes,replyTo:'',replyVout:null};
+  const end=bytes.subarray(0,90).indexOf(10);
+  if(end<0||end===bytes.length-1) return plain;
+  const match=/^BAC1:reply:([0-9a-fA-F]{64}):([0-9]{1,10})$/.exec(dec.decode(bytes.subarray(0,end)));
+  if(!match||!validVout(Number(match[2]))) return plain;
+  return {body:bytes.subarray(end+1),replyTo:match[1].toLowerCase(),replyVout:Number(match[2])};
+}
+function classifyPayload(bytes){
+  const decoded=decodeReply(bytes), c=classify(decoded.body);
+  return c?{...c,replyTo:decoded.replyTo,replyVout:decoded.replyVout}:null;
+}
+function readOpReturn(hex){
+  if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]+$/i.test(hex)) return null;
+  const data=Uint8Array.from(hex.match(/../g),s=>parseInt(s,16));
+  if(data[0]!==0x6a||data[1]===0x5d) return null;
+  let p=1;const parts=[];
+  while(p<data.length){
+    const op=data[p++];let n;
+    if(op<0x4c)n=op;
+    else if(op===0x4c){if(p>=data.length)return null;n=data[p++]}
+    else if(op===0x4d){if(p+2>data.length)return null;n=data[p]|(data[p+1]<<8);p+=2}
+    else if(op===0x4e){if(p+4>data.length)return null;n=new DataView(data.buffer).getUint32(p,true);p+=4}
+    else return null;
+    if(p+n>data.length)return null;
+    parts.push(data.subarray(p,p+n));p+=n;
+  }
+  const out=new Uint8Array(parts.reduce((n,b)=>n+b.length,0));let pos=0;
+  for(const part of parts){out.set(part,pos);pos+=part.length}
+  return out.length?out:null;
+}
+async function loadReplyParent(txid,vout){
+  const id=cleanTxid(txid);if(!id||!validVout(vout))return null;
+  const key=messageKey({txid:id,vout});
+  if(BYMSG.has(key))return BYMSG.get(key);
+  if(REPLY_CACHE.has(key))return REPLY_CACHE.get(key);
+  if(REPLY_REQUESTS.has(key))return REPLY_REQUESTS.get(key);
+  const request=(async()=>{
+    try{
+      const response=await fetch(`${API}/tx/${id}`);
+      if(!response.ok)throw new Error('Original transaction unavailable');
+      const tx=await response.json();
+      if(cleanTxid(tx.txid)!==id)throw new Error('Original transaction mismatch');
+      const bytes=readOpReturn(tx.vout?.[vout]?.scriptpubkey);
+      const c=bytes&&classifyPayload(bytes);if(!c)return null;
+      const parent={...c,txid:id,vout,height:tx.status?.block_height||0,time:tx.status?.block_time||0};
+      REPLY_CACHE.set(key,parent);
+      while(REPLY_CACHE.size>100)REPLY_CACHE.delete(REPLY_CACHE.keys().next().value);
+      return parent;
+    }catch(e){return null}
+    finally{REPLY_REQUESTS.delete(key)}
+  })();
+  REPLY_REQUESTS.set(key,request);return request;
+}
+
 /* ---------------- render ---------------- */
 const NAMES={talk:'Chat',pgp:'Signed & encrypted',bridge:'Bridge orders',tag:'Tags & signals',all:'Everything',liquid:'The Liquid negotiation'};
 const VERB={talk:'wrote into the chain',pgp:'signed a message on-chain',bridge:'placed a bridge order',tag:'left a tag'};
@@ -729,25 +817,32 @@ function turn(m,prev){
   const mine=isMine(m.txid);
   const same=prev&&isMine(prev.txid)===mine&&(prev.who||(prev.txid?prev.txid.slice(0,8):'unknown'))===who;
   const t=new Date(m.time*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-  const par=parentOf(m);
-  const pw=par?(par.who||par.txid.slice(0,8)):'';
-  const quote=par?`<a class="qt" href="#m-${par.txid}" style="border-color:${hue(pw)}"><span class="qn" style="color:${hue(pw)}">${esc(pw)}</span><span class="qx">${esc((par.text||'').replace(/\s+/g,' ').slice(0,110))}</span></a>`:'';
+  const quote=quoteHTML(m);
   const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
                  :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
-  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="m-${m.txid||''}" data-txid="${esc(m.txid||'')}">
+  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="${messageDomId(m)}" data-txid="${esc(m.txid||'')}">
     <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
       ${same?'':nm}
       ${quote}
       ${m.kind==='img'
-        ? `<button class="imh" data-id="${esc(m.txid||'')}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
+        ? `<button class="imh" data-id="${esc(m.txid||'')}" data-vout="${validVout(m.vout)?m.vout:''}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
       <div class="mst">${long?'<span class="more">More</span>':''}<span class="mine-label" ${mine?'':'hidden'} title="Marked as yours in this browser">You</span><span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span>
-        ${cleanTxid(m.txid)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><button class="markmine" data-txid="${m.txid}" title="Remember this choice in this browser">${mine?'Unmark as Mine':'Mark as Mine'}</button></details>`:''}</div>
+        ${cleanTxid(m.txid)&&validVout(m.vout)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><button class="reply-action" data-txid="${m.txid}" data-vout="${m.vout}">Reply</button></details>`:''}</div>
     </div></div>`;
 }
-/* find the message this one answers: first by spend-link, then by a txid quoted in the text */
-let BYTX=new Map();
+function quoteHTML(m){
+  const par=parentOf(m);
+  const ref=m.replyTo?{txid:cleanTxid(m.replyTo),vout:m.replyVout}:par;
+  if(!ref||!cleanTxid(ref.txid))return '';
+  const name=par?(par.who||par.txid.slice(0,8)):ref.txid.slice(0,8);
+  const local=par&&BYMSG.has(messageKey(par))&&speech(par)&&(!query||(par.text||'').toLowerCase().includes(query));
+  const href=local?'#'+messageDomId(par):'https://mempool.space/tx/'+ref.txid;
+  const missing=!par&&validVout(ref.vout);
+  return `<a class="qt" href="${href}" ${local?'':'target="_blank" rel="noopener"'} ${missing?`data-parent="${ref.txid}" data-vout="${ref.vout}" title="Load the original message"`:''} style="border-color:${hue(name)}"><span class="qn" style="color:${hue(name)}">${esc(name)}</span><span class="qx">${esc(par?messageExcerpt(par):'Reply · Click to load the original message')}</span></a>`;
+}
+let BYTX=new Map(), BYMSG=new Map(), REPLY_CACHE=new Map(), REPLY_REQUESTS=new Map();
 /* A lone word is the hard case: people write "hello", protocols write "ordi". A marker
    is emitted by machines hundreds of times a day; a person's word is not. So a word is
    speech unless it repeats at machine volume, and a short list of things people plainly
@@ -777,8 +872,8 @@ function loneWord(t){
 const speech=m=>m.kind==='talk'||m.kind==='pgp'||m.kind==='img'||(m.kind==='word'&&loneWord(m.text));
 
 function reindex(list){
-  BYTX=new Map();
-  for(const m of list){ if(m.txid) BYTX.set(m.txid,m) }
+  BYTX=new Map();BYMSG=new Map();
+  for(const m of list){if(m.txid){BYTX.set(m.txid,m);BYMSG.set(messageKey(m),m)}}
 }
 /* A reply is a transaction that spends an output of the transaction it answers.
    Two things have to be excluded or the quotes are nonsense:
@@ -792,6 +887,13 @@ function repost(a,b){
   return lo.startsWith(sh)&&sh.length>=20;
 }
 function parentOf(m){
+  if(m.replyTo){
+    const id=cleanTxid(m.replyTo);
+    if(!id||!validVout(m.replyVout))return null;
+    const key=messageKey({txid:id,vout:m.replyVout});
+    if(key===messageKey(m))return null;
+    return BYMSG.get(key)||REPLY_CACHE.get(key)||null;
+  }
   if(!m.ins) return null;
   for(const t of m.ins){
     const p=BYTX.get(t);
@@ -836,9 +938,25 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
-  document.querySelectorAll('.markmine').forEach(el=>el.onclick=()=>{
-    markMine(el.dataset.txid,!isMine(el.dataset.txid));
+  document.querySelectorAll('.reply-action').forEach(el=>el.onclick=()=>{
     el.closest('details').open=false;
+    selectReply(el.dataset.txid,Number(el.dataset.vout));
+  });
+  document.querySelectorAll('.qt[data-parent]').forEach(el=>el.onclick=async e=>{
+    e.preventDefault();
+    const id=el.dataset.parent,vout=Number(el.dataset.vout);
+    el.querySelector('.qx').textContent='Loading original message…';
+    const par=await loadReplyParent(id,vout);
+    // A new block may redraw the thread while the original is being fetched.
+    document.querySelectorAll('.qt[data-parent]').forEach(quote=>{
+      if(quote.dataset.parent!==id||Number(quote.dataset.vout)!==vout)return;
+      if(par){
+        quote.querySelector('.qn').textContent=par.who||par.txid.slice(0,8);
+        quote.querySelector('.qx').textContent=messageExcerpt(par);
+        quote.removeAttribute('data-parent');
+      }else quote.querySelector('.qx').textContent='Original message unavailable · View transaction';
+      quote.title='Open the original transaction';quote.onclick=null;
+    });
   });
   document.querySelectorAll('.vb').forEach(el=>el.onclick=()=>{
     filter=el.dataset.v;
@@ -847,7 +965,7 @@ function bind(){
   });
   /* Anyone can put a picture on the chain, so nobody is shown one until they ask. */
   document.querySelectorAll('.imh').forEach(el=>el.onclick=()=>{
-    const m=msgs.find(x=>x.txid===el.dataset.id&&x.kind==='img');
+    const m=msgs.find(x=>x.txid===el.dataset.id&&x.kind==='img'&&(!el.dataset.vout||x.vout===Number(el.dataset.vout)));
     if(!m) return;
     const i=document.createElement('img');
     i.className='ims'; i.loading='lazy'; i.alt='image from block '+m.height;
@@ -970,6 +1088,72 @@ if(QA){
   grow();
 }
 
+/* ---------------- live market price ---------------- */
+let PRICE_SOCKET=null,PRICE_RECONNECT=null,PRICE_POLL=null,PRICE_BACKOFF=1000;
+let PRICE_STOPPED=true,PRICE_FETCHING=false,PRICE_AT=0,PRICE_WS_AT=0,PRICE_EVENT=0,PRICE_SEQ=0;
+function paintBitcoinPrice(value){
+  if(typeof value!=='string'&&typeof value!=='number')return false;
+  const price=Number(value);if(!Number.isFinite(price)||price<=0)return false;
+  PRICE_AT=Date.now();PRICE_SEQ++;
+  const el=$('s-price');
+  el.textContent=price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  el.title='Bitcoin price in USDT · Updated '+new Date(PRICE_AT).toLocaleTimeString();
+  return true;
+}
+async function pollBitcoinPrice(){
+  if(PRICE_STOPPED||PRICE_FETCHING)return;
+  PRICE_FETCHING=true;const seq=PRICE_SEQ;
+  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),10000);
+  try{
+    const response=await fetch('https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT',{signal:controller.signal});
+    if(!response.ok)throw new Error('Price unavailable');
+    const data=await response.json();
+    if(!PRICE_STOPPED&&seq===PRICE_SEQ&&data.symbol==='BTCUSDT')paintBitcoinPrice(data.price);
+  }catch(e){}
+  finally{clearTimeout(timer);PRICE_FETCHING=false}
+}
+function reconnectBitcoinPrice(){
+  if(PRICE_STOPPED||PRICE_RECONNECT!==null)return;
+  const delay=PRICE_BACKOFF+Math.floor(Math.random()*500);
+  PRICE_BACKOFF=Math.min(PRICE_BACKOFF*2,30000);
+  PRICE_RECONNECT=setTimeout(()=>{PRICE_RECONNECT=null;connectBitcoinPrice()},delay);
+}
+function connectBitcoinPrice(){
+  if(PRICE_STOPPED||PRICE_SOCKET)return;
+  try{
+    const socket=new WebSocket('wss://data-stream.binance.vision/ws/btcusdt@miniTicker');
+    PRICE_SOCKET=socket;PRICE_WS_AT=Date.now();
+    socket.onmessage=event=>{
+      if(PRICE_STOPPED||PRICE_SOCKET!==socket)return;
+      try{
+        const data=JSON.parse(event.data);
+        if(data.s!=='BTCUSDT'||data.e!=='24hrMiniTicker'||!Number.isFinite(data.E)||data.E<=PRICE_EVENT)return;
+        if(paintBitcoinPrice(data.c)){PRICE_EVENT=data.E;PRICE_WS_AT=Date.now();PRICE_BACKOFF=1000}
+      }catch(e){}
+    };
+    socket.onerror=()=>socket.close();
+    socket.onclose=()=>{if(PRICE_SOCKET!==socket)return;PRICE_SOCKET=null;reconnectBitcoinPrice()};
+  }catch(e){reconnectBitcoinPrice()}
+}
+function refreshBitcoinPrice(){
+  const age=Date.now()-PRICE_AT;
+  if(age>90000){$('s-price').textContent='Unavailable';$('s-price').title='Price feed unavailable; retrying automatically'}
+  if(age>15000)pollBitcoinPrice();
+  if(PRICE_SOCKET&&Date.now()-PRICE_WS_AT>45000)PRICE_SOCKET.close();
+}
+function startBitcoinPrice(){
+  if(PRICE_POLL!==null)return;
+  PRICE_STOPPED=false;pollBitcoinPrice();connectBitcoinPrice();
+  PRICE_POLL=setInterval(refreshBitcoinPrice,30000);
+}
+function stopBitcoinPrice(){
+  PRICE_STOPPED=true;clearInterval(PRICE_POLL);PRICE_POLL=null;
+  clearTimeout(PRICE_RECONNECT);PRICE_RECONNECT=null;
+  if(PRICE_SOCKET){const socket=PRICE_SOCKET;PRICE_SOCKET=null;socket.close()}
+}
+addEventListener('pagehide',stopBitcoinPrice);
+addEventListener('pageshow',startBitcoinPrice);
+
 /* ---------------- pinned ---------------- */
 const LIQUID=[
  {h:965822,t:'91271efcbb5ab29abfc38ae635f0644e3ba042aad56f92d40136e1dde4742fe8',who:'Blockstream Security',k:'talk',me:false,
@@ -1007,11 +1191,11 @@ async function scanBlock(height){
   $('s-blocks').textContent=scanned; $('s-or').textContent=orCount.toLocaleString();
   const found=[];
   for(const o of outs){
-    const c=classify(o.data);
+    const c=classifyPayload(o.data);
     if(c){let txid='',ins=[];
       try{txid=await txidOf(bytes,o.tx)}catch(e){}
       try{ins=inTxids(bytes,dv,o.tx.bodyStart,4)}catch(e){}
-      found.push({...c,height,time:meta.timestamp,txid,ins,pay:o.pay,me:false})}
+      found.push({...c,height,time:meta.timestamp,txid,vout:o.vout,ins,pay:o.pay,me:false})}
   }
   return found;
 }
@@ -1057,43 +1241,68 @@ const nbytes=s=>new TextEncoder().encode(s).length;
 const sats=n=>n.toLocaleString()+' sats';
 
 /* ---- composer ---- */
-let FILE=null;
-const payload=()=>FILE?FILE.bytes:$('q').value;
+let FILE=null, REPLY=null;
+function hasDraft(){return FILE?FILE.bytes.length>0:!!$('q').value.trim()}
+function payload(){return encodeReply(FILE?FILE.bytes:$('q').value,REPLY)}
+function captureDraft(){return {text:$('q').value,file:FILE,reply:REPLY}}
+function clearSentDraft(draft){
+  if(!draft||$('q').value!==draft.text||FILE!==draft.file||REPLY!==draft.reply)return;
+  $('q').value='';FILE=null;REPLY=null;
+  drawAtt();drawReply();refreshComp();grow();
+}
+function drawReply(){
+  const preview=$('reply-preview');preview.hidden=!REPLY;
+  $('reply-name').textContent=REPLY?'Replying to '+(REPLY.who||REPLY.txid.slice(0,8)):'';
+  $('reply-excerpt').textContent=REPLY?messageExcerpt(REPLY):'';
+  placeJump();
+}
+function selectReply(txid,vout){
+  const m=BYMSG.get(messageKey({txid,vout}));
+  if(!m||!cleanTxid(m.txid)||!validVout(m.vout))return;
+  REPLY={txid:m.txid,vout:m.vout,text:m.text||'',hex:m.hex||'',kind:m.kind,who:m.who||''};
+  drawReply();refreshComp();estimateAttachment();$('q').focus();
+}
+function cancelReply(){REPLY=null;drawReply();refreshComp();estimateAttachment();$('q').focus()}
+$('reply-cancel').onclick=cancelReply;
 const kb=n=>n<1024?n+' B':(n/1024).toFixed(n<10240?1:0)+' KB';
 
 function refreshComp(){
-  const n=FILE?FILE.bytes.length:nbytes($('q').value);
+  const n=payload().length;
   $('cnt').textContent=(!FILE&&n>LEGACY)?n+' B':'';   /* only speaks up past the old relay limit */
   $('cnt').style.color=n>MAXDATA?'var(--coral)':'var(--code)';
-  $('sendb').disabled=(!FILE&&!n)||n>MAXDATA||BUSY;
+  $('sendb').disabled=!hasDraft()||n>MAXDATA||BUSY;
   $('q').placeholder=FILE?'The file above is what gets published':'Write a message onto Bitcoin…';
 }
 
-/* A file goes into the same OP_RETURN output as text would. One transaction can
-   hold a little under 100 kB, and every byte is paid for at the going fee rate,
-   so the cost is shown on the chip before anything is signed. */
+/* The file and optional reply reference share one OP_RETURN output. Show an
+   estimated cost; the actual inputs and fee are checked before wallet approval. */
 $('plusb').onclick=()=>$('fi').click();
 $('fi').onchange=async e=>{
   const f=e.target.files[0]; e.target.value='';
   if(!f) return;
   const bytes=new Uint8Array(await f.arrayBuffer());
   if(bytes.length>MAXDATA){
-    hint(`${esc(f.name)} is ${kb(bytes.length)}. A single transaction can carry about ${kb(MAXDATA)}.`,true);
+    hint(`${esc(f.name)} exceeds the ${MAXDATA.toLocaleString()}-byte upload limit.`,true);
     return;
   }
   FILE={name:f.name,type:f.type,bytes};
   drawAtt(); refreshComp(); hint('');
+  estimateAttachment();
+};
+async function estimateAttachment(){
+  const file=FILE, reply=REPLY;if(!file)return;
+  const data=payload();drawAtt();
   try{
     const L=await lib();
     if(RATE==null){
       try{FEES=await (await fetch(API+'/v1/fees/recommended')).json()}catch(e){}
       RATE=FEES.halfHourFee||3;
     }
-    const dl=L.dataScript(bytes).length;
+    const dl=L.dataScript(data).length;
     const cost=Math.ceil(L.vsize(1,'p2wpkh',dl,true)*RATE);
-    if(FILE&&FILE.bytes===bytes) drawAtt(cost);
+    if(FILE===file&&REPLY===reply) drawAtt(cost);
   }catch(e){}
-};
+}
 function drawAtt(cost){
   const a=$('att');
   if(!FILE){ a.className='att'; a.innerHTML=''; return }
@@ -1120,7 +1329,10 @@ ovs.onclick=e=>{if(e.target===ovs)closeSearch()};
 ovp.onclick=e=>{if(e.target===ovp)closeSheet()};
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch()}
-  else if(e.key==='Escape'){closeSearch();closeSheet()}
+  else if(e.key==='Escape'&&!e.isComposing){
+    if(ovs.classList.contains('on')||ovp.classList.contains('on')){closeSearch();closeSheet()}
+    else if(REPLY){e.preventDefault();cancelReply()}
+  }
 });
 function fillSearch(){
   const q=$('sq').value.trim().toLowerCase();
@@ -1129,13 +1341,13 @@ function fillSearch(){
   const hits=(q?all.filter(m=>(m.text||'').toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q))
                 :all).slice(-80).reverse();
   $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
-      return `<div class="it" data-id="${m.txid||''}"><span class="d" style="background:${hue(w)}"></span>`
+      return `<div class="it" data-id="${messageDomId(m)}"><span class="d" style="background:${hue(w)}"></span>`
         +`<span class="tx">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
         +`<span class="h">${esc(w)} · ${m.height.toLocaleString()}</span></div>`}).join('')
     :`<div class="pal-e">Nothing matching “${esc($('sq').value)}” in the ${scanned} blocks loaded so far. Scroll up in the room to pull in older blocks, then search again.</div>`;
   $('sl').querySelectorAll('.it').forEach(el=>el.onclick=()=>{
     closeSearch();
-    const t=document.getElementById('m-'+el.dataset.id);
+    const t=document.getElementById(el.dataset.id);
     if(t){t.scrollIntoView({block:'center',behavior:'smooth'});
       t.classList.add('flash');setTimeout(()=>t.classList.remove('flash'),1500)}
   });
@@ -1328,7 +1540,7 @@ function checkPsbt(psbt,data,feeRate,claimed){
 
 async function send(){
   const text=payload();
-  if(BUSY||(!FILE&&!String(text).trim())) return;
+  if(BUSY||!hasDraft()||text.length>MAXDATA) return;
   armFooter();
   hint('');
   $('wallet-xverse').focus();
@@ -1337,9 +1549,10 @@ async function send(){
 function chooseWallet(id){
   if(BUSY) return;
   const text=payload();
-  if(!FILE&&!String(text).trim()){
+  if(!hasDraft()){
     hint('Write a message first.'); $('q').focus(); return;
   }
+  if(text.length>MAXDATA){hint('Message and reply reference exceed the upload limit.',true);return}
   hint('');
   if(id==='__off') return drawQR(text);
   const w=detected().find(w=>w.id===id);
@@ -1360,6 +1573,7 @@ function bindWallets(){
 bindWallets();
 
 async function publish(w,text){
+  const draft=captureDraft();
   BUSY=true; refreshComp();
   try{
     hint('Preparing…');
@@ -1384,7 +1598,7 @@ async function publish(w,text){
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
     const txid=r.txid||await push(L.extract(r.psbt));
     markMine(txid);
-    $('q').value=''; FILE=null; drawAtt();
+    clearSentDraft(draft);
     hint(`Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,12)}…</a> appears here at the next block.`);
     setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
   }catch(e){
@@ -1399,6 +1613,7 @@ function stopAnim(){ if(ANIM){clearInterval(ANIM);ANIM=null} }
 function stopCam(){ if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null} }
 function drawQR(text){
   try{
+  const draft=captureDraft();
   stopAnim(); stopCam();
   pcard.innerHTML=`<div class="chd"><h2 id="publish-title">Sign Offline</h2><button class="cl" id="pcl" title="Close" aria-label="Close offline signing">✕</button></div>
   <div class="cbd">
@@ -1409,8 +1624,8 @@ function drawQR(text){
     <div class="frames" id="fr"></div>
   </div>`;
   $('pcl').onclick=closeSheet;
-  $('qgo').onclick=()=>buildQR(text);
-  $('qa').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();buildQR(text)}};
+  $('qgo').onclick=()=>buildQR(text,draft);
+  $('qa').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();buildQR(text,draft)}};
   ovp.classList.add('on');
   $('qa').focus();
   }catch(e){
@@ -1419,7 +1634,7 @@ function drawQR(text){
     $('hint').focus();
   }
 }
-async function buildQR(text){
+async function buildQR(text,draft=captureDraft()){
   try{
     const addr=$('qa').value.trim();
     if(!addr) throw new Error('Enter an address first');
@@ -1448,10 +1663,10 @@ async function buildQR(text){
     if(parts.length>1) ANIM=setInterval(show,400);
     setst(`<span class="k">Fee ${sats(b.fee)} for ${b.vbytes} vB at ${RATE||3} sat/vB`
       +(b.overpay?`, including ${sats(b.overpay)} of remainder that also goes to the miner`:'')+`</span>`);
-    $('bcb').onclick=()=>broadcastPasted(L);
+    $('bcb').onclick=()=>broadcastPasted(L,draft);
   }catch(e){ fail(e) }
 }
-async function broadcastPasted(L){
+async function broadcastPasted(L,draft=captureDraft()){
   try{
     const v=$('sig').value.trim();
     if(!v) throw new Error('Paste the signed transaction or PSBT first');
@@ -1468,21 +1683,20 @@ async function broadcastPasted(L){
     setst('<span class="k">Broadcasting…</span>');
     const txid=await push(raw);
     markMine(txid);
-    $('q').value=''; refreshComp();
+    clearSentDraft(draft);
     setst(`<div class="ok">Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
       +`<br><span class="k">It appears in the room at the next block.</span></div>`);
   }catch(e){ fail(e) }
 }
 
 $('jump').onclick=()=>toBottom(true);
-$('theme').onclick=()=>{const d=document.documentElement.getAttribute('data-theme')==='dark';
-  document.documentElement.setAttribute('data-theme',d?'light':'dark');
-  try{localStorage.setItem('bac_theme',d?'light':'dark')}catch(e){}};
-try{const t=localStorage.getItem('bac_theme'); if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+// Dark mode is fixed; ignore and remove any preference saved by older versions.
+try{localStorage.removeItem('bac_theme')}catch(e){}
 
 /* ---------------- boot ---------------- */
 (async()=>{
   render();
+  startBitcoinPrice();
   dropAll();
   try{
     TIP=parseInt(await (await fetch(`${API}/blocks/tip/height`)).text(),10);

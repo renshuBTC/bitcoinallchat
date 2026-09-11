@@ -66,6 +66,9 @@ function runtime(options = {}) {
   const rendererStart = html.indexOf('const NAMES=');
   const rendererEnd = html.indexOf('function turn(', rendererStart);
   vm.runInContext(html.slice(rendererStart, rendererEnd), scope);
+  for (const name of ['validVout', 'messageDomId', 'quoteHTML']) {
+    vm.runInContext(declaration(name), scope);
+  }
   vm.runInContext(declaration('turn'), scope);
   return { scope, elements, writes,
     get saved() { return saved; },
@@ -304,17 +307,16 @@ test('Unmarking also removes the own-message style on the next render', () => {
   assert.equal(rowIsOwned(app.scope.turn(message(FIRST), null)), false);
 });
 
-test('Existing bubbles and menu labels update in place when marked and unmarked', () => {
+test('Existing bubbles and You labels update in place when ownership changes', () => {
   function row(txid, incomplete = false) {
     const classes = new Set(['row', 'own']);
     const label = {hidden: false};
-    const button = {textContent: ''};
-    return {dataset: {txid}, label, button,
+    return {dataset: {txid}, label,
       classList: {
         toggle(name, active) {if (active) classes.add(name); else classes.delete(name);},
         contains(name) {return classes.has(name);},
       },
-      querySelector(selector) {return incomplete ? null : selector === '.mine-label' ? label : button;},
+      querySelector(selector) {return !incomplete && selector === '.mine-label' ? label : null;},
     };
   }
   const rows = [row(FIRST), row(SECOND), row(FIRST.slice(0, 8)), row(FIRST, true)];
@@ -323,41 +325,19 @@ test('Existing bubbles and menu labels update in place when marked and unmarked'
   assert.doesNotThrow(() => app.scope.markMine(FIRST));
   assert.equal(rows[0].classList.contains('own'), true);
   assert.equal(rows[0].label.hidden, false);
-  assert.match(rows[0].button.textContent, /Unmark/i);
   assert.equal(rows[1].classList.contains('own'), false);
   assert.equal(rows[1].label.hidden, true);
-  assert.match(rows[1].button.textContent, /^Mark as Mine$/i);
   assert.equal(rows[2].classList.contains('own'), false);
   assert.equal(rows[3].classList.contains('own'), true);
   app.scope.markMine(FIRST, false);
   assert.equal(rows[0].classList.contains('own'), false);
   assert.equal(rows[0].label.hidden, true);
-  assert.match(rows[0].button.textContent, /^Mark as Mine$/i);
-});
-
-test('The message menu toggles only its selected transaction and closes afterwards', () => {
-  const menu = {open: true};
-  const button = {dataset: {txid: FIRST}, closest: () => menu};
-  const app = runtime({
-    saved: JSON.stringify([SECOND]),
-    document: {querySelectorAll: selector => selector === '.markmine' ? [button] : []},
-  });
-  vm.runInContext(declaration('bind'), app.scope);
-  app.scope.bind();
-  button.onclick();
-  assert.equal(app.scope.isMine(FIRST), true);
-  assert.equal(app.scope.isMine(SECOND), true);
-  assert.equal(menu.open, false);
-  menu.open = true;
-  button.onclick();
-  assert.equal(app.scope.isMine(FIRST), false);
-  assert.equal(app.scope.isMine(SECOND), true);
-  assert.equal(menu.open, false);
 });
 
 function sendingRuntime(options = {}) {
   const app = runtime(options);
   const events = [];
+  const draft = Object.freeze({text: 'yoyoyo', file: null, reply: null});
   const L = {
     buildPsbt: async () => ({type: 'p2wpkh', psbt: new Uint8Array([1]), fee: 100, vbytes: 100, inputs: [{}]}),
     extract: () => {events.push('extract'); return 'deadbeef';},
@@ -378,6 +358,8 @@ function sendingRuntime(options = {}) {
   };
   Object.assign(app.scope, {
     BUSY: false, FILE: null, RATE: 3,
+    captureDraft: () => {events.push('captured-draft'); return draft;},
+    clearSentDraft: snapshot => {events.push(['cleared-draft', snapshot]);},
     refreshComp: () => {}, drawAtt: () => {},
     hint: text => {app.elements.get('hint').textContent = text;},
     setst: text => {events.push(['status', text]);},
@@ -395,7 +377,7 @@ function sendingRuntime(options = {}) {
     setTimeout: () => 1,
   });
   vm.runInContext(declaration('publish') + '\n' + declaration('broadcastPasted'), app.scope);
-  return {...app, app, events, L, wallet};
+  return {...app, app, events, L, wallet, draft};
 }
 
 for (const fallback of [false, true]) {
@@ -407,6 +389,7 @@ for (const fallback of [false, true]) {
     assert.ok(run.events.indexOf('checked') < run.events.indexOf('sign'));
     assert.equal(run.events.includes('push'), fallback);
     assert.ok(run.events.includes('disconnected'));
+    assert.equal(run.events.find(event => Array.isArray(event) && event[0] === 'cleared-draft')?.[1], run.draft);
   });
 }
 
@@ -420,14 +403,16 @@ for (const [label, flags] of [
     await run.scope.publish(run.wallet, 'yoyoyo');
     assert.deepEqual(run.own(), []);
     assert.equal(run.app.saved, null);
+    assert.equal(run.events.some(event => Array.isArray(event) && event[0] === 'cleared-draft'), false);
   });
 }
 
 test('Successful offline broadcasting remembers its returned transaction', async () => {
   const run = sendingRuntime();
-  await run.scope.broadcastPasted(run.L);
+  await run.scope.broadcastPasted(run.L, run.draft);
   assert.equal(run.scope.isMine(FIRST), true);
   assert.deepEqual(JSON.parse(run.app.saved), [FIRST]);
+  assert.equal(run.events.find(event => Array.isArray(event) && event[0] === 'cleared-draft')?.[1], run.draft);
 });
 
 test('Rejected offline broadcasting does not mark a transaction', async () => {
@@ -435,6 +420,7 @@ test('Rejected offline broadcasting does not mark a transaction', async () => {
   await run.scope.broadcastPasted(run.L);
   assert.deepEqual(run.own(), []);
   assert.equal(run.app.saved, null);
+  assert.equal(run.events.some(event => Array.isArray(event) && event[0] === 'cleared-draft'), false);
 });
 
 test('Invalid signed input does not broadcast or mark a transaction', async () => {

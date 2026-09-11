@@ -5,8 +5,9 @@ Bitcoin blocks, read as one conversation, and a composer for adding to it.
 
 There is no application backend or user account. The static page fetches raw
 blocks from mempool.space and parses them in your browser. Published data is on
-Bitcoin. The theme and up to 1,000 transaction IDs marked as yours are saved in
-this browser's local storage; message text, wallet addresses and keys are not.
+Bitcoin. Up to 1,000 successfully sent transaction IDs are saved in this browser's
+local storage for message colours; message text, wallet addresses and keys are not.
+The site always uses dark mode.
 
 ## Reading
 
@@ -27,14 +28,16 @@ Conversation uses language and payload heuristics; it cannot verify human
 authorship. Everything also shows parsed protocol data, up to the latest 2,000
 matching entries. Unsupported and skipped outputs are not displayed.
 
-Quoted replies are inferred from transaction spend links. Shared output scripts
-and repeated text help filter apparent self-replies; this does not verify who
-controls a wallet.
+Use **⋯ → Reply** to quote a message above the composer. Cancel removes the reply
+selection and keeps the draft. The posted payload includes the original
+transaction ID and output index, so readers can resolve the exact message even
+when a transaction contains several OP_RETURN outputs. Older quoted replies are
+still inferred from spend links, with shared outputs and repeated text used to
+filter apparent self-replies. Neither method verifies a person's identity.
 
 Messages sent successfully from this browser receive a green bubble and a **You**
-label. For older posts, use **⋯ → Mark as Mine**. These are local display markers,
-not proof of authorship. **Unmark as Mine** removes a marker. Markers do not sync
-between browsers and are lost when this site's browser storage is cleared.
+label. These local display markers are not proof of authorship. They synchronize
+between tabs, not different browsers, and disappear when site storage is cleared.
 
 ## Writing
 
@@ -43,6 +46,19 @@ your bytes and change back to the address you are spending from, and your wallet
 signs it. The page does not request private keys or charge a service fee. Miner
 fees apply. Xverse and UniSat open their official download pages when the selected
 extension is unavailable; Offline supports signing on a separate device.
+The signing choices appear after Enter or the send arrow.
+
+Replies use AllChat's versioned payload format:
+
+    BAC1:reply:<64-character transaction ID>:<output index>\n<original payload bytes>
+
+Here `\n` means one LF byte, not a literal backslash and n. The original body can
+be UTF-8 text or a file. The reader strips one validated header before classifying
+the body. Unsupported or malformed headers remain ordinary payload data. The
+reference bytes count toward size limits and fees, and are included in the
+independent transaction check. This is an application format, not a special
+Bitcoin transaction type; it does not spend from or pay the original poster.
+Missing quoted content can be loaded on demand from its transaction and output.
 
 `post-src.js` builds the transaction: bech32/bech32m and base58check address
 decoding, coin selection, PSBT v0 serialisation, extraction of a signed PSBT, and
@@ -94,13 +110,16 @@ Any static server works, and the file has no build step of its own:
 
     python3 -m http.server 8000
 
-Fonts come from Google Fonts and message data from mempool.space; both are
-declared in the Content-Security-Policy and nothing else is allowed to be reached.
+Fonts come from Google Fonts and message data from mempool.space. The BTC/USDT
+price uses Binance's unauthenticated public market-data REST and WebSocket feeds.
+The stream reconnects automatically, with REST fallback and stale-price handling.
+These hosts are declared in the Content-Security-Policy.
 
 ## Checks
 
 Run `npm test` (Node.js 20 or newer) for the conversation-classifier, wallet-routing,
-offline-dialog, ownership-marker and composer-keyboard tests. They exercise the page's actual functions
+offline-dialog, reply-payload, price-feed, ownership and composer-keyboard tests.
+They exercise the page's actual functions
 with local fixtures; they do not connect a wallet or broadcast a transaction.
 
 ## Credit
