@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-nBAMKOJj/c/+IaR/53sDrk9ZZnT/zeuzTDoCYv1lSf0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-GE/ZrA9Vh2UfA7Ba1hZPmN464cSu5UpvG3yzyHkHXtI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -1554,6 +1554,38 @@ async function loadInitial(){
       await yieldToBrowser();
     }
   }finally{busy=false;render();updateJump();syncReaderScroll()}
+}
+
+/* Reading while the first fill runs. Each batch replaces the whole thread and then corrects
+   the scroll position by the height it added. That correction is arithmetically right, but
+   when it lands in the middle of a wheel or touch gesture it cancels the reader's momentum,
+   so the page appears to fight them: measured on the live site, two of three gestures during
+   loading were reversed or ignored. Redraws are now held back while a gesture is in flight
+   and applied once it settles, carrying the same height compensation forward so the reader
+   still keeps their place. Guarded so a DOM-less test harness simply skips it. */
+if(typeof document!=='undefined' && typeof addEventListener==='function'){
+  let lastInput=0;
+  for(const evt of ['wheel','touchmove','touchstart','keydown'])
+    addEventListener(evt,()=>{lastInput=Date.now()},{passive:true});
+  const readerScrolling=()=>Date.now()-lastInput<400;
+  const scrollToNow=window.scrollTo.bind(window);
+  const drawNow=render;
+  let held=null;
+  render=function(){
+    if(typeof busy!=='undefined' && busy && readerScrolling()){
+      if(!held) held=setInterval(()=>{
+        if(readerScrolling()) return;
+        clearInterval(held); held=null;
+        const before=document.documentElement.scrollHeight, y=window.scrollY;
+        drawNow();
+        const after=document.documentElement.scrollHeight;
+        if(after!==before) scrollToNow(0, y+(after-before));
+      },150);
+      return;
+    }
+    if(held){ clearInterval(held); held=null; }
+    return drawNow.apply(this,arguments);
+  };
 }
 
 /* Explicit, cancellable history search. Only conversational payloads are retained;
