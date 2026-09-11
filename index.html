@@ -426,14 +426,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <aside class="info">
     <div class="ihead">Bitcoin AllChat</div>
     <h1 class="open-h">Text written into Bitcoin blocks.</h1>
-    <p class="open-p">Every message is an OP_RETURN output from a recent block, read raw from mempool.space and
-      parsed in your browser. Nothing is stored.</p>
-    <p class="open-p">Conversation is what people wrote. Everything is every payload, machine data included.</p>
-    <p class="open-p">Writing builds an unsigned transaction: your text in one OP_RETURN output, change back to
-      you. Your wallet signs it, the page never sees a key, and you pay the miner fee. The + button attaches a
-      file, under 100 kB, priced per byte.</p>
-    <p class="open-p warn-p">Use a burner wallet, not the one holding your savings. Nothing published can be
-      undone. No warranty, and no liability for any loss.</p>
+    <p class="open-p">Messages are OP_RETURN outputs, read from mempool.space, parsed in your browser.
+      Nothing stored.</p>
+    <p class="open-p">Conversation: what people wrote. Everything: all payloads.</p>
+    <p class="open-p">Writing signs one transaction in your wallet. No key leaves it. You pay the miner fee.
+      + attaches a file, max 100 kB.</p>
+    <p class="open-p warn-p">Use a burner wallet. Nothing published can be undone. No warranty, no liability.</p>
     <div class="blocks" id="blocks">
       <div class="mbw">
         <div class="mbh">&nbsp;</div>
