@@ -180,9 +180,9 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
 .row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
 .ims{display:block;max-width:100%;border-radius:9px;margin:3px 0 2px}
-.vsw{display:flex;gap:6px;margin-top:16px}
-.vb{flex:1 1 0;background:transparent;border:1px solid var(--line);color:var(--mut);
-  border-radius:8px;padding:6px 8px;font:inherit;font-size:13.4px;cursor:pointer}
+.vsw{display:flex;gap:5px;margin:0}
+.vb{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--mut);white-space:nowrap;
+  border-radius:7px;padding:4px 10px;font:inherit;font-size:12.4px;line-height:1.3;cursor:pointer}
 .vb:hover{color:var(--ink2);border-color:var(--line2)}
 .vb.on{background:var(--comp);color:var(--ink);border-color:var(--line2)}
 .payl{margin:0 0 8px}
@@ -279,17 +279,30 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .dockfoot .bw{color:var(--mut2);font-size:13.6px;line-height:1.45}
 .dockfoot .icb{width:24px;height:24px;font-size:13.6px;border-radius:6px}
 .cbd .bwarn{border-left:2px solid var(--coral);padding-left:12px;color:var(--ink2)}
-/* the block clock rides in the footer row: a message can only land in a block, so the
-   wait sits beside the other footnotes rather than taking a row of its own */
-.blocks{display:flex;align-items:stretch;gap:6px;margin:0;font-family:var(--sans);
-  font-size:11.6px;line-height:1.3}
-.blk-c{display:flex;flex-direction:column;padding:4px 9px;border-radius:8px;white-space:nowrap;
-  background:var(--comp);border:1px solid var(--line);text-align:center}
-.blk-c b{font-family:var(--mono);font-weight:400;font-size:11.8px;color:var(--ink2)}
-.blk-c span{color:var(--mut2)}
-.blk-c.last{border-left:3px solid #7c5cff}
-.blk-c.next{border-left:3px solid #2ecc71}
-.blk-x{align-self:center;color:var(--mut2);font-size:11.6px}
+/* the block clock rides in the footer row, drawn the way mempool.space draws a block:
+   a front face carrying the fee summary, with a top and a right face extruded behind it */
+.blocks{display:flex;align-items:flex-end;gap:6px;margin:0;font-family:var(--sans)}
+.mbw{display:flex;flex-direction:column;align-items:center}
+.mbh{font-family:var(--mono);font-size:9px;line-height:11px;height:11px;color:#45c5d8}
+.mb{position:relative;width:66px;height:66px;margin:7px 7px 0 0}
+.mb .top{position:absolute;left:0;width:100%;height:7px;top:-7px;
+  transform:skewX(-45deg);transform-origin:bottom left}
+.mb .rgt{position:absolute;top:0;height:100%;width:7px;right:-7px;
+  transform:skewY(-45deg);transform-origin:left top}
+.mb .face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:#fff;text-align:center;line-height:1.24;padding:0 2px;overflow:hidden}
+.mb .face i{font-style:normal;font-size:7.3px;white-space:nowrap}
+.mb .face u{text-decoration:none;font-size:6.9px;white-space:nowrap}
+.mb .face b{font-weight:600;font-size:10.2px;letter-spacing:-.2px;margin:1.5px 0}
+.mb.next .face{background:linear-gradient(180deg,#8a8a1e,#35a04a)}
+.mb.next .top{background:#70700f}
+.mb.next .rgt{background:#246d2c}
+.mb.next .face u{color:#ffe083}
+.mb.last .face{background:linear-gradient(180deg,#9333ea,#1d8ef5)}
+.mb.last .top{background:#5a2196}
+.mb.last .rgt{background:#145da4}
+.mb.last .face u{color:#ff9f43}
+.blk-x{align-self:stretch;width:0;border-left:1.5px dashed var(--line2);margin:14px 3px 0}
 </style>
 </head>
 <body>
@@ -306,10 +319,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <div><span>blocks scanned</span><b id="s-blocks">0</b></div>
       <div><span>OP_RETURN seen</span><b id="s-or">0</b></div>
       <div><span>messages</span><b id="foot-n">0</b></div>
-    </div>
-    <div class="vsw">
-      <button class="vb on" data-v="talk">conversation</button>
-      <button class="vb" data-v="all">everything</button>
     </div>
     <div class="ifoot">
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
@@ -349,12 +358,26 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <div class="hint" id="hint"></div>
     <div class="dockfoot">
 <div class="blocks" id="blocks">
-        <div class="blk-c last"><b id="bk-h">…</b><span id="bk-a">reading the chain</span></div>
-        <span class="blk-x">→</span>
-        <div class="blk-c next"><b>next block</b><span id="bk-n">…</span></div>
+        <div class="mbw">
+          <div class="mbh">&nbsp;</div>
+          <div class="mb next"><div class="top"></div><div class="rgt"></div><div class="face">
+            <i id="p-med">~0 sat/vB</i><u id="p-rng">&nbsp;</u><b id="p-btc">0.000 BTC</b>
+            <i id="p-tx">&nbsp;</i><i id="p-eta">&nbsp;</i></div></div>
+        </div>
+        <span class="blk-x"></span>
+        <div class="mbw">
+          <div class="mbh" id="bk-h">&nbsp;</div>
+          <div class="mb last"><div class="top"></div><div class="rgt"></div><div class="face">
+            <i id="m-med">~0 sat/vB</i><u id="m-rng">&nbsp;</u><b id="m-btc">0.000 BTC</b>
+            <i id="m-tx">&nbsp;</i><i id="bk-a">&nbsp;</i></div></div>
+        </div>
+      </div>
+      <div class="vsw">
+        <button class="vb on" data-v="talk">conversation</button>
+        <button class="vb" data-v="all">everything</button>
       </div>
       <button class="dlink" id="howb">how this works</button>
-      <span class="bw">Burner wallet, not the one holding your savings.</span>
+      <span class="bw">Burner wallet, not your main one.</span>
       <button class="icb" id="theme" title="Theme">◐</button>
     </div>
   </div>
