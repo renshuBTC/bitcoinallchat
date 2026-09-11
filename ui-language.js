@@ -3,8 +3,8 @@
   'use strict';
   window.BAC_UI_LANGUAGE?.dispose();
   const LOCALES=window.BAC_LOCALES||{en:{}};
-  const SCOPES='.info,.dock,.msgopts,.chat-nav,.payload-nav,.search-tools,.pal-e';
-  const EXCLUDED='script,style,svg,canvas,code,pre,.txt,.qt,.pay,.reply-excerpt,#reply-excerpt,#m-pool,[translate="no"],[data-no-translate]';
+  const SCOPES='.info,.dock,.msgopts,.toploader,.search-notice,.pal-e,#sl';
+  const EXCLUDED='script,style,svg,canvas,code,pre,.txt,.qt,.pay,.it,.reply-excerpt,#reply-excerpt,#m-pool,[translate="no"],[data-no-translate]';
   const ATTRS=['placeholder','title','aria-label'];
   const texts=new WeakMap(),attributes=new WeakMap(),formats=new WeakMap();
   let language='en',observer=null,timer=null,disposed=false;

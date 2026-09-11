@@ -66,7 +66,7 @@ function runtime(options = {}) {
   const rendererStart = html.indexOf('const NAMES=');
   const rendererEnd = html.indexOf('function turn(', rendererStart);
   vm.runInContext(html.slice(rendererStart, rendererEnd), scope);
-  for (const name of ['validVout', 'messageDomId', 'quoteHTML']) {
+  for (const name of ['validVout', 'messageKey', 'messageDomId', 'quoteHTML']) {
     vm.runInContext(declaration(name), scope);
   }
   vm.runInContext(declaration('turn'), scope);

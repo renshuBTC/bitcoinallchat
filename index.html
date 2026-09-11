@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-Vo+yClrJiH5plmlJJDPjvaby4jkpsUZGeLRabX4I4CM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-AEIVPXTg3xavtXJEmgRiNGznxeE7lyYzudwutyP/6YE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -23,9 +23,9 @@
 <meta name="twitter:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
 <meta name="twitter:description" content="Read text messages stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<script src="locales.js" integrity="sha384-CifGdo/wkyVU7E08YL4J1SuNwhpqeMKf+D66KgPJYsTvVhuFshhZvbRALAHNE72x" defer></script>
+<script src="locales.js" integrity="sha384-UXVUQ/jzH085fQRF9rT2RXOX4E8erf5EYa8NH2x6E7jxTzEgvNGfUwjSXx8bBzNM" defer></script>
 <script src="translate.js" integrity="sha384-/qdDU9ulf951n6wD7Gx0WIttBOK8KokcfR+pNCMNdZc9x5hm53hUWEZ7LhFX/W71" defer></script>
-<script src="ui-language.js" integrity="sha384-wf7yOdpqPJzeNgujbXO38SuqN+W+s1IsUtMyzHSNJanuQi30d5flkudb/gVFiGiy" defer></script>
+<script src="ui-language.js" integrity="sha384-dUYpW299a9/h3pZ0JBsAP5BcQtj2DYXSWY+eh1NZpNtYE71QJglGJE4dBLVuxmIY" defer></script>
 <script src="language-settings.js" integrity="sha384-OsxAfWrIyZsp70E62wS/m6AtLxs2yY1pKYKC7LeKWnaos/SikzyA2yC2PIPkxmY8" defer></script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@400;450;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -228,14 +228,12 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .vb:hover{color:var(--ink2);border-color:var(--line2)}
 .vb.on{background:var(--comp);color:var(--ink);border-color:var(--line2)}
 .payl{margin:0 0 8px}
-.payload-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:10px 0 16px}
-.payload-nav button:disabled{opacity:.45;cursor:default}
-.pay{display:flex;gap:11px;align-items:baseline;padding:3px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
-.pay .h{flex:0 0 auto;width:68px;text-align:right}
+.pay,.it{display:flex;gap:11px;align-items:baseline;padding:3px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
+.pay .h,.it .h{flex:0 0 auto;width:68px;text-align:right}
 .pay .t{flex:0 0 auto;width:64px;text-align:right;color:var(--mut2)}
 .pay a{color:var(--mut);text-decoration:none;flex:0 0 auto;width:62px}
 .pay a:hover{color:var(--coral)}
-.pay .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+.pay .p,.it .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
 .ifoot .how{background:transparent;border:0;color:var(--ink2);font:inherit;font-size:16.6px;cursor:pointer;
   padding:0;text-decoration:underline;text-underline-offset:2px}
 .ifoot .how:hover{color:var(--coral)}
@@ -252,32 +250,22 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .pal-t .ic{color:var(--mut);font-size:16px}
 .cl{background:transparent;border:0;color:var(--mut);font-size:17px;cursor:pointer;line-height:1}
 .cl:hover{color:var(--ink)}
-.pal-l{overflow-y:auto;padding:7px}
-.search-tools{padding:10px 18px 12px;border-bottom:1px solid var(--line);flex:0 0 auto;min-width:0;font-size:13px;line-height:1.5;color:var(--mut)}
-.search-tools [role="status"]{overflow-wrap:anywhere}
-.search-summary{color:var(--ink2)}
-.search-actions,.search-pages{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}
-.search-actions{margin-top:7px;justify-content:space-between}
-.search-actions button{border:0;border-radius:6px;background:transparent;color:var(--ink2);font:inherit;padding:5px 7px;cursor:pointer;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:start}
-.search-actions button:hover{background:var(--pill)}
-.search-actions button:disabled{color:var(--mut2);cursor:default;background:transparent}
-.it{display:grid;grid-template-columns:9px minmax(0,1fr) minmax(0,135px) max-content;align-items:center;gap:5px 11px;padding:9px 11px;border-radius:9px;cursor:pointer}
-.it{width:100%;border:0;background:transparent;font:inherit;color:inherit;text-align:start}
+.pal-l{overflow-y:auto;overscroll-behavior:contain;padding:7px 18px;min-height:70px;outline:0}
+.search-notice{flex:0 0 auto;padding:7px 18px 10px;font:12.6px/1.5 var(--mono);color:var(--mut);overflow-wrap:anywhere}
+.search-notice[hidden]{display:none}
+.it{width:100%;border:0;border-radius:3px;background:transparent;text-align:start;cursor:pointer;line-height:normal}
 .it:hover{background:var(--pill)}
-.it .d{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
-.it .tx{flex:1 1 auto;min-width:0;font-size:16.6px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it .h{min-width:0;font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--mut2);white-space:nowrap}
-.it .h span{display:block;overflow:hidden;text-overflow:ellipsis}
-.it .stmp{font-family:var(--mono);font-size:11.8px;line-height:1.5;color:var(--mut2);white-space:nowrap;text-align:right}
-.it .stmp span{display:block}
+.it .txid{flex:0 0 62px;color:var(--mut);white-space:nowrap}
+.it .h{min-width:0;white-space:nowrap}
+.it .stmp{flex:0 0 auto;width:64px;white-space:nowrap;text-align:right;color:var(--mut2)}
 @media(max-width:600px){
-  .it{grid-template-columns:9px minmax(0,1fr) max-content}
-  .it .d{grid-column:1;grid-row:1 / span 2}
-  .it .tx{grid-column:2 / -1}
-  .it .h{grid-column:2;grid-row:2}
+  .it{display:grid;grid-template-columns:62px minmax(0,1fr) max-content;gap:0 11px}
+  .it .txid{grid-column:1;grid-row:1 / span 2;align-self:start}
+  .it .p{grid-column:2 / -1}
+  .it .h{grid-column:2;grid-row:2;width:auto;text-align:left}
   .it .stmp{grid-column:3;grid-row:2}
 }
-.pal-e{padding:20px 18px;color:var(--mut);font-size:16.6px;line-height:1.5}
+.pal-e{padding:12px 0;color:var(--mut);font:12.6px/1.5 var(--mono)}
 
 /* publish sheet */
 .chd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);flex:0 0 auto}
@@ -421,7 +409,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 [data-theme=light] .wallets button:hover{background:rgba(0,0,0,.055)}
 .vb.on,.hint button,.wallets a,.wallets button{color:var(--ink)}
 .wallets{display:inline-flex;align-items:center;flex:0 1 auto;flex-wrap:wrap;gap:2px;color:var(--mut2)}
-.wallets.on{display:inline-flex}
+.dockfoot .dfr[hidden]{display:none}
 .wallets a,.wallets button{flex:0 0 auto}
 .hint{display:block;padding:6px 6px 0;margin:0;min-height:0;
   font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;white-space:normal;overflow-wrap:anywhere}
@@ -503,7 +491,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   box-shadow:0 6px 24px rgba(0,0,0,.25);font:14px/1.5 var(--sans)}
 .language-menu[hidden]{display:none}
 .language-option{display:block;width:100%;border:0;border-radius:6px;padding:7px 10px;background:transparent;
-  color:var(--ink2);font:inherit;text-align:start}
+  color:var(--ink2);font:inherit;text-align:left}
 .language-option:hover,.language-option[aria-selected=true]{background:var(--line2);color:var(--ink)}
 .language-option[aria-selected=true]{font-weight:600}
 #languageb[aria-pressed=true]{color:var(--ink)}
@@ -562,21 +550,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
   <div class="pal-t"><span class="ic">⌕</span>
     <input id="sq" dir="auto" aria-label="Search messages, senders, txids" placeholder="Search messages, senders, txids…" autocomplete="off">
     <button class="cl" id="scl" type="button" title="Close" aria-label="Close search">✕</button></div>
-  <div class="search-tools">
-    <div role="status" aria-live="polite" aria-atomic="true">
-      <div class="search-summary" id="search-summary"></div>
-      <div><span id="search-coverage"></span><span aria-hidden="true"> · </span><span id="search-floor"></span></div>
-      <div id="search-state"></div>
-    </div>
-    <div class="search-actions">
-      <button type="button" id="search-history">Search Earlier Blocks</button>
-      <div class="search-pages">
-        <button type="button" id="search-earlier" disabled>Earlier Results</button>
-        <button type="button" id="search-latest" disabled>Latest Results</button>
-      </div>
-    </div>
-  </div>
-  <div class="pal-l" id="sl"></div>
+  <div class="pal-l" id="sl" tabindex="0" aria-label="Search results"></div>
+  <div class="search-notice" id="search-notice" role="status" aria-live="polite" hidden></div>
 </div></div>
 
 <div class="ov" id="ovp"><div class="pal" id="pcard" role="dialog" aria-modal="true" aria-labelledby="publish-title"></div></div>
@@ -611,7 +586,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
           <button class="vb" data-v="all" aria-pressed="false">Everything</button>
         </div>
       </div>
-      <div class="dfr">
+      <div class="dfr" id="signing-options" hidden>
         <span class="wallets" aria-label="Signing options">Sign With
           <a id="wallet-xverse" href="https://www.xverse.app/download" target="_blank" rel="noopener noreferrer" title="Sign with Xverse, or download it if it is not installed">Xverse</a>
           <a id="wallet-unisat" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer" title="Sign with UniSat, or download it if it is not installed">UniSat</a>
@@ -938,7 +913,7 @@ function turn(m,prev){
   const quote=quoteHTML(m);
   const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
                  :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
-  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="${messageDomId(m)}" data-kind="${esc(m.kind||'')}" data-txid="${esc(m.txid||'')}">
+  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="${messageDomId(m)}" data-message="${esc(messageKey(m))}" data-kind="${esc(m.kind||'')}" data-txid="${esc(m.txid||'')}">
     <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
       ${same?'':nm}
@@ -1026,6 +1001,23 @@ function counts(){
 }
 const ALL_PAGE_SIZE=2000;
 let ALL_FIRST='',ALL_COUNT=ALL_PAGE_SIZE,ALL_QUERY='',ALL_LOADING=false,ALL_NAV_RUN=0;
+let READER_VIEW='',READER_SCROLL_Y=0,READER_TOUCH_Y=null,READER_SCROLL_ARMED=0,READER_SCROLL_POINTER=false,READER_SCROLL_IDLE=null;
+function clearReaderScrollIntent(){READER_SCROLL_ARMED=0;clearTimeout(READER_SCROLL_IDLE);READER_SCROLL_IDLE=null}
+function keepReaderScrollIntent(){clearTimeout(READER_SCROLL_IDLE);READER_SCROLL_IDLE=setTimeout(clearReaderScrollIntent,200)}
+function captureReaderAnchor(){
+  const rows=document.querySelectorAll('#thread .pay[id], #thread .row[id]');
+  for(const row of rows){const rect=row.getBoundingClientRect();
+    if(rect.bottom>0)return {id:row.id,key:row.dataset.message,top:rect.top};
+  }
+  return null;
+}
+function restoreReaderAnchor(anchor){
+  const row=anchor&&document.getElementById(anchor.id);
+  if(row){const delta=row.getBoundingClientRect().top-anchor.top;
+    if(Number.isFinite(delta)&&Math.abs(delta)>.5)window.scrollTo(0,window.scrollY+delta);
+  }
+  READER_SCROLL_Y=window.scrollY;clearReaderScrollIntent();
+}
 function allMatches(){return query?msgs.filter(m=>(m.text||m.hex||'').toLowerCase().includes(query)):msgs}
 function allPage(){
   if(ALL_QUERY!==query){ALL_QUERY=query;ALL_FIRST='';ALL_COUNT=ALL_PAGE_SIZE;ALL_NAV_RUN++}
@@ -1040,40 +1032,12 @@ function setAllPage(matches,start,end){
   ALL_FIRST=messageKey(matches[start]);ALL_COUNT=Math.min(ALL_PAGE_SIZE,end-start);
 }
 function payloadExcerpt(m){return String((m.kind==='data'?m.hex:m.text)||'').slice(0,180).replace(/\s+/g,' ')}
-function allPageControls(page){
-  const earlier=(page.start>0||next>0||BLOCK_RETRY.size)&&!ALL_LOADING&&!(busy&&page.start===0);
-  const latest=!page.latest||ALL_LOADING;
-  if(!earlier&&!latest)return '';
-  return `<nav class="payload-nav" aria-label="Payload pages">`
-    +(ALL_LOADING?'<span role="status">Loading…</span>':'')
-    +(earlier?'<button type="button" class="midb all-earlier">Older</button>':'')
-    +(latest?'<button type="button" class="midb all-latest">Latest</button>':'')+'</nav>';
-}
 function latestPayloads(){
   ALL_NAV_RUN++;ALL_FIRST='';ALL_COUNT=ALL_PAGE_SIZE;ALL_QUERY=query;
   if(filter==='all'){render();toBottom(false)}
 }
-async function earlierPayloads(){
-  if(filter!=='all'||ALL_LOADING)return;
-  let page=allPage();
-  if(page.start>0){setAllPage(page.matches,Math.max(0,page.start-ALL_PAGE_SIZE),page.start);render();toBottom(false);return}
-  if(busy||(next<=0&&!BLOCK_RETRY.size))return;
-  const run=++ALL_NAV_RUN,wantedQuery=query,boundary=page.rows.length?messageKey(page.rows[0]):'';
-  /* Pin the visible page before fetching; new live payloads must not move it. */
-  if(boundary)setAllPage(page.matches,page.start,page.end);
-  ALL_LOADING=true;LOAD_FAILED=false;LOAD_PAUSED=false;render();
-  try{
-    await loadOlder(LANES);
-    if(run!==ALL_NAV_RUN||query!==wantedQuery)return;
-    const matches=allMatches(),end=boundary?matches.findIndex(m=>messageKey(m)===boundary):matches.length;
-    if(end>0)setAllPage(matches,Math.max(0,end-ALL_PAGE_SIZE),end);
-  }catch(e){
-    if(run===ALL_NAV_RUN&&query===wantedQuery)LOAD_FAILED=true;
-  }finally{
-    ALL_LOADING=false;
-    if(filter==='all'){render();if(run===ALL_NAV_RUN&&query===wantedQuery)toBottom(false)}
-  }
-}
+function earlierPayloads(){return moveReaderWindow('all',-1)}
+function newerPayloads(){return moveReaderWindow('all',1)}
 
 /* Conversation uses a movable DOM window; loaded messages remain searchable and reachable. */
 const CHAT_PAGE_SIZE=1000;
@@ -1091,38 +1055,63 @@ function setChatPage(matches,start,end){
   if(end<=start)return;
   CHAT_FIRST=messageKey(matches[start]);CHAT_COUNT=Math.min(CHAT_PAGE_SIZE,end-start);
 }
-function chatPageControls(page){
-  if(page.matches.length<=CHAT_PAGE_SIZE&&page.latest)return '';
-  const earlier=page.start>0||next>0||BLOCK_RETRY.size;
-  return `<nav class="payload-nav chat-nav" aria-label="Message pages">`
-    +`<button type="button" class="midb chat-earlier" ${!earlier||CHAT_LOADING||(busy&&page.start===0)?'disabled':''}>${CHAT_LOADING?'Loading Earlier Messages…':'Earlier Messages'}</button>`
-    +`<button type="button" class="midb chat-latest" ${page.latest&&!CHAT_LOADING?'disabled':''}>Latest Messages</button></nav>`;
-}
 function latestMessages(smooth=false){
   CHAT_NAV_RUN++;CHAT_FIRST='';CHAT_COUNT=CHAT_PAGE_SIZE;CHAT_QUERY=query;
   if(filter!=='all'&&filter!=='liquid'){render();toBottom(smooth)}
 }
-async function earlierMessages(){
-  if(filter==='all'||filter==='liquid'||CHAT_LOADING)return;
-  const page=chatPage();
-  if(page.start>0){setChatPage(page.matches,Math.max(0,page.start-CHAT_PAGE_SIZE),page.start);render();toBottom(false);return}
-  if(busy||(next<=0&&!BLOCK_RETRY.size))return;
-  const run=++CHAT_NAV_RUN,wantedQuery=query,boundary=page.rows.length?messageKey(page.rows[0]):'';
-  if(boundary)setChatPage(page.matches,page.start,page.end);
-  CHAT_LOADING=true;LOAD_FAILED=false;LOAD_PAUSED=false;
+function earlierMessages(){return moveReaderWindow('talk',-1)}
+function newerMessages(){return moveReaderWindow('talk',1)}
+/* Overlapping windows retain the visible row while either edge changes. Only user
+   scrolling calls this; rendering and an idle edge never launch another fetch. */
+async function moveReaderWindow(kind,direction){
+  const all=kind==='all',active=()=>all?filter==='all':filter!=='all'&&filter!=='liquid';
+  if(!active()||(all?ALL_LOADING:CHAT_LOADING))return;
+  const page=all?allPage():chatPage(),size=all?ALL_PAGE_SIZE:CHAT_PAGE_SIZE,setPage=all?setAllPage:setChatPage;
+  if(direction<0&&page.start>0||direction>0&&page.end<page.matches.length){
+    const anchor=captureReaderAnchor(),start=direction<0?Math.max(0,page.start-size/2):Math.min(Math.max(0,page.matches.length-size),page.start+size/2);
+    setPage(page.matches,start,Math.min(page.matches.length,start+size));
+    if(direction>0&&start+size>=page.matches.length){if(all)ALL_FIRST='';else CHAT_FIRST=''}
+    render();restoreReaderAnchor(anchor);updateJump();return;
+  }
+  if(direction>0||busy||(next<=0&&!BLOCK_RETRY.size))return;
+  const run=all?++ALL_NAV_RUN:++CHAT_NAV_RUN,wantedQuery=query,boundary=page.rows.length?messageKey(page.rows[0]):'';
+  if(boundary)setPage(page.matches,page.start,page.end);
+  if(all)ALL_LOADING=true;else CHAT_LOADING=true;
+  LOAD_FAILED=false;busy=true;render();
   try{
-    await loadOlder(LANES);
-    if(run!==CHAT_NAV_RUN||query!==wantedQuery||filter==='all'||filter==='liquid')return;
-    const matches=chatMatches(),end=boundary?matches.findIndex(m=>messageKey(m)===boundary):matches.length;
-    if(end>0)setChatPage(matches,Math.max(0,end-CHAT_PAGE_SIZE),end);
-  }catch(e){if(run===CHAT_NAV_RUN&&query===wantedQuery)LOAD_FAILED=true}
+    await loadBatch(LANES);
+    if(!active()||query!==wantedQuery||run!==(all?ALL_NAV_RUN:CHAT_NAV_RUN))return;
+    const anchor=captureReaderAnchor(),matches=all?allMatches():chatMatches();
+    const at=matches.findIndex(m=>messageKey(m)===(anchor?.key||boundary));
+    if(matches.length){const start=at<0?Math.max(0,matches.length-size):Math.max(0,at-size/2);setPage(matches,start,Math.min(matches.length,start+size))}
+    render();restoreReaderAnchor(anchor);
+  }catch(e){if(run===(all?ALL_NAV_RUN:CHAT_NAV_RUN)&&query===wantedQuery)LOAD_FAILED=true}
   finally{
-    CHAT_LOADING=false;
-    if(filter!=='all'&&filter!=='liquid'){
-      render();if(run===CHAT_NAV_RUN&&query===wantedQuery)toBottom(false);
-    }
+    busy=false;if(all)ALL_LOADING=false;else CHAT_LOADING=false;
+    if(active())render();updateJump();
   }
 }
+function readerEdge(direction){
+  const edge=$(direction<0?'toploader':'reader-bottom');if(!edge)return false;
+  const rect=edge.getBoundingClientRect();return direction<0?rect.bottom>=-240:rect.top<=innerHeight+240;
+}
+function readerScrollIntent(direction){
+  if(!direction||filter==='liquid'||document.querySelector('.ov.on')||$('language-menu')?.hidden===false)return;
+  if(direction<0){const page=filter==='all'?allPage():chatPage();
+    if(page.rows.length&&page.latest)(filter==='all'?setAllPage:setChatPage)(page.matches,page.start,page.end);
+  }
+  if(readerEdge(direction)){clearReaderScrollIntent();moveReaderWindow(filter==='all'?'all':'talk',direction)}
+}
+function handleReaderScroll(){
+  const y=window.scrollY,direction=Math.sign(y-READER_SCROLL_Y);READER_SCROLL_Y=y;
+  const armed=READER_SCROLL_ARMED;
+  if(direction&&armed&&direction!==armed)clearReaderScrollIntent();
+  if(direction&&(armed===direction||READER_SCROLL_POINTER)){
+    if(armed===direction)keepReaderScrollIntent();
+    readerScrollIntent(direction);
+  }
+}
+function readerUserScroll(direction){if(!direction)return;READER_SCROLL_ARMED=direction;keepReaderScrollIntent();readerScrollIntent(direction)}
 function revealMessage(key){
   const target=searchMessages().find(m=>messageKey(m)===key);if(!target||!speech(target))return false;
   filter='talk';
@@ -1141,23 +1130,23 @@ function revealMessage(key){
 
 function render(){
   const t=$('thread');
+  const anchor=READER_VIEW===filter?captureReaderAnchor():null;READER_VIEW=filter;
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
-  /* Everything uses bounded pages; earlier loaded payloads remain reachable. */
+  /* Both views use overlapping windows, with no inline pagination controls. */
   if(filter==='all'){
-    const page=allPage(),{rows,start,end,matches}=page,controls=allPageControls(page);
+    const page=allPage(),{rows,start,end,matches}=page;
     const status=matches.length?`Payloads ${(start+1).toLocaleString()}–${end.toLocaleString()} of ${matches.length.toLocaleString()} loaded${query?' matches':''}`:'No loaded payloads'+(query?' match this search':'');
-    const note=ALL_LOADING?'Loading an earlier batch…':LOAD_FAILED?'Could not load earlier blocks. Try again.':page.latest?'Newest last · Updates appear here.':'Newest last · This page stays in place.';
-    t.innerHTML=`<div class="toploader" id="toploader"><div>${status} · ${scanned.toLocaleString()} blocks</div><div>${note}</div></div>${controls}<div class="payl">`
-      +rows.map(m=>`<div class="pay" data-message="${esc(messageKey(m))}">`
+    t.innerHTML=`<div class="toploader" id="toploader"><div>${status} · ${scanned.toLocaleString()} blocks</div><div>${readerStatus(page,ALL_LOADING)}</div></div><div class="payl">`
+      +rows.map(m=>`<div class="pay" id="p-${esc(messageKey(m))}" data-message="${esc(messageKey(m))}">`
           +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
           +`<span class="p" dir="auto">${esc(payloadExcerpt(m))}</span>`
           +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${displayTime(m.time)}</span></div>`
-      ).join('')+`</div>${controls}`;
-    counts();bind();observeTop();return;
+      ).join('')+`</div><div class="toploader" id="reader-bottom">${end<matches.length?'Scroll down for newer entries.':''}</div>`;
+    restoreReaderAnchor(anchor);counts();bind();refreshHistorySearch();return;
   }
   reindex([...msgs,...searchMessages()]);
-  const page=chatPage(),talk=page.rows,controls=chatPageControls(page);
-  let head=`<div class="toploader" id="toploader">${LOAD_FAILED||LOAD_PAUSED?loadingRetryButton():page.start>0?'Earlier Messages':next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
+  const page=chatPage(),talk=page.rows;
+  let head=`<div class="toploader" id="toploader">${readerStatus(page,CHAT_LOADING)}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!talk.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
   /* Only what people wrote is drawn. Protocol payloads are still parsed and
@@ -1168,7 +1157,13 @@ function render(){
     if(day!==lastDay){body+=`<div class="daysep"><span>${day}</span></div>`;lastDay=day;prev=null}
     body+=turn(m,prev); prev=m;
   }
-  t.innerHTML=head+controls+body+controls; counts(); bind(); observeTop();
+  t.innerHTML=head+body+`<div class="toploader" id="reader-bottom">${page.end<page.matches.length?'Scroll down for newer entries.':''}</div>`;
+  restoreReaderAnchor(anchor);counts();bind();refreshHistorySearch();
+}
+function readerStatus(page,loading){
+  if(!TIP||loading||busy&&page.start===0)return 'Loading…';
+  if(LOAD_FAILED)return 'Could not load earlier blocks. Scroll up to retry.';
+  return page.start===0&&next<=0&&!BLOCK_RETRY.size?'Beginning of the scanned range':'Scroll up to load earlier entries.';
 }
 function bind(){
   document.querySelectorAll('.translate-action').forEach(el=>{
@@ -1183,15 +1178,7 @@ function bind(){
       el.href=url;el.closest('details').open=false;
     };
   });
-  document.querySelectorAll('.all-earlier').forEach(el=>el.onclick=earlierPayloads);
-  document.querySelectorAll('.all-latest').forEach(el=>el.onclick=latestPayloads);
-  document.querySelectorAll('.chat-earlier').forEach(el=>el.onclick=earlierMessages);
-  document.querySelectorAll('.chat-latest').forEach(el=>el.onclick=()=>latestMessages());
   document.querySelectorAll('.qt[data-local-message]').forEach(el=>el.onclick=e=>{if(revealMessage(el.dataset.localMessage))e.preventDefault()});
-  const retry=$('retryblocks');if(retry)retry.onclick=()=>{
-    if(CHAIN_CHANGED){pollChainTip();return}
-    LOAD_FAILED=false;LOAD_PAUSED=false;shown()<TARGET?loadInitial():loadOlder();
-  };
   document.querySelectorAll('.reply-action').forEach(el=>el.onclick=()=>{
     el.closest('details').open=false;
     selectReply(el.dataset.txid,Number(el.dataset.vout));
@@ -1227,22 +1214,32 @@ function bind(){
 }
 
 /* ---------------- scroll: newest at the bottom, older loads as you scroll up ---------------- */
-let io=null;
 function atBottom(){return window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-140}
-function toBottom(smooth){window.scrollTo({top:document.documentElement.scrollHeight,behavior:smooth?'smooth':'auto'})}
-function observeTop(){
-  if(io)io.disconnect();
-  const el=$('toploader');if(!el||filter==='liquid'||filter==='all'||CHAT_LOADING)return;
-  const earlier=chatPage().start>0;
-  if(!earlier&&(LOAD_FAILED||LOAD_PAUSED||(next<=0&&!BLOCK_RETRY.size)))return;
-  io=new IntersectionObserver(es=>{if(filter!=='all'&&filter!=='liquid'&&es.some(e=>e.isIntersecting))earlierMessages()},{rootMargin:'700px 0px 0px 0px'});
-  io.observe(el);
-}
+function toBottom(smooth){window.scrollTo({top:document.documentElement.scrollHeight,behavior:smooth?'smooth':'auto'});syncReaderScroll()}
+function syncReaderScroll(){READER_SCROLL_Y=window.scrollY;clearReaderScrollIntent()}
 function updateJump(){
   const b=$('jump'),earlier=filter==='all'?!!ALL_FIRST:filter!=='liquid'&&!!CHAT_FIRST;
   if(b)b.style.display=atBottom()&&!earlier?'none':'flex';
 }
-window.addEventListener('scroll',updateJump,{passive:true});
+window.addEventListener('scroll',()=>{updateJump();handleReaderScroll()},{passive:true});
+window.addEventListener('scrollend',clearReaderScrollIntent,{passive:true});
+function readerInputAllowed(event){
+  return !event.target?.closest?.('input,textarea,select,[contenteditable],.ov,.language-menu')&&
+    !document.querySelector('.ov.on')&&$('language-menu')?.hidden!==false;
+}
+document.addEventListener('wheel',event=>{if(readerInputAllowed(event))readerUserScroll(Math.sign(event.deltaY))},{passive:true});
+document.addEventListener('touchstart',event=>{READER_TOUCH_Y=readerInputAllowed(event)?event.touches[0]?.clientY:null},{passive:true});
+document.addEventListener('touchmove',event=>{
+  const y=event.touches[0]?.clientY;if(READER_TOUCH_Y!==null&&y!==undefined&&readerInputAllowed(event))readerUserScroll(Math.sign(READER_TOUCH_Y-y));READER_TOUCH_Y=y??null;
+},{passive:true});
+document.addEventListener('keydown',event=>{
+  if(event.isComposing||event.keyCode===229||!readerInputAllowed(event))return;
+  const direction=['ArrowUp','PageUp','Home'].includes(event.key)||event.key===' '&&event.shiftKey?-1:['ArrowDown','PageDown','End',' '].includes(event.key)?1:0;
+  readerUserScroll(direction);
+});
+document.addEventListener('pointerdown',event=>{READER_SCROLL_POINTER=readerInputAllowed(event)&&(event.clientX>=document.documentElement.clientWidth-20||event.button===1)});
+document.addEventListener('pointerup',()=>{READER_SCROLL_POINTER=false;clearReaderScrollIntent()});
+document.addEventListener('pointercancel',()=>{READER_SCROLL_POINTER=false;clearReaderScrollIntent()});
 /* The jump button sits just above the composer, never over it. The composer block grows
    when a hint line or a reply preview appears, so its top edge is measured rather
    than assumed, and re-measured whenever it changes size. */
@@ -1253,7 +1250,7 @@ function placeJump(){
   b.style.bottom=(height+12)+'px';
   const thread=$('thread');if(thread)thread.style.paddingBottom=(height+28)+'px';
 }
-addEventListener('resize',placeJump);
+addEventListener('resize',()=>{clearReaderScrollIntent();placeJump()});
 if(window.ResizeObserver){const dn=document.querySelector('.dock-in');
   if(dn) new ResizeObserver(placeJump).observe(dn)}
 placeJump();
@@ -1439,13 +1436,12 @@ function liquidHTML(){
 
 /* ---------------- scanning ---------------- */
 const TARGET=100, MAXBLOCKS=260, LANES=3;
-let LOAD_FAILED=false,LOAD_PAUSED=false,LOAD_ATTEMPTED=0;
+let LOAD_FAILED=false,LOAD_ATTEMPTED=0;
 const BLOCK_RETRY=new Set();
 const BLOCK_HASHES=new Map(),BLOCK_PARENTS=new Map();
 const ROOM_HEIGHTS=new Set();
 let CHAIN_CHANGED=false,CHAIN_EPOCH=0;
 const yieldToBrowser=()=>new Promise(resolve=>setTimeout(resolve,0));
-function loadingRetryButton(){return '<button class="midb" id="retryblocks">'+(LOAD_FAILED?'Retry Loading Messages':'Load More Messages')+'</button>'}
 async function readBlockResource(url,format,signal){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
   const abort=()=>controller.abort();
@@ -1539,16 +1535,6 @@ async function loadBatch(n){
   msgs=msgs.concat(additions.flat());msgs.sort((a,b)=>a.height-b.height);
   LOAD_FAILED=failed>0;return {loaded:hs.length-failed,failed};
 }
-/* Older blocks prepend above the current position; errors do not lock the reader. */
-async function loadOlder(count=LANES){
-  if(busy||LOAD_FAILED||LOAD_PAUSED||(next<=0&&!BLOCK_RETRY.size))return;
-  busy=true;const before=document.documentElement.scrollHeight;
-  try{
-    await loadBatch(count);render();
-    const after=document.documentElement.scrollHeight;
-    if(after!==before)window.scrollTo(0,window.scrollY+(after-before));
-  }finally{busy=false;updateJump();observeTop()}
-}
 function shown(){return msgs.reduce((n,m)=>n+(speech(m)?1:0),0)}
 async function loadInitial(){
   if(busy)return;busy=true;const attempted=LOAD_ATTEMPTED;
@@ -1566,8 +1552,7 @@ async function loadInitial(){
       if(LOAD_FAILED)break;
       await yieldToBrowser();
     }
-    LOAD_PAUSED=!LOAD_FAILED&&shown()<TARGET&&LOAD_ATTEMPTED-attempted>=MAXBLOCKS;
-  }finally{busy=false;render();updateJump();observeTop()}
+  }finally{busy=false;render();updateJump();syncReaderScroll()}
 }
 
 /* Explicit, cancellable history search. Only conversational payloads are retained;
@@ -1599,7 +1584,12 @@ function searchResultPage(matches){
 }
 function earlierSearchResults(){
   const page=searchResultPage(SEARCH_PAGE_MATCHES);
-  if(page.start>0){const start=Math.max(0,page.start-SEARCH_PAGE_SIZE);SEARCH_FIRST=messageKey(SEARCH_PAGE_MATCHES[start]);SEARCH_COUNT=page.start-start;fillSearch()}
+  if(page.start>0){const start=Math.max(0,page.start-SEARCH_PAGE_SIZE/2);SEARCH_FIRST=messageKey(SEARCH_PAGE_MATCHES[start]);SEARCH_COUNT=SEARCH_PAGE_SIZE;fillSearch()}
+}
+function newerSearchResults(){
+  const page=searchResultPage(SEARCH_PAGE_MATCHES);if(!page.hasLatest)return;
+  const start=Math.min(Math.max(0,page.total-SEARCH_PAGE_SIZE),page.start+SEARCH_PAGE_SIZE/2);
+  SEARCH_FIRST=start+SEARCH_PAGE_SIZE>=page.total?'':messageKey(SEARCH_PAGE_MATCHES[start]);SEARCH_COUNT=SEARCH_PAGE_SIZE;fillSearch();
 }
 function latestSearchResults(){SEARCH_FIRST='';SEARCH_COUNT=SEARCH_PAGE_SIZE;fillSearch()}
 function searchHistoryState(){
@@ -1741,31 +1731,102 @@ $('sendb').onclick=()=>send();
 
 /* ---- search palette ---- */
 const ovs=$('ovs'), ovp=$('ovp'), pcard=$('pcard');
+let SEARCH_QUERY_TIMER=null,SEARCH_QUERY_RUN=0,SEARCH_LAST_QUERY='',SEARCH_PENDING=null;
+let SEARCH_SCROLL_INTENT=0,SEARCH_SCROLL_Y=0,SEARCH_TOUCH_Y=null,SEARCH_RENDERED_PAGE=null;
 function openSearch(){
   if(ovp.classList.contains('on'))return;
   window.BAC_LANGUAGE_SETTINGS?.close(false);
-  if(!ovs.classList.contains('on'))ovs.returnFocus=document.activeElement;
-  ovs.classList.add('on');$('sq').value='';fillSearch();$('sq').focus();
-  startHistorySearch(true);
+  if(ovs.classList.contains('on')){$('sq').focus();return}
+  ovs.returnFocus=document.activeElement;
+  ovs.classList.add('on');$('sq').value='';SEARCH_LAST_QUERY='';
+  SEARCH_PENDING={run:++SEARCH_QUERY_RUN,query:'',bootstrap:true};
+  fillSearch(true);$('sq').focus();
 }
 function closeSearch(){
   if(!ovs.classList.contains('on'))return;
-  pauseHistorySearch('closed');
-  ovs.classList.remove('on');(ovs.returnFocus?.isConnected?ovs.returnFocus:$('searchb')||$('q'))?.focus();
+  ovs.classList.remove('on');cancelSearchWork();
+  (ovs.returnFocus?.isConnected?ovs.returnFocus:$('searchb')||$('q'))?.focus();
+}
+function cancelSearchWork(){
+  if(SEARCH_QUERY_TIMER!==null)clearTimeout(SEARCH_QUERY_TIMER);
+  SEARCH_QUERY_TIMER=null;SEARCH_PENDING=null;SEARCH_QUERY_RUN++;
+  SEARCH_SCROLL_INTENT=0;SEARCH_TOUCH_Y=null;pauseHistorySearch('closed');
+}
+function queueSearchQuery(){
+  if(!ovs.classList.contains('on'))return;
+  const query=searchKey($('sq').value.trim());
+  if(query===SEARCH_LAST_QUERY){fillSearch();return}
+  if(SEARCH_QUERY_TIMER!==null)clearTimeout(SEARCH_QUERY_TIMER);
+  SEARCH_QUERY_TIMER=null;SEARCH_PENDING=null;SEARCH_SCROLL_INTENT=0;
+  const run=++SEARCH_QUERY_RUN;SEARCH_LAST_QUERY=query;
+  pauseHistorySearch('paused');
+  if(query)SEARCH_QUERY_TIMER=setTimeout(()=>{
+    SEARCH_QUERY_TIMER=null;
+    if(run!==SEARCH_QUERY_RUN||!ovs.classList.contains('on'))return;
+    SEARCH_PENDING={run,query,bootstrap:false};fillSearch();
+  },500);
+  fillSearch(true);
+}
+function tryPendingSearch(){
+  const pending=SEARCH_PENDING;
+  if(!pending||!ovs.classList.contains('on')||pending.run!==SEARCH_QUERY_RUN||pending.query!==searchKey($('sq').value.trim()))return;
+  const state=searchHistoryState();
+  if(!state.canStart||state.running)return;
+  SEARCH_PENDING=null; // Consume before starting: history progress can synchronously re-render.
+  if(!state.complete&&state.reason!=='memory')startHistorySearch(pending.bootstrap);
+}
+function captureSearchAnchor(){
+  const list=$('sl'),bounds=list.getBoundingClientRect();
+  for(const row of list.querySelectorAll('.it')){
+    const rect=row.getBoundingClientRect();
+    if(rect.bottom>bounds.top&&rect.top<bounds.bottom)return {key:row.dataset.message,offset:rect.top-bounds.top};
+  }
+  return null;
+}
+function noteSearchScroll(direction){
+  if(!ovs.classList.contains('on')||SEARCH_QUERY_TIMER!==null||SEARCH_PENDING){SEARCH_SCROLL_INTENT=0;return}
+  SEARCH_SCROLL_INTENT=direction;handleSearchScroll();
+}
+function handleSearchScroll(){
+  const list=$('sl'),delta=list.scrollTop-SEARCH_SCROLL_Y;SEARCH_SCROLL_Y=list.scrollTop;
+  if(!ovs.classList.contains('on')||!SEARCH_SCROLL_INTENT)return;
+  const direction=delta?Math.sign(delta):SEARCH_SCROLL_INTENT===2?0:SEARCH_SCROLL_INTENT;
+  if(!direction||SEARCH_QUERY_TIMER!==null||SEARCH_PENDING)return;
+  const page=SEARCH_RENDERED_PAGE;if(!page)return;
+  if(direction<0&&list.scrollTop<=60&&page.hasLatest){SEARCH_SCROLL_INTENT=0;newerSearchResults()}
+  else if(direction>0&&list.scrollHeight-list.clientHeight-list.scrollTop<=60){
+    SEARCH_SCROLL_INTENT=0;
+    if(page.hasEarlier)earlierSearchResults();
+    else {const state=searchHistoryState();if(state.canStart&&!state.running&&!state.complete&&state.reason!=='memory')startHistorySearch()}
+  }
 }
 function closeSheet(){invalidateOffline();ovp.classList.remove('on');stopCam();$('q').focus()}
 $('searchb').onclick=openSearch;
 $('scl').onclick=closeSearch;
-$('sq').oninput=fillSearch;
-$('search-history').onclick=()=>searchHistoryState().running?pauseHistorySearch():startHistorySearch();
-$('search-earlier').onclick=earlierSearchResults;
-$('search-latest').onclick=latestSearchResults;
+$('sq').oninput=e=>{if(!e.isComposing)queueSearchQuery()};
+$('sq').addEventListener('compositionend',queueSearchQuery);
+$('sl').addEventListener('scroll',handleSearchScroll,{passive:true});
+$('sl').addEventListener('wheel',e=>{if(e.deltaY)noteSearchScroll(Math.sign(e.deltaY))},{passive:true});
+$('sl').addEventListener('touchstart',e=>{SEARCH_TOUCH_Y=e.touches[0]?.clientY??null},{passive:true});
+$('sl').addEventListener('touchmove',e=>{
+  const y=e.touches[0]?.clientY;if(SEARCH_TOUCH_Y!==null&&y!==undefined&&y!==SEARCH_TOUCH_Y)noteSearchScroll(Math.sign(SEARCH_TOUCH_Y-y));
+  SEARCH_TOUCH_Y=y??null;
+},{passive:true});
+$('sl').addEventListener('pointerdown',()=>{SEARCH_SCROLL_INTENT=2});
+addEventListener('pointerup',()=>{if(SEARCH_SCROLL_INTENT===2)SEARCH_SCROLL_INTENT=0});
+$('sl').addEventListener('keydown',e=>{
+  if(e.isComposing||e.keyCode===229)return;
+  if(['ArrowDown','PageDown','End'].includes(e.key))noteSearchScroll(1);
+  else if(['ArrowUp','PageUp','Home'].includes(e.key))noteSearchScroll(-1);
+  else if(e.key===' '&&e.target===$('sl'))noteSearchScroll(e.shiftKey?-1:1);
+});
+addEventListener('pagehide',cancelSearchWork);
 ovs.onclick=e=>{if(e.target===ovs)closeSearch()};
 ovp.onclick=e=>{if(e.target===ovp)closeSheet()};
 document.addEventListener('keydown',e=>{
   if(e.isComposing||e.keyCode===229)return;
   if(ovs.classList.contains('on')&&e.key==='Tab'){
-    const controls=[...ovs.querySelectorAll('input,button')].filter(el=>!el.disabled&&!el.hidden);
+    const controls=[...ovs.querySelectorAll('input,button,[tabindex="0"]')].filter(el=>!el.disabled&&!el.hidden);
     const first=controls[0],last=controls[controls.length-1];
     if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}
@@ -1800,42 +1861,42 @@ function searchTimeHTML(timestamp){
   const date=new Date(timestamp*1000);
   if(!Number.isFinite(date.getTime()))return '<span class="stmp">—</span>';
   const formatter=searchTimeHTML.formatter||(searchTimeHTML.formatter=new Intl.DateTimeFormat(undefined,{year:'numeric',month:'2-digit',day:'2-digit'}));
-  return `<time class="stmp" datetime="${date.toISOString()}"><span>${esc(formatter.format(date))}</span><span>${esc(displayTime(timestamp))}</span></time>`;
+  const time=displayTime(timestamp),label=esc(formatter.format(date)+' '+time);
+  return `<time class="stmp" datetime="${date.toISOString()}" title="${label}" aria-label="${label}">${esc(time)}</time>`;
 }
-function fillSearch(){
+function fillSearch(reset=false){
+  const list=$('sl'),anchor=reset?null:captureSearchAnchor();
   const q=searchKey($('sq').value.trim());
   const all=searchMessages();
   const matches=q?all.filter(m=>searchKey(m.text).includes(q)||searchKey(m.who).includes(q)||(m.txid||'').startsWith(q)):all;
-  const page=searchResultPage(matches),hits=page.rows;
+  const page=searchResultPage(matches),hits=page.rows;SEARCH_RENDERED_PAGE=page;
   const active=document.activeElement,activeKey=active?.classList.contains('it')?active.dataset.message:null;
-  updateSearchControls(page);
-  $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
-      return `<button type="button" class="it" data-message="${esc(messageKey(m))}"><span class="d" style="background:${hue(w)}"></span>`
-        +`<span class="tx" dir="auto">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
-        +`<span class="h"><span>${esc(w)}</span><span>#${m.height.toLocaleString()}</span></span>`
+  const notice=updateSearchNotice();
+  $('sl').innerHTML=hits.length?hits.map(m=>{
+      return `<button type="button" class="it" data-message="${esc(messageKey(m))}"><span class="txid">${esc(m.txid?m.txid.slice(0,8):'—')}</span>`
+        +`<span class="p" dir="auto">${esc((m.text||m.hex||'').slice(0,180).replace(/\s+/g,' '))}</span>`
+        +`<span class="h">#${m.height.toLocaleString()}</span>`
         +searchTimeHTML(m.time)+'</button>'}).join('')
-    :'<div class="pal-e">No matching loaded messages.</div>';
+    :notice?'':'<div class="pal-e">No matching loaded messages.</div>';
   const buttons=[...$('sl').querySelectorAll('.it')];
   buttons.forEach(el=>el.onclick=()=>{
     closeSearch();
     revealMessage(el.dataset.message);
   });
-  if(activeKey)(buttons.find(el=>el.dataset.message===activeKey)||$('sq')).focus({preventScroll:true});
+  if(reset)list.scrollTop=0;
+  else if(anchor){
+    const row=buttons.find(el=>el.dataset.message===anchor.key);
+    if(row)list.scrollTop+=row.getBoundingClientRect().top-list.getBoundingClientRect().top-anchor.offset;
+  }
+  if(activeKey)(buttons.find(el=>el.dataset.message===activeKey)||list).focus({preventScroll:true});
+  SEARCH_SCROLL_Y=list.scrollTop;SEARCH_SCROLL_INTENT=0;
+  tryPendingSearch();
 }
-function updateSearchControls(page){
-  const state=searchHistoryState(),number=value=>value.toLocaleString();
-  const first=page.total?page.total-page.end+1:0,last=page.total-page.start;
-  $('search-summary').textContent=`Results ${number(first)}–${number(last)} of ${number(page.total)}`;
-  $('search-coverage').textContent=`${number(state.coveredBlocks)} of ${number(state.totalBlocks)} blocks searched`;
-  $('search-floor').textContent=`Back to block ${number(state.floor)}`;
-  const failed=state.reason==='error',limited=['budget','memory'].includes(state.reason);
-  $('search-state').textContent=state.complete?'Search complete for this range.':!state.canStart||state.running&&state.phase==='conversation'?'Preparing…':
-    failed?'Could not load earlier blocks. Try again.':limited?'Search limit reached.':state.paused?'Search paused.':'Search incomplete.';
-  const history=$('search-history');
-  history.textContent=state.running?'Pause Search':'Search Earlier Blocks';
-  history.disabled=state.complete||state.reason==='memory'||!state.canStart&&!state.running;
-  $('search-earlier').disabled=!page.hasEarlier;
-  $('search-latest').disabled=!page.hasLatest;
+function updateSearchNotice(){
+  const state=searchHistoryState(),notice=!state.canStart||state.running||SEARCH_QUERY_TIMER!==null||SEARCH_PENDING?'Loading…':
+    state.reason==='memory'?'Search limit reached.':state.reason==='error'?'Could not load earlier blocks. Scroll down to retry.':'';
+  $('search-notice').textContent=notice;$('search-notice').hidden=!notice;
+  return notice;
 }
 
 /* ---- publishing ----
@@ -1870,6 +1931,20 @@ async function push(hex,canBroadcast=()=>true){
   return txid;
 }
 const WAL=[
+ {id:'xverse',name:'Xverse',p:()=>window.XverseProviders&&window.XverseProviders.BitcoinProvider,
+  async connect(p){
+    const result=r=>{if(r?.error)throw Object.assign(new Error(r.error.message||'Wallet request failed'),{code:r.error.code});return r?.result};
+    let account;try{account=result(await p.request('wallet_connect',{addresses:['payment'],network:'Mainnet'}))}
+    catch(e){if(e?.code!==-32601)throw e;account=result(await p.request('getAccounts',{purposes:['payment']}))}
+    if(account?.network?.bitcoin?.name&&account.network.bitcoin.name!=='Mainnet')throw new Error('Select Bitcoin mainnet in your wallet');
+    const list=Array.isArray(account)?account:account?.addresses;
+    const a=Array.isArray(list)&&list.find(x=>x&&x.purpose==='payment')||Array.isArray(list)&&list.find(x=>x&&!x.purpose);
+    if(!a||typeof a.address!=='string'||!a.address)throw new Error('Xverse did not return a Bitcoin payment address');
+    return{address:a.address,publicKey:a.publicKey}},
+  async sign(p,psbt,addr,idx,L){
+    const r=await p.request('signPsbt',{psbt:L.b64enc(psbt),signInputs:{[addr]:idx},broadcast:false});
+    if(!r.result?.psbt)throw new Error("The wallet did not return a signed PSBT");
+    return{psbt:L.b64dec(r.result.psbt)}}},
  {id:'unisat',name:'UniSat',p:()=>window.unisat,
   async connect(p){const a=await p.requestAccounts(),address=Array.isArray(a)&&a[0];
     if(typeof address!=='string'||!address)throw new Error('UniSat did not return an address');
@@ -1888,20 +1963,6 @@ const WAL=[
   async connect(p){const r=await p.connect();return{address:r.address,publicKey:r.publicKey||r.compressedPublicKey}},
   async sign(p,psbt,addr,idx,L){const s=await p.signPsbt(L.bytesToHex(psbt),{autoFinalized:true});
     return{psbt:transactionBytes(s)}}},
- {id:'xverse',name:'Xverse',p:()=>window.XverseProviders&&window.XverseProviders.BitcoinProvider,
-  async connect(p){
-    const result=r=>{if(r?.error)throw Object.assign(new Error(r.error.message||'Wallet request failed'),{code:r.error.code});return r?.result};
-    let account;try{account=result(await p.request('wallet_connect',{addresses:['payment'],network:'Mainnet'}))}
-    catch(e){if(e?.code!==-32601)throw e;account=result(await p.request('getAccounts',{purposes:['payment']}))}
-    if(account?.network?.bitcoin?.name&&account.network.bitcoin.name!=='Mainnet')throw new Error('Select Bitcoin mainnet in your wallet');
-    const list=Array.isArray(account)?account:account?.addresses;
-    const a=Array.isArray(list)&&list.find(x=>x&&x.purpose==='payment')||Array.isArray(list)&&list.find(x=>x&&!x.purpose);
-    if(!a||typeof a.address!=='string'||!a.address)throw new Error('Xverse did not return a Bitcoin payment address');
-    return{address:a.address,publicKey:a.publicKey}},
-  async sign(p,psbt,addr,idx,L){
-    const r=await p.request('signPsbt',{psbt:L.b64enc(psbt),signInputs:{[addr]:idx},broadcast:false});
-    if(!r.result?.psbt)throw new Error("The wallet did not return a signed PSBT");
-    return{psbt:L.b64dec(r.result.psbt)}}},
  {id:'leather',name:'Leather',p:()=>window.LeatherProvider,
   async connect(p){const r=await p.request('getAddresses');
     const A=r.result.addresses.filter(x=>x.symbol==='BTC');
@@ -2266,11 +2327,10 @@ async function send(){
   if(BUSY||!hasDraft()||text.length>MAXDATA) return;
   armFooter();
   hint('');
-  if(ACTIVE_WALLET){
-    const w=detected().find(w=>w.id===ACTIVE_WALLET.id);
-    if(w)return publish(w,text);
-    ACTIVE_WALLET=null;
-  }
+  const installed=detected(),preferred=ACTIVE_WALLET&&installed.find(w=>w.id===ACTIVE_WALLET.id);
+  if(ACTIVE_WALLET&&!preferred)ACTIVE_WALLET=null;
+  const w=preferred||installed[0];
+  if(w)return publish(w,text);
   $('wallet-xverse').focus();
 }
 
@@ -2329,12 +2389,6 @@ async function publish(w,text){
   const epoch=WALLET_EPOCH;
   BUSY=true; refreshComp();
   try{
-    hint('Preparing…');
-    const L=await lib();
-    if(RATE==null){
-      try{const fees=await transactionRequest(API+'/v1/fees/recommended',{},'json');if(fees.ok)FEES=fees.data}catch(e){}
-      RATE=FEES.halfHourFee||3;
-    }
     const p=w.p();
     hint(`Waiting for ${esc(w.name)}…`);
     const acc=await w.connect(p);
@@ -2342,6 +2396,13 @@ async function publish(w,text){
     if(!acc||!acc.address) throw new Error(w.name+' did not return an address');
     if(ACTIVE_WALLET&&ACTIVE_WALLET!==w)drop(ACTIVE_WALLET);
     ACTIVE_WALLET=w;
+    hint('Preparing…');
+    const L=await lib();
+    if(RATE==null){
+      try{const fees=await transactionRequest(API+'/v1/fees/recommended',{},'json');if(fees.ok)FEES=fees.data}catch(e){}
+      RATE=FEES.halfHourFee||3;
+    }
+    if(epoch!==WALLET_EPOCH)throw new Error('Wallet connection closed');
     hint('Reading your coins…');
     const us=await getUtxos(acc.address);
     if(!us.length) throw new Error('no confirmed coins on '+acc.address);
@@ -2503,7 +2564,7 @@ async function pollChainTip(){
     }
     if(target<TIP||replaced){
       TIP=target;next=target;msgs=[];scanned=orCount=0;
-      BLOCK_RETRY.clear();LOAD_FAILED=LOAD_PAUSED=false;
+      BLOCK_RETRY.clear();LOAD_FAILED=false;
       BLOCK_HASHES.clear();BLOCK_PARENTS.clear();CHAIN_CHANGED=false;CHAIN_EPOCH++;
       resetHistorySearch();
       REPLY_CACHE.clear();REPLY_REQUESTS.clear();reindex([]);
@@ -2522,7 +2583,7 @@ async function pollChainTip(){
   finally{
     TIP_POLLING=false;busy=false;
     if(changed){msgs.sort((a,b)=>a.height-b.height);render();if(stick)toBottom(true)}
-    updateJump();observeTop();
+    updateJump();syncReaderScroll();
   }
 }
 async function startApp(){
@@ -2543,8 +2604,12 @@ async function startApp(){
 startApp();
 addEventListener('bac-language-change',bind);
 
-/* Kept as the send-event hook; signing controls are always visible. */
-function armFooter(){}
+/* Reveal signing choices after the first send attempt and keep them available. */
+function armFooter(){
+  if(BUSY||!hasDraft()||payload().length>MAXDATA)return;
+  const options=$('signing-options');if(options)options.hidden=false;
+  placeJump();
+}
 try{
   const sb=$('sendb'); if(sb) sb.addEventListener('click',armFooter);
   const qa=$('q'); if(qa) qa.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229) armFooter() });

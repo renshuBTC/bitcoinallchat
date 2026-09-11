@@ -81,7 +81,8 @@ function environment(wallet = true) {
     focus() { document.activeElement = this; }
     click() { this.focus(); return this.onclick?.({ target: this, preventDefault() {} }); }
   }
-  for (const id of ['ovs', 'ovp', 'pcard', 'hint', 'q', 'sendb', 'hoff', 'wallet-xverse', 'wallet-unisat']) new Element(id);
+  for (const id of ['ovs', 'ovp', 'pcard', 'hint', 'q', 'sendb', 'hoff', 'wallet-xverse', 'wallet-unisat', 'signing-options']) new Element(id);
+  elements.get('signing-options').hidden=true;
   const activeWallet = { id: 'xverse', name: 'Xverse' };
   const ctx = vm.createContext({
     document,
@@ -93,7 +94,7 @@ function environment(wallet = true) {
     payload: () => 'Message for offline signing',
     hasDraft: () => !!String(ctx.payload()).trim(),
     captureDraft: () => ({}),
-    armFooter() {}, connectOnly: w => { ctx.ACTIVE_WALLET = w; }, publish: (w, text) => publishCalls.push({ id: w.id, text }),
+    placeJump() {}, connectOnly: w => { ctx.ACTIVE_WALLET = w; }, publish: (w, text) => publishCalls.push({ id: w.id, text }),
     esc: value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     clearInterval: id => intervalsCleared.push(id),
     setTimeout: fn => { fn(); return 1; },
@@ -116,7 +117,7 @@ function environment(wallet = true) {
     const modalState = html.slice(modalStart, modalEnd).replace(/const ovs=[^;]*;/, '');
     vm.runInContext(modalState, ctx);
   }
-  for (const name of ['openSearch', 'closeSearch', 'closeSheet', 'send', 'chooseWallet', 'bindWallets', 'drawQR', 'buildQR']) {
+  for (const name of ['armFooter', 'openSearch', 'closeSearch', 'closeSheet', 'send', 'chooseWallet', 'bindWallets', 'drawQR', 'buildQR']) {
     vm.runInContext(declaration(name), ctx);
   }
   const closeBindingsStart = html.indexOf('ovs.onclick=');
@@ -126,6 +127,7 @@ function environment(wallet = true) {
   return { ctx, elements, document, listeners, intervalsCleared, publishCalls,
     async open() {
       await ctx.send();
+      assert.equal(elements.get('signing-options').hidden,false);
       const button = elements.get('hoff');
       assert.ok(button, 'Offline option is presented');
       await button.click();

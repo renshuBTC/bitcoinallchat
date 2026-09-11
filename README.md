@@ -7,10 +7,15 @@ A static browser application: no application server, user accounts, or private-k
 collection. Blockchain data is fetched from mempool.space and decoded locally.
 Publishing creates a Bitcoin transaction and incurs miner fees.
 
+Write a message and press Enter or Send to begin. An installed wallet opens
+directly; signing links and the offline option appear after this first send
+attempt and remain available. If no wallet is installed, choose a download link
+or an offline signer. Shift+Enter inserts a line break.
+
 ## Features
 
-- Read recent messages, search dated results back to the first Liquid whitehat
-  message, load earlier blocks, or inspect parsed protocol data.
+- Read recent messages, scroll up for earlier blocks, search dated results back
+  to the first Liquid whitehat message, or inspect parsed protocol data.
 - Publish text with Xverse, UniSat, or an offline signer.
 - Quote replies with an exact transaction-and-output reference stored on-chain.
 - Choose from 39 interface languages using the globe menu. Message translation
@@ -70,9 +75,9 @@ Tests use local fixtures and do not request wallet access or broadcast transacti
   no native reply field; payment links alone do not establish reply intent.
 - Conversation filtering and inferred older replies use heuristics. Sender labels
   and local **You** markers are not identity verification.
-- Search includes a quick lookup of the Liquid exchange and optional block scans
-  back to block 965,818. Coverage is shown explicitly; loaded results are not a
-  complete search until the selected range has been scanned.
+- Search opens with a quick lookup of the Liquid exchange. Typing a query starts
+  a limited block scan; scroll down through the results to continue farther back,
+  as far as block 965,818. Results cover loaded messages and may be incomplete.
 - Up to 1,000 successfully published transaction IDs and the selected interface
   language may be saved locally. Drafts, wallet addresses and private keys are not.
 - Text and its reply reference are limited to 100,000 bytes, with stricter limits

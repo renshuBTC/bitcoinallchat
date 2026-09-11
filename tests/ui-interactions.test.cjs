@@ -10,50 +10,56 @@ function declaration(name){
   throw Error('Function not found: '+name);
 }
 function search(){
-  const nodes=new Map(),listeners=new Map(),menus=[],effects=[];
+  const nodes=new Map(),listeners=new Map(),globalListeners=new Map(),menus=[],effects=[],timers=new Map();let timerId=0;
   const state={running:false,canStart:true,floor:965818,ceiling:965919,coveredBlocks:2,totalBlocks:102,complete:false,paused:false,reason:'',phase:'blocks'};
   const document={activeElement:null,getElementById:id=>nodes.get(id),addEventListener:(name,handler)=>listeners.set(name,handler),
     querySelectorAll:selector=>selector==='.msgopts[open]'?menus.filter(menu=>menu.open):[]};
   class Element{
-    constructor(id,tag='div'){this.id=id;this.tagName=tag.toUpperCase();this.children=[];this.value='';this.textContent='';this.isConnected=true;this.dataset={};this.hidden=false;this.disabled=false;this.open=false;
+    constructor(id,tag='div'){Object.assign(this,{id,tagName:tag.toUpperCase(),children:[],value:'',textContent:'',isConnected:true,dataset:{},hidden:false,disabled:false,open:false,clientHeight:300,_scrollTop:0,handlers:new Map()});
       const classes=new Set();this.classList={add:name=>classes.add(name),remove:name=>classes.delete(name),contains:name=>classes.has(name)};nodes.set(id,this)}
     focus(){document.activeElement=this}
-    contains(node){return node===this||this.children.includes(node)}
+    contains(node){return node===this||this.children.some(child=>child.contains(node))}
+    addEventListener(name,fn){this.handlers.set(name,fn)}
+    emit(name,event={}){this.handlers.get(name)?.({target:this,...event})}
     querySelector(selector){return selector==='summary'?this.children[0]:this.children.find(node=>node.classList.contains('it'))}
-    querySelectorAll(selector){return selector==='input,button'?this.children.filter(node=>['INPUT','BUTTON'].includes(node.tagName)):this.children.filter(node=>node.classList.contains('it'))}
+    querySelectorAll(selector){const out=[];const walk=node=>{for(const child of node.children){if(selector==='.it'?child.classList.contains('it'):['INPUT','BUTTON'].includes(child.tagName)||child.id==='sl')out.push(child);walk(child)}};walk(this);return out}
+    get scrollHeight(){return Math.max(70,this.children.length*50)}
+    get scrollTop(){return Math.min(this._scrollTop,Math.max(0,this.scrollHeight-this.clientHeight))}
+    set scrollTop(value){this._scrollTop=Math.max(0,Math.min(value,Math.max(0,this.scrollHeight-this.clientHeight)))}
+    getBoundingClientRect(){const top=this.parentList?100+this.parentList.children.indexOf(this)*50-this.parentList.scrollTop:100;return {top,bottom:top+(this.parentList?50:this.clientHeight)}}
     get innerHTML(){return this._html||''}
-    set innerHTML(value){
-      this._html=value;for(const node of this.children)node.isConnected=false;this.children=[];
+    set innerHTML(value){this._html=value;for(const node of this.children)node.isConnected=false;this.children=[];
       for(const [,tag,id] of value.matchAll(/<(button|div)[^>]*class="it"[^>]*data-message="([^"]+)"/g)){
-        const result=new Element(id+'-result',tag);result.classList.add('it');result.dataset.message=id;this.children.push(result);
+        const result=new Element(id+'-result',tag);result.classList.add('it');result.dataset.message=id;result.parentList=this;this.children.push(result);
       }
     }
   }
-  for(const id of ['ovs','ovp','ovl','q','sq','sl','searchb','scl','search-history','search-earlier','search-latest','search-summary','search-coverage','search-floor','search-state'])new Element(id,['q','sq'].includes(id)?'input':['searchb','scl','search-history','search-earlier','search-latest'].includes(id)?'button':'div');
-  nodes.get('ovs').children=['sq','scl','search-history','search-earlier','search-latest'].map(id=>nodes.get(id));
+  for(const id of ['ovs','ovp','q','sq','sl','searchb','scl','search-notice'])new Element(id,['q','sq'].includes(id)?'input':['searchb','scl'].includes(id)?'button':'div');
+  nodes.get('ovs').children=['sq','scl','sl'].map(id=>nodes.get(id));
   const context=vm.createContext({document,ovs:nodes.get('ovs'),ovp:nodes.get('ovp'),$:id=>nodes.get(id),
     REPLY:null,msgs:[],scanned:2,speech:()=>true,messageKey:m=>m.txid+':'+(m.vout??0),hue:()=> '#123456',effects,
-    SEARCH_FIRST:'',SEARCH_PAGE_QUERY:'',SEARCH_PAGE_MATCHES:[],SEARCH_PAGE_SIZE:80,
+    SEARCH_FIRST:'',SEARCH_PAGE_QUERY:'',SEARCH_PAGE_MATCHES:[],SEARCH_PAGE_SIZE:80,SEARCH_COUNT:80,
+    SEARCH_QUERY_TIMER:null,SEARCH_QUERY_RUN:0,SEARCH_LAST_QUERY:'',SEARCH_PENDING:null,SEARCH_SCROLL_INTENT:0,SEARCH_SCROLL_Y:0,SEARCH_TOUCH_Y:null,SEARCH_RENDERED_PAGE:null,
     searchHistoryState:()=>state,
-    startHistorySearch:bootstrapOnly=>effects.push('start:'+(bootstrapOnly===true?'bootstrap':'blocks')),
-    pauseHistorySearch:reason=>effects.push('pause:'+(reason||'paused')),
-    window:{BAC_LANGUAGE_SETTINGS:{close:()=>effects.push('close-language')}},
-    revealMessage:key=>effects.push('reveal:'+key),
-    closeSheet:()=>effects.push('close-offline'),cancelReply:()=>effects.push('cancel-reply'),
-    setTimeout:()=>1,console});
+    startHistorySearch:bootstrapOnly=>{effects.push('start:'+(bootstrapOnly===true?'bootstrap':'blocks'));context.fillSearch();return Promise.resolve()},
+    pauseHistorySearch:reason=>{effects.push('pause:'+(reason||'paused'));state.running=false;if(nodes.get('ovs').classList.contains('on'))context.fillSearch()},
+    window:{BAC_LANGUAGE_SETTINGS:{close:()=>effects.push('close-language')}},addEventListener:(name,fn)=>globalListeners.set(name,fn),
+    revealMessage:key=>effects.push('reveal:'+key),closeSheet:()=>effects.push('close-offline'),cancelReply:()=>effects.push('cancel-reply'),
+    setTimeout:fn=>{const id=++timerId;timers.set(id,fn);return id},clearTimeout:id=>timers.delete(id),console});
   context.searchMessages=()=>context.msgs;
-  for(const name of ['openSearch','closeSearch','searchKey','fillSearch','esc','displayTime','searchTimeHTML','updateSearchControls','searchResultPage','earlierSearchResults','latestSearchResults'])vm.runInContext(declaration(name),context);
-  for(const id of ['search-history','search-earlier','search-latest'])vm.runInContext(html.split('\n').find(line=>line.startsWith("$('"+id+"').onclick=")),context);
-  const start=html.indexOf("document.addEventListener('keydown',e=>{",html.indexOf('/* ---- search palette ---- */'));
+  for(const name of ['openSearch','closeSearch','cancelSearchWork','queueSearchQuery','tryPendingSearch','captureSearchAnchor','noteSearchScroll','handleSearchScroll','searchKey','fillSearch','esc','displayTime','searchTimeHTML','updateSearchNotice','searchResultPage','earlierSearchResults','newerSearchResults','latestSearchResults'])vm.runInContext(declaration(name),context);
+  const start=html.indexOf("$('sq').oninput=",html.indexOf('/* ---- search palette ---- */'));
   const end=html.indexOf('function searchKey(',start);vm.runInContext(html.slice(start,end),context);
   function key(fields={}){const e={key:'Escape',prevented:false,preventDefault(){this.prevented=true},...fields};listeners.get('keydown')(e);return e}
   function menu(id){const element=new Element(id,'details'),summary=new Element(id+'-summary','summary');element.children.push(summary);element.open=true;menus.push(element);return element}
-  return {context,document,nodes,effects,state,key,menu,click:target=>listeners.get('click')({target})};
+  function runTimers(){for(const [id,fn] of [...timers]){if(timers.delete(id))fn()}}
+  return {context,document,nodes,effects,state,key,menu,timers,runTimers,pagehide:()=>globalListeners.get('pagehide')(),click:target=>listeners.get('click')({target})};
 }
+
 test('Search opens with input focus, traps boundary Tab navigation, and restores the original focus on close',()=>{
   const a=search(),{nodes}=a;nodes.get('q').focus();a.context.openSearch();
   assert.equal(a.document.activeElement,nodes.get('sq'));assert(nodes.get('ovs').classList.contains('on'));
-  const backward=a.key({key:'Tab',shiftKey:true});assert(backward.prevented);assert.equal(a.document.activeElement,nodes.get('search-history'));
+  const backward=a.key({key:'Tab',shiftKey:true});assert(backward.prevented);assert.equal(a.document.activeElement,nodes.get('sl'));
   const forward=a.key({key:'Tab'});assert(forward.prevented);assert.equal(a.document.activeElement,nodes.get('sq'));
   a.key();assert.equal(a.document.activeElement,nodes.get('q'));assert(!nodes.get('ovs').classList.contains('on'));
   assert(!a.effects.includes('close-offline'),'Closing search must not invalidate unrelated offline signing');
@@ -88,14 +94,17 @@ test('Jump to latest opens the latest window rather than stopping at the end of 
   }
 });
 
-test('Search results retain sender and block columns and show a numeric date plus the same time format as Everything',()=>{
+test('Search rows match Everything order with one-line time and a full accessible date',()=>{
   const a=search(),timestamp=1231006505,txid='a'.repeat(64);
   a.context.msgs=[{txid,vout:2,text:'Historical message',who:'sender',height:123,time:timestamp}];
   a.context.openSearch();const markup=a.nodes.get('sl').innerHTML;
   const expectedDate=new Intl.DateTimeFormat(undefined,{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(timestamp*1000));
-  assert.match(markup,/<span class="h"><span>sender<\/span><span>#123<\/span><\/span>/);
-  assert(markup.includes('<time class="stmp" datetime="2009-01-03T18:15:05.000Z">'));
-  assert(markup.includes(a.context.esc(expectedDate)));assert(markup.includes(a.context.esc(a.context.displayTime(timestamp))));
+  assert.match(markup,/<span class="txid">aaaaaaaa<\/span><span class="p" dir="auto">Historical message<\/span><span class="h">#123<\/span>/);
+  assert.doesNotMatch(markup,/sender|class="d"|background:/);
+  const time=a.context.displayTime(timestamp),label=a.context.esc(expectedDate+' '+time);
+  assert(markup.includes('<time class="stmp" datetime="2009-01-03T18:15:05.000Z"'));
+  assert(markup.includes('title="'+label+'" aria-label="'+label+'">'+a.context.esc(time)+'</time>'));
+  assert.doesNotMatch(markup,/<time[^>]*>[\s\S]*?<span/);
   assert.equal(a.nodes.get('sl').children[0].tagName,'BUTTON');
 });
 test('Missing or invalid timestamps show a placeholder without exceptions or invalid datetime attributes',()=>{
@@ -111,47 +120,116 @@ test('Date and time labels are escaped even if a formatter returns markup-like t
   assert.doesNotMatch(markup,/<img|<svg/);assert.match(markup,/datetime="2009-01-03T18:15:05.000Z"/);
 });
 
-test('History controls distinguish bootstrap from explicit block scans and show actual coverage and pause states',()=>{
-  const a=search();a.context.openSearch();
-  assert.deepEqual(a.effects,['close-language','start:bootstrap']);
-  assert.equal(a.nodes.get('search-coverage').textContent,'2 of 102 blocks searched');
-  assert.equal(a.nodes.get('search-floor').textContent,'Back to block 965,818');
-  assert.equal(a.nodes.get('search-state').textContent,'Search incomplete.');
-  assert.match(a.nodes.get('sl').innerHTML,/No matching loaded messages\./);
-  a.nodes.get('search-history').onclick({type:'click'});assert.equal(a.effects.at(-1),'start:blocks');
-  a.state.running=true;a.state.phase='conversation';a.context.fillSearch();
-  assert.equal(a.nodes.get('search-history').textContent,'Pause Search');assert.equal(a.nodes.get('search-state').textContent,'Preparing…');
-  a.nodes.get('search-history').onclick();assert.equal(a.effects.at(-1),'pause:paused');
-  a.state.running=false;a.state.paused=true;a.state.reason='paused';a.context.fillSearch();
-  assert.equal(a.nodes.get('search-state').textContent,'Search paused.');
-  a.state.reason='error';a.context.fillSearch();assert.equal(a.nodes.get('search-state').textContent,'Could not load earlier blocks. Try again.');
-  a.state.reason='memory';a.context.fillSearch();assert.equal(a.nodes.get('search-state').textContent,'Search limit reached.');assert(a.nodes.get('search-history').disabled);
-  a.state.reason='budget';a.context.fillSearch();assert(!a.nodes.get('search-history').disabled,'A bounded block batch can be resumed');
-  a.state.reason='chain';a.state.canStart=false;a.context.fillSearch();
-  assert.equal(a.nodes.get('search-state').textContent,'Preparing…');assert(a.nodes.get('search-history').disabled);
-  a.state.canStart=true;
-  a.state.reason='';a.state.complete=true;a.state.coveredBlocks=102;a.context.fillSearch();
-  assert.equal(a.nodes.get('search-state').textContent,'Search complete for this range.');assert(a.nodes.get('search-history').disabled);
+function loadedMessages(count){return Array.from({length:count},(_,i)=>({txid:i.toString(16).padStart(64,'0'),vout:0,height:965818+i,text:'Message '+i}))}
+const started=a=>a.effects.filter(value=>value.startsWith('start:'));
+function edge(a,direction){const list=a.nodes.get('sl');list.scrollTop=direction>0?list.scrollHeight:0;list.emit('wheel',{deltaY:direction})}
+
+test('Changing a nonempty query debounces one bounded scan, cancels bootstrap, and never chains scans after progress',()=>{
+  const a=search();a.context.openSearch();a.state.running=true;a.state.phase='conversation';
+  const input=a.nodes.get('sq');input.value='first';input.oninput({isComposing:false});
+  assert.equal(a.state.running,false);assert.equal(a.timers.size,1);
+  input.value='second';input.oninput({isComposing:false});assert.equal(a.timers.size,1);a.runTimers();
+  assert.deepEqual(started(a),['start:bootstrap','start:blocks']);
+  a.state.reason='budget';for(let i=0;i<5;i++)a.context.fillSearch();a.runTimers();
+  assert.deepEqual(started(a),['start:bootstrap','start:blocks']);
+  assert.equal(a.nodes.get('search-notice').hidden,true,'A paused batch does not add a busy summary panel');
+  input.oninput({isComposing:false});assert.equal(a.timers.size,0,'Repeated normalized query has no new scan');
+  input.value='third';input.oninput({isComposing:false});input.value='';input.oninput({isComposing:false});a.runTimers();
+  assert.equal(started(a).length,2,'Clearing a query cancels its pending scan');
 });
 
-test('All 181 loaded results are reachable in bounded pages and a query resets to its newest page',()=>{
-  const a=search();a.context.msgs=Array.from({length:181},(_,i)=>({txid:i.toString(16).padStart(64,'0'),height:965818+i,vout:0,text:'Message '+i}));
-  a.context.openSearch();const seen=new Set();
-  function collect(){for(const result of a.nodes.get('sl').children)seen.add(result.dataset.message);assert(a.nodes.get('sl').children.length<=80)}
-  collect();assert.equal(a.nodes.get('search-summary').textContent,'Results 1–80 of 181');assert(a.nodes.get('search-latest').disabled);
-  a.nodes.get('search-earlier').onclick();collect();assert.equal(a.nodes.get('search-summary').textContent,'Results 81–160 of 181');
-  a.nodes.get('search-earlier').onclick();collect();assert(a.nodes.get('search-earlier').disabled);assert.equal(seen.size,181);
-  a.nodes.get('search-latest').onclick();assert.equal(a.nodes.get('search-summary').textContent,'Results 1–80 of 181');
-  a.nodes.get('sq').value='Message 180';a.context.fillSearch();assert.equal(a.nodes.get('sl').children.length,1);
-  assert.equal(a.nodes.get('search-summary').textContent,'Results 1–1 of 1');assert(a.nodes.get('search-earlier').disabled);
-  a.nodes.get('sq').value='No match';a.context.fillSearch();assert.equal(a.nodes.get('search-summary').textContent,'Results 0–0 of 0');
+test('IME input waits until composition finishes and creates only one query request',()=>{
+  const a=search();a.context.openSearch();const input=a.nodes.get('sq');input.value='你好';
+  input.oninput({isComposing:true});assert.equal(a.timers.size,0);
+  input.emit('compositionend');input.oninput({isComposing:false});assert.equal(a.timers.size,1);
+  a.runTimers();assert.deepEqual(started(a),['start:bootstrap','start:blocks']);
 });
 
-test('Progress refresh keeps keyboard focus on the same result and returns to search when its match disappears',()=>{
-  const a=search(),first={txid:'a'.repeat(64),vout:0,text:'First match',height:965820};a.context.msgs=[first];
-  a.context.openSearch();const old=a.nodes.get('sl').children[0];old.focus();
-  a.context.msgs.push({txid:'b'.repeat(64),vout:0,text:'Second match',height:965821});a.context.fillSearch();
+test('Open and query intents wait for the initial tip and consume once even when start immediately renders progress',()=>{
+  for(const withQuery of [false,true]){
+    const a=search();a.state.canStart=false;a.context.openSearch();assert.equal(started(a).length,0);
+    if(withQuery){a.nodes.get('sq').value='history';a.context.queueSearchQuery();a.runTimers()}
+    assert.equal(started(a).length,0);assert(a.context.SEARCH_PENDING);
+    a.state.canStart=true;a.context.fillSearch();a.context.fillSearch();
+    assert.deepEqual(started(a),[withQuery?'start:blocks':'start:bootstrap']);assert.equal(a.context.SEARCH_PENDING,null);
+  }
+});
+
+test('Closing or leaving the page cancels query timers, pending tip intents, and running history without discarding messages',()=>{
+  for(const leave of ['close','pagehide']){
+    const a=search();a.context.msgs=loadedMessages(3);a.context.openSearch();
+    a.nodes.get('sq').value='Message';a.context.queueSearchQuery();a.state.running=true;
+    if(leave==='close')a.context.closeSearch();else a.pagehide();
+    assert.equal(a.timers.size,0);assert.equal(a.state.running,false);assert.equal(a.context.SEARCH_PENDING,null);
+    const count=started(a).length;a.runTimers();a.context.fillSearch();assert.equal(started(a).length,count);assert.equal(a.context.msgs.length,3);
+  }
+});
+
+test('Actual scroll intent reaches every result in overlapping 80-row windows and preserves the visible row position',()=>{
+  const a=search();a.context.msgs=loadedMessages(181);a.context.openSearch();const list=a.nodes.get('sl'),seen=new Set();
+  const collect=()=>{for(const row of list.children)seen.add(row.dataset.message);assert(list.children.length<=80)};
+  collect();assert.equal(a.context.SEARCH_RENDERED_PAGE.start,101);assert.equal(a.context.SEARCH_RENDERED_PAGE.rows.length,80);
+  while(a.context.SEARCH_RENDERED_PAGE.hasEarlier){
+    list.scrollTop=list.scrollHeight;const anchor=a.context.captureSearchAnchor();list.emit('wheel',{deltaY:1});collect();
+    const restored=list.children.find(row=>row.dataset.message===anchor.key);
+    assert(restored);assert.equal(restored.getBoundingClientRect().top-list.getBoundingClientRect().top,anchor.offset);
+  }
+  assert.equal(seen.size,181);assert.deepEqual(started(a),['start:bootstrap']);
+  while(a.context.SEARCH_RENDERED_PAGE.hasLatest)edge(a,-1);
+  assert.equal(a.context.SEARCH_RENDERED_PAGE.start,101);
+  a.nodes.get('sq').value='Message 180';a.context.queueSearchQuery();assert.equal(list.scrollTop,0);assert.equal(list.children.length,1);
+});
+
+test('Programmatic scrolling, progress renders, and gestures during an active request never create a scan loop',()=>{
+  const a=search();a.context.msgs=loadedMessages(20);a.context.openSearch();const list=a.nodes.get('sl');
+  list.scrollTop=list.scrollHeight;list.emit('scroll');assert.equal(started(a).length,1);
+  edge(a,1);assert.deepEqual(started(a),['start:bootstrap','start:blocks']);
+  for(let i=0;i<5;i++){list.emit('scroll');a.context.fillSearch()}
+  assert.equal(started(a).length,2);
+  a.state.running=true;edge(a,1);a.state.running=false;a.state.reason='budget';a.context.fillSearch();list.emit('scroll');
+  assert.equal(started(a).length,2,'An old gesture cannot schedule the next batch');
+  edge(a,1);assert.equal(started(a).length,3,'A fresh gesture can resume one bounded batch');
+  a.state.reason='memory';a.context.fillSearch();edge(a,1);assert.equal(started(a).length,3);
+  a.state.reason='';a.state.complete=true;a.context.fillSearch();edge(a,1);assert.equal(started(a).length,3);
+});
+
+test('Cached result windows stay scrollable during a background history scan without starting another request',()=>{
+  const a=search();a.context.msgs=loadedMessages(181);a.context.openSearch();a.state.running=true;
+  edge(a,1);assert.equal(a.context.SEARCH_RENDERED_PAGE.start,61);
+  edge(a,-1);assert.equal(a.context.SEARCH_RENDERED_PAGE.start,101);
+  while(a.context.SEARCH_RENDERED_PAGE.hasEarlier)edge(a,1);
+  edge(a,1);assert.deepEqual(started(a),['start:bootstrap']);
+  a.state.running=false;a.context.fillSearch();a.nodes.get('sl').emit('scroll');
+  assert.deepEqual(started(a),['start:bootstrap'],'No deferred request is created when the active scan ends');
+});
+
+test('Keyboard and touch edge navigation work without action buttons and preserve native message activation',()=>{
+  const a=search();a.context.msgs=loadedMessages(181);a.context.openSearch();const list=a.nodes.get('sl');
+  list.scrollTop=list.scrollHeight;list.emit('keydown',{key:'PageDown'});assert.equal(a.context.SEARCH_RENDERED_PAGE.start,61);
+  list.scrollTop=0;list.emit('keydown',{key:'PageUp'});assert.equal(a.context.SEARCH_RENDERED_PAGE.start,101);
+  list.scrollTop=list.scrollHeight;list.emit('touchstart',{touches:[{clientY:200}]});list.emit('touchmove',{touches:[{clientY:100}]});
+  assert.equal(a.context.SEARCH_RENDERED_PAGE.start,61);
+  const before=a.context.SEARCH_RENDERED_PAGE.start;list.emit('keydown',{key:' ',target:list.children[0]});assert.equal(a.context.SEARCH_RENDERED_PAGE.start,before);
+  assert.doesNotMatch(html,/(?:id="search-(?:history|earlier|latest)"|class="search-actions")/);
+});
+
+test('Progress refresh preserves keyboard focus and preview formatting reads only its bounded prefix',()=>{
+  const a=search(),first=loadedMessages(1)[0];a.context.msgs=[first];a.context.openSearch();const old=a.nodes.get('sl').children[0];old.focus();
+  a.context.msgs.push({...loadedMessages(2)[1],text:'Second'});a.context.fillSearch();
   assert.notEqual(a.document.activeElement,old);assert.equal(a.document.activeElement.dataset.message,first.txid+':0');
-  assert(a.document.activeElement.isConnected);a.nodes.get('sq').value='Second';a.context.fillSearch();
-  assert.equal(a.document.activeElement,a.nodes.get('sq'));
+  a.context.msgs=[{...first,text:' '.repeat(1000000)+'Hidden tail'}];a.context.fillSearch();
+  assert.doesNotMatch(a.nodes.get('sl').innerHTML,/Hidden tail/);assert.match(a.nodes.get('sl').innerHTML,/class="p" dir="auto"> <\/span>/);
+});
+
+test('Search has no summary panel and only shows needed loading, scoped empty or failure notices',()=>{
+  const a=search();a.context.msgs=loadedMessages(2);a.context.openSearch();
+  assert.doesNotMatch(html,/search-(?:summary|coverage|floor|state|tools)/);
+  assert.equal(a.nodes.get('search-notice').hidden,true);
+  a.state.running=true;a.context.fillSearch();assert.equal(a.nodes.get('search-notice').textContent,'Loading…');assert.equal(a.nodes.get('sl').children.length,2);
+  a.context.msgs=[];a.context.fillSearch();assert.equal(a.nodes.get('sl').innerHTML,'','Loading must not falsely report no matches');
+  a.state.running=false;a.context.fillSearch();assert.equal(a.nodes.get('search-notice').hidden,true);assert.match(a.nodes.get('sl').innerHTML,/No matching loaded messages\./);
+  a.state.reason='error';a.context.fillSearch();assert.equal(a.nodes.get('search-notice').textContent,'Could not load earlier blocks. Scroll down to retry.');
+  assert.equal(a.nodes.get('sl').innerHTML,'');
+  a.state.reason='memory';a.context.fillSearch();assert.equal(a.nodes.get('search-notice').textContent,'Search limit reached.');
+  a.state.reason='';a.state.complete=true;a.context.msgs=loadedMessages(2);a.context.fillSearch();assert.equal(a.nodes.get('search-notice').hidden,true);
 });

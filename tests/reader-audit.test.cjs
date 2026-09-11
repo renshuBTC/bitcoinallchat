@@ -112,7 +112,8 @@ test('Text and quote payloads remain escaped even when they contain active HTML 
   scope.reindex([parent,reply]);const rendered=scope.turn(reply,null);
   assert.ok(rendered.includes('&lt;img src=x onerror=alert(1)&gt;'));
   assert.ok(rendered.includes('&lt;script&gt;alert(2)&lt;/script&gt;'));
-  assert.doesNotMatch(rendered,/<img src=x|<script>/);
+  assert.equal(rendered.includes('<img src=x'),false);
+  assert.equal(rendered.includes('<script>'),false);
 });
 
 test('Thousands of row timestamps reuse locale formatters without changing their display',()=>{

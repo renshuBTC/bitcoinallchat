@@ -15,7 +15,7 @@ function runtime(){
     API:'https://example.invalid',msgs:[],next:1000,busy:false,scanned:0,orCount:0,query:'',filter:'talk',
     document:{documentElement:{scrollHeight:100}},window:{scrollY:0,scrollTo(){}},$:el,
     setTimeout(fn,delay){const id=++nextTimer;if(delay===0)queueMicrotask(fn);else timers.set(id,fn);return id},clearTimeout:id=>timers.delete(id),
-    render:()=>rendered.push(ctx.scanned),updateJump(){},observeTop(){},toBottom(){},atBottom:()=>true,
+    render:()=>rendered.push(ctx.scanned),updateJump(){},syncReaderScroll(){},toBottom(){},atBottom:()=>true,
     speech:m=>m.kind==='talk',cleanTxid:value=>typeof value==='string'&&/^[0-9a-f]{64}$/i.test(value)?value.toLowerCase():'',
     fetch:async url=>{requests.push(url);return {ok:true,headers:{get:()=>null},text:async()=>'a'.repeat(64),json:async()=>({timestamp:1}),arrayBuffer:async()=>new ArrayBuffer(81)}},
     parseBlock:()=>({outs:[],bytes:new Uint8Array(81),dv:new DataView(new ArrayBuffer(81)),total:0}),
@@ -85,7 +85,6 @@ test('persistent startup errors pause after the first block rather than scanning
   const app=runtime();let calls=0;app.ctx.scanBlock=async()=>{calls++;throw new Error('offline')};
   await app.ctx.loadInitial();assert.equal(calls,1);assert.equal(app.ctx.next,999);assert.equal(app.evaluate('LOAD_FAILED'),true);
   assert.deepEqual(Array.from(app.evaluate('BLOCK_RETRY')),[1000]);assert.equal(app.ctx.busy,false);
-  await app.ctx.loadOlder();assert.equal(calls,1,'observer cannot loop on a failed request');
 });
 
 test('failed heights retry successfully without dropping or duplicating neighboring results',async()=>{
@@ -96,15 +95,10 @@ test('failed heights retry successfully without dropping or duplicating neighbor
   assert.equal(app.evaluate('BLOCK_RETRY.size'),0);assert.equal(app.evaluate('LOAD_FAILED'),false);
 });
 
-test('startup request budget counts attempts and exposes an explicit continuation',async()=>{
+test('Startup stops at its request budget while retaining earlier heights for later scrolling',async()=>{
   const app=runtime();let calls=0;app.ctx.scanBlock=async()=>{calls++;return []};
-  await app.ctx.loadInitial();assert.equal(calls,260);assert.equal(app.evaluate('LOAD_ATTEMPTED'),260);assert.equal(app.evaluate('LOAD_PAUSED'),true);
-  assert.match(app.ctx.loadingRetryButton(),/Load More Messages/);assert.equal(app.ctx.busy,false);
-});
-
-test('older-loading render errors release busy state instead of permanently locking loading',async()=>{
-  const app=runtime();app.ctx.scanBlock=async()=>[];app.ctx.render=()=>{throw new Error('render failed')};
-  await assert.rejects(app.ctx.loadOlder(),/render failed/);assert.equal(app.ctx.busy,false);
+  await app.ctx.loadInitial();assert.equal(calls,260);assert.equal(app.evaluate('LOAD_ATTEMPTED'),260);
+  assert.equal(app.ctx.next,740);assert.equal(app.ctx.busy,false);
 });
 
 test('initial and expanded text have finite DOM sizes without modifying the source message',()=>{
@@ -116,7 +110,7 @@ test('initial and expanded text have finite DOM sizes without modifying the sour
   assert.match(html,/View Full Transaction/,'oversized full original remains reachable');
 });
 
-test('Everything has an observer sentinel and conversation windows do not discard source records',()=>{
+test('Reader edge markers and bounded conversation windows retain source records',()=>{
   const start=html.indexOf("if(filter==='all')"),end=html.indexOf('reindex(msgs)',start);
   assert.match(html.slice(start,end),/id="toploader"/);
   assert.match(html.slice(html.indexOf('function render(){'),html.indexOf('function bind(){')),/talk=page\.rows/);

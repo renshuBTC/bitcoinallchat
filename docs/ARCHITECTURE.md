@@ -5,12 +5,15 @@
 `index.html` contains the page, styles and main application. It fetches raw Bitcoin
 blocks from mempool.space, parses transaction outputs in the browser and renders
 recognized content. Parsing has size/count bounds, and network reads have deadlines.
-The latest scan starts with a target of 100 conversation messages; controls expose
-additional history without rendering every loaded record at once.
+The latest scan starts with a target of 100 conversation messages; scrolling
+exposes additional history without rendering every loaded record at once.
 
-Conversation renders at most 1,000 messages at a time, with earlier/latest controls
-and exact-output navigation for quotes and search results. Search shows 80 results
-per page. Displayed dates and times come from block timestamps, not a separate
+Conversation renders at most 1,000 messages at a time; Everything renders at most
+2,000 records. Scroll up for older records and down to revisit newer loaded ones.
+Overlapping windows preserve the visible record's position while keeping the DOM
+bounded. Quotes and search results can reveal an exact output outside the current
+window. Search displays up to 80 results, newest first, with scrolling in either
+direction. Displayed dates and times come from block timestamps, not a separate
 message creation time.
 
 Opening search fetches the first Liquid whitehat message, transaction
@@ -19,13 +22,17 @@ in block 965,818. A bounded, paged address lookup finds related messages quickly
 These isolated matches do not count as complete-block coverage, and receiving a
 transaction at that address does not prove who authored it.
 
-Search Earlier Blocks scans up to 60 additional blocks per action, down to block
-965,818. It can be paused and resumed; closing search cancels pending requests.
+After a short typing pause, a nonempty search query starts one scan of up to 60
+additional blocks, down to block 965,818. Scrolling down at the oldest loaded
+result can start another bounded scan. Merely rendering results never starts a
+continuation. Changing the query, closing search or leaving the page cancels
+pending work; loaded records remain available for the page session.
 Only conversational records are retained in a separate archive with a conservative
 32 MiB accounting limit. Reaching that limit stops further historical loading for
 the current page session without discarding loaded results. Full block scanning can
-transfer substantial data. The interface reports actual block coverage and does
-not claim a complete text search while gaps remain. Reorganizations invalidate
+transfer substantial data. Complete-block coverage is tracked separately from
+discovered messages; an empty result list refers only to loaded messages.
+Reorganizations invalidate
 cached history and reply lookups.
 
 OP_RETURN data pushes are joined before classification. Text is decoded as UTF-8
@@ -73,6 +80,12 @@ Supported spending addresses are native SegWit P2WPKH (`bc1q`, 20-byte program),
 Taproot P2TR (`bc1p`, 32-byte program), and legacy P2PKH (`1…`). Nested SegWit
 (`3…`) and P2WSH are not supported. Wallet connections are temporary and are not
 restored after reload. Connecting without a draft does not initiate signing.
+
+Signing choices start hidden and appear after Enter or Send with a nonempty,
+valid-sized draft. Sending uses the active installed wallet, otherwise the first
+detected provider (Xverse before UniSat), and asks for account permission before
+loading transaction-building resources. If no wallet is installed, it reveals
+the download links and offline choice. Cancellation never tries another wallet.
 
 Independent code in `index.html` verifies funding transaction IDs and scripts,
 selected amounts, the prepared outputs, message bytes and fees. The wallet returns

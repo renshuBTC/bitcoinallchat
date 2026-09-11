@@ -40,7 +40,6 @@ test('Opening search discovers the verified transaction bytes without downloadin
   assert.equal(seed.text,'we are whitehats. contact us on chain');assert.equal(seed.vout,0);assert.equal(seed.height,FLOOR);assert.equal(seed.time,1788719410);
   assert.equal(seed.who,undefined);assert.equal(h.scope.msgs.length,0);
   const state=h.scope.searchHistoryState();assert.equal(state.seedReady,true);assert.equal(state.coveredBlocks,0);assert.equal(state.complete,false);
-  assert.match(declaration('openSearch'),/startHistorySearch\(true\)/);
 });
 
 test('Address discovery follows bounded cursors, deduplicates exact outputs, and never invents whole-block coverage',async()=>{
@@ -79,7 +78,6 @@ test('Paused in-flight reads abort and cannot publish stale data or move the ret
   h.scope.pauseHistorySearch();assert.equal(signal.aborted,true);finish();await pending;
   const state=h.scope.searchHistoryState();assert.equal(state.reason,'paused');assert.equal(state.coveredBlocks,0);assert.equal(state.nextHeight,FLOOR+1);
   assert.equal(h.scope.searchMessages().length,1);
-  assert.match(declaration('closeSearch'),/pauseHistorySearch\('closed'\)/);
 });
 
 test('A failed height remains retryable and cannot make incomplete coverage appear complete',async()=>{
@@ -99,13 +97,23 @@ test('Memory limits reject a block atomically and preserve every already discove
   assert.deepEqual(h.scope.searchMessages().map(h.scope.messageKey),keys);
 });
 
-test('All loaded matching results remain accessible in nonoverlapping pages of at most 80',()=>{
+test('Overlapping search windows keep every loaded result reachable in both directions',()=>{
   const h=runtime();const matches=Array.from({length:251},(_,n)=>message(n));h.scope.msgs=matches;
   h.scope.fillSearch=()=>h.scope.searchResultPage(h.scope.searchMessages());
-  const seen=[];
-  for(;;){const page=h.scope.searchResultPage(matches);assert.ok(page.rows.length<=80);seen.push(...page.rows.map(h.scope.messageKey));if(!page.hasEarlier)break;h.scope.earlierSearchResults()}
-  assert.equal(seen.length,251);assert.equal(new Set(seen).size,251);
-  h.scope.latestSearchResults();assert.equal(h.scope.searchResultPage(matches).rows[0].txid,id(250));
+  const older=new Set(),newer=new Set();let previous=null;
+  for(;;){
+    const page=h.scope.searchResultPage(matches);assert.ok(page.rows.length<=80);
+    page.rows.forEach(row=>older.add(h.scope.messageKey(row)));
+    if(previous){assert.ok(page.end<previous.end);assert.ok(page.end>previous.start,'Windows overlap to retain the visible row')}
+    if(!page.hasEarlier)break;previous=page;h.scope.earlierSearchResults();
+  }
+  assert.equal(older.size,251);previous=null;
+  for(;;){
+    const page=h.scope.searchResultPage(matches);page.rows.forEach(row=>newer.add(h.scope.messageKey(row)));
+    if(previous){assert.ok(page.start>previous.start);assert.ok(page.start<previous.end)}
+    if(!page.hasLatest)break;previous=page;h.scope.newerSearchResults();
+  }
+  assert.equal(newer.size,251);assert.equal(h.scope.searchResultPage(matches).rows[0].txid,id(250));
   h.scope.earlierSearchResults();h.node('sq').value='different';assert.equal(h.scope.searchResultPage(matches).rows[0].txid,id(250));
 });
 

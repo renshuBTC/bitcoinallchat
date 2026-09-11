@@ -9,8 +9,6 @@ const SAMPLE_COPY={
   'OP_RETURN Seen':['OP_RETURN détectés','عمليات OP_RETURN المرصودة'],
   'Conversation (Latest 100 Messages)':['Conversation (100 derniers messages)','المحادثة (أحدث 100 رسالة)'],
   'Everything':['Tout','الكل'],
-  'Older':['Plus anciens','الأقدم'],
-  'Latest':['Derniers','الأحدث'],
   'Write a message onto Bitcoin…':['Écrivez un message sur Bitcoin…','اكتب رسالة على Bitcoin…'],
   'Publish onto Bitcoin':['Publier sur Bitcoin','النشر على Bitcoin'],
   'Sign With':['Signer avec','التوقيع باستخدام'],
@@ -20,6 +18,7 @@ const SAMPLE_COPY={
   'Close':['Fermer','إغلاق'],
   'Apply Language':['Appliquer la langue','تطبيق اللغة'],
   'Preparing…':['Préparation…','جارٍ التحضير…'],
+  'Loading…':['Chargement…','جارٍ التحميل…'],
   'Reading your coins…':['Vérification de vos fonds…','جارٍ التحقق من أموالك…'],
   'Reply':['Répondre','رد'],
   'Translate':['Traduire','ترجمة'],
@@ -174,14 +173,14 @@ test('All template placeholders retain literal names, wallets, fees, counts, tim
   assert.deepEqual(a.calls,[]);a.api.dispose();
 });
 
-test('Sidebar, dock, conversation navigation and message options translate while all other content stays original',async()=>{
+test('Sidebar, dock, reader status and message options translate while all other content stays original',async()=>{
   const a=app(),info=a.add(a.document.body,'aside',{className:'info'}),dock=a.add(a.document.body,'div',{className:'dock'});
   const translated=[
     a.add(info,'p',{text:'Messages on Bitcoin.'}),
     a.add(dock,'button',{text:'Everything'}),
-    a.add(a.add(a.document.body,'nav',{id:'test-nav',className:'chat-nav'}),'button',{text:'Display Language'}),
+    a.add(a.add(a.document.body,'div',{id:'test-nav',className:'toploader'}),'span',{text:'Display Language'}),
     a.add(a.add(a.document.body,'details',{className:'msgopts'}),'button',{text:'Reply'}),
-    a.add(a.add(a.document.body,'nav',{className:'payload-nav'}),'button',{text:'Older'})
+    a.add(a.add(a.document.body,'div',{className:'toploader'}),'span',{text:'Loading…'})
   ];
   // Known dictionary keys prove these are exclusions, not simply missing translations.
   const protectedNodes=[
@@ -206,7 +205,7 @@ test('Sidebar, dock, conversation navigation and message options translate while
   const select=a.add(a.document.getElementById('test-nav'),'select',{attrs:{'aria-label':'Display Language'}});
   const option=a.add(select,'option',{text:'Reply',attrs:{value:'fr'}});
   await a.language('fr');
-  assert.deepEqual(translated.map(node=>node.textContent),['Des messages sur Bitcoin.','Tout','Langue d’affichage','Répondre','Plus anciens']);
+  assert.deepEqual(translated.map(node=>node.textContent),['Des messages sur Bitcoin.','Tout','Langue d’affichage','Répondre','Chargement…']);
   assert.deepEqual(protectedNodes.map(node=>node.textContent),before);
   assert.equal(body.textContent,'Messages on Bitcoin.');assert.equal(quote.textContent,'Reply');
   assert.equal(draft.value,'Everything');assert.equal(draft.textContent,'Reply');
@@ -265,7 +264,7 @@ test('Dynamic statuses, text-node updates and changed placeholders use their lat
 
 test('New scoped roots and nested controls are translated once without a mutation self-loop',async()=>{
   const a=app();await a.language('fr');
-  const modal=a.add(a.document.body,'nav',{className:'chat-nav'}),heading=a.add(modal,'h2',{text:'Display Language'});
+  const modal=a.add(a.document.body,'div',{className:'toploader'}),heading=a.add(modal,'h2',{text:'Display Language'});
   const nested=a.add(modal,'div',{className:'dock'}),button=a.add(nested,'button',{text:'Apply Language'});
   await a.flush();assert.equal(heading.textContent,'Langue d’affichage');assert.equal(button.textContent,'Appliquer la langue');
   const settled=a.stats();assert.equal(settled.pending,0);assert.equal(a.observers.size,1);
@@ -335,25 +334,24 @@ test('An explicit refresh consumes the scheduled observer work and dispose leave
   await a.flush();assert.equal(a.stats().pending,0);
 });
 
-test('Search controls and dynamic coverage translate while matching message previews and date metadata stay original',async()=>{
+test('Minimal search notices and accessible labels translate while message previews and date metadata stay original',async()=>{
   const packs=sampleLocales();
   const copy={
-    'Search Earlier Blocks':'Rechercher dans les blocs précédents',
+    'Search results':'Résultats de recherche',
+    'Could not load earlier blocks. Scroll down to retry.':'Impossible de charger les blocs précédents. Faites défiler vers le bas pour réessayer.',
     'No matching loaded messages.':'Aucun message chargé ne correspond.',
-    '{n} of {total} blocks searched':'{n} blocs sur {total} recherchés',
-    'Results {start}–{end} of {n}':'Résultats {start}–{end} sur {n}'
   };
   for(const [key,value] of Object.entries(copy)){packs.en[key]=key;packs.fr[key]=value;packs.ar[key]=key}
-  const a=app(packs),tools=a.add(a.document.body,'div',{className:'search-tools'});
-  const button=a.add(tools,'button',{text:'Search Earlier Blocks'}),coverage=a.add(tools,'span',{text:'2 of 102 blocks searched'});
-  const summary=a.add(tools,'span',{text:'Results 1–80 of 181'}),empty=a.add(a.document.body,'div',{className:'pal-e',text:'No matching loaded messages.'});
-  const result=a.add(a.document.body,'button',{className:'it'}),preview=a.add(result,'span',{className:'tx',text:'Search Earlier Blocks'});
+  const a=app(packs),notice=a.add(a.document.body,'div',{className:'search-notice',text:'Loading…'});
+  const empty=a.add(a.document.body,'div',{className:'pal-e',text:'No matching loaded messages.'});
+  const list=a.add(a.document.body,'div',{id:'sl',attrs:{'aria-label':'Search results'}});
+  const result=a.add(list,'button',{className:'it'}),preview=a.add(result,'span',{className:'p',text:'Loading…'});
   const stamp=a.add(result,'time',{className:'stmp',text:'01/03/2009 6:15 PM'});
   await a.language('fr');
-  assert.equal(button.textContent,copy['Search Earlier Blocks']);assert.equal(empty.textContent,copy['No matching loaded messages.']);
-  assert.equal(coverage.textContent,'2 blocs sur 102 recherchés');assert.equal(summary.textContent,'Résultats 1–80 sur 181');
-  assert.equal(preview.textContent,'Search Earlier Blocks');assert.equal(stamp.textContent,'01/03/2009 6:15 PM');
-  coverage.textContent='9 of 102 blocks searched';await a.flush();assert.equal(coverage.textContent,'9 blocs sur 102 recherchés');
-  await a.language('en');assert.equal(coverage.textContent,'9 of 102 blocks searched');assert.equal(button.textContent,'Search Earlier Blocks');
+  assert.equal(notice.textContent,'Chargement…');assert.equal(empty.textContent,copy['No matching loaded messages.']);
+  assert.equal(preview.textContent,'Loading…');assert.equal(stamp.textContent,'01/03/2009 6:15 PM');
+  assert.equal(list.getAttribute('aria-label'),'Résultats de recherche');
+  notice.textContent='Could not load earlier blocks. Scroll down to retry.';await a.flush();assert.equal(notice.textContent,copy['Could not load earlier blocks. Scroll down to retry.']);
+  await a.language('en');assert.equal(notice.textContent,'Could not load earlier blocks. Scroll down to retry.');
   assert.deepEqual(a.calls,[]);assert.equal(a.stats().pending,0);a.api.dispose();
 });

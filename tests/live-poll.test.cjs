@@ -5,13 +5,13 @@ const source=html.slice(html.indexOf('let TIP_POLLING='),html.indexOf('async fun
 function app(){
   const h={target:'102',hash:'a'.repeat(64),scans:[],fail:0,nodes:new Map()};
   const scope=vm.createContext({API:'https://example.test',TIP:100,busy:false,msgs:[],next:50,scanned:50,orCount:500,
-    BLOCK_RETRY:new Set(),LOAD_FAILED:false,LOAD_PAUSED:false,BLOCK_HASHES:new Map([[100,h.hash]]),BLOCK_PARENTS:new Map(),
+    BLOCK_RETRY:new Set(),LOAD_FAILED:false,BLOCK_HASHES:new Map([[100,h.hash]]),BLOCK_PARENTS:new Map(),
     CHAIN_CHANGED:false,CHAIN_EPOCH:0,REPLY_CACHE:new Map(),REPLY_REQUESTS:new Map(),ALL_FIRST:'',ALL_NAV_RUN:0,ALL_COUNT:2000,ALL_PAGE_SIZE:2000,
     CHAT_FIRST:'',CHAT_COUNT:1000,CHAT_PAGE_SIZE:1000,CHAT_NAV_RUN:0,
     cleanTxid:value=>typeof value==='string'&&/^[0-9a-f]{64}$/i.test(value)?value.toLowerCase():'',
     $:id=>{if(!h.nodes.has(id))h.nodes.set(id,{});return h.nodes.get(id)},
     readBlockResource:async url=>url.includes('/block-height/')?h.hash:h.target,scanBlock:async height=>{h.scans.push(height);if(height===h.fail)throw Error('offline');return [{height}];},
-    atBottom:()=>true,yieldToBrowser:async()=>{},render(){},toBottom(){},updateJump(){},observeTop(){},
+    atBottom:()=>true,yieldToBrowser:async()=>{},render(){},toBottom(){},updateJump(){},syncReaderScroll(){},
     resetHistorySearch(){h.historyReset=true;},
     loadInitial:async()=>{h.reloaded=true;},reindex:messages=>{h.indexed=messages;},
   });
@@ -61,4 +61,39 @@ test('an invalid confirmation hash leaves the current history intact for retry',
 test('a conflicting neighboring scan triggers a reload even if the tip height has not changed',async()=>{
   const h=app();h.target='100';h.scope.CHAIN_CHANGED=true;await h.run();
   assert.equal(h.reloaded,true);assert.equal(h.scope.CHAIN_CHANGED,false);assert.equal(h.scope.CHAIN_EPOCH,1);
+});
+
+function declaration(name){
+  const start=html.search(new RegExp('(?:async )?function '+name+'\\('));assert.ok(start>=0,name);
+  for(let end=html.indexOf('}',start);end>=0;end=html.indexOf('}',end+1)){
+    const code=html.slice(start,end+1);try{new vm.Script(code);return code}catch{}
+  }throw Error('Cannot extract '+name);
+}
+
+test('A search opened before chain readiness starts its queued bootstrap on the first loaded render, once',async()=>{
+  const h=app(),starts=[];let finishTip;
+  const overlay={classList:{contains:()=>true}};
+  Object.assign(h.scope,{
+    TIP:0,scanned:0,filter:'talk',query:'',READER_VIEW:'',ovs:overlay,
+    SEARCH_PENDING:{run:1,query:'',bootstrap:true},SEARCH_QUERY_RUN:1,
+    searchKey:value=>String(value||'').toLowerCase(),
+    searchHistoryState:()=>({canStart:h.scope.TIP>0,running:false,complete:false,reason:''}),
+    startHistorySearch:bootstrap=>starts.push(bootstrap),
+    captureReaderAnchor:()=>null,restoreReaderAnchor(){},counts(){},bind(){},
+    searchMessages:()=>h.scope.msgs,
+    chatPage:()=>({rows:[],start:0,end:0,matches:[]}),readerStatus:()=>'',CHAT_LOADING:false,
+    startBitcoinPrice(){},setInterval(){},
+    readBlockResource:()=>new Promise(resolve=>{finishTip=resolve}),
+  });
+  h.nodes.set('ovs',overlay);h.nodes.set('sq',{value:''});
+  for(const name of ['tryPendingSearch','refreshHistorySearch','render','startApp'])vm.runInContext(declaration(name),h.scope);
+  h.scope.fillSearch=()=>h.scope.tryPendingSearch();
+  // The initial loader renders after each completed block; use the real render path here.
+  h.scope.loadInitial=async()=>{h.scope.scanned=1;h.scope.render()};
+  vm.runInContext('TIP_READY=false;TIP_POLLING=false;',h.scope);
+  const pending=h.scope.startApp();
+  assert.deepEqual(starts,[]);assert.ok(h.scope.SEARCH_PENDING);
+  finishTip('101');await pending;
+  assert.deepEqual(starts,[true]);assert.equal(h.scope.SEARCH_PENDING,null);
+  h.scope.render();h.scope.render();assert.deepEqual(starts,[true]);
 });

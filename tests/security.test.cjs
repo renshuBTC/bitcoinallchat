@@ -140,6 +140,35 @@ test('Publish verifies the returned signed PSBT before broadcast and remembers o
   assert.ok(f.events.includes('sign'));assert.deepEqual(f.events.find(e=>Array.isArray(e)&&e[0]==='push'),['push',f.raw]);
   assert.deepEqual(f.events.find(e=>Array.isArray(e)&&e[0]==='mine'),['mine',TXID]);assert.ok(f.events.includes('clear'));
 });
+
+test('Wallet permission opens before builder downloads and repeated Send cannot duplicate it',async()=>{
+  const f=await sending(),order=[];let allow;
+  const connected=f.wallet.connect;
+  f.wallet.connect=()=>{order.push('connect');return new Promise(resolve=>{allow=()=>connected().then(resolve)})};
+  f.scope.lib=async()=>{order.push('builder');return f.L};
+  Object.assign(f.scope,{MAXDATA:100000,payload:()=>text,hasDraft:()=>true,armFooter(){},detected:()=>[f.wallet]});
+  vm.runInContext(declaration('send'),f.scope);
+  const first=f.scope.send();
+  assert.deepEqual(order,['connect']);assert.equal(f.scope.BUSY,true);
+  await f.scope.send();assert.deepEqual(order,['connect']);
+  await allow();await first;
+  assert.deepEqual(order,['connect','builder']);assert.ok(f.events.includes('sign'));
+  assert.ok(f.events.some(event=>Array.isArray(event)&&event[0]==='push'));
+});
+
+for(const stage of ['connect','sign'])test('Rejecting '+stage+' never falls back to another installed wallet',async()=>{
+  const f=await sending(),calls=[];
+  f.wallet[stage]=async()=>{calls.push(stage);throw Error('User rejected '+stage)};
+  f.scope.lib=async()=>{calls.push('builder');return f.L};
+  const other={id:'other',connect:async()=>{calls.push('other-wallet');throw Error('must not connect')}};
+  Object.assign(f.scope,{MAXDATA:100000,payload:()=>text,hasDraft:()=>true,armFooter(){},detected:()=>[f.wallet,other]});
+  vm.runInContext(declaration('send'),f.scope);
+  await f.scope.send();
+  assert.equal(calls.includes('other-wallet'),false);
+  if(stage==='connect')assert.deepEqual(calls,['connect']);
+  assert.equal(f.events.some(event=>Array.isArray(event)&&['push','mine'].includes(event[0])),false);
+  assert.equal(f.events.includes('clear'),false);assert.equal(f.scope.BUSY,false);
+});
 for(const options of [{txidOnly:true},{mismatch:true},{closeDuringSign:true}])test('Publish refuses unchecked or expired wallet result '+JSON.stringify(options),async()=>{
   const f=await sending(options);await f.scope.publish(f.wallet,text);
   assert.equal(f.events.some(e=>Array.isArray(e)&&['push','mine'].includes(e[0])),false);
