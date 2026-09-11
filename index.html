@@ -180,14 +180,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .comp .send[disabled]{background:var(--line2);color:var(--mut2);cursor:default}
 .row.flash .bub{box-shadow:0 0 0 2px var(--coral)}
 .ims{display:block;max-width:100%;border-radius:9px;margin:3px 0 2px}
-.fold{display:block;margin:12px auto;padding:5px 13px;border-radius:999px;background:var(--comp);
-  border:1px solid var(--line);color:var(--mut2);font:inherit;font-size:13.4px;cursor:pointer;width:fit-content}
-.fold:hover{color:var(--ink2);border-color:var(--line2)}
-.payl{margin:9px 0 9px 42px;border-left:2px solid var(--line2);padding-left:12px}
-.pay{display:flex;gap:11px;align-items:baseline;padding:2px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
-.pay a{color:var(--mut);text-decoration:none;flex:0 0 auto}
-.pay a:hover{color:var(--coral)}
-.pay .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
 .imh{display:block;margin:3px 0 2px;background:var(--pill);border:1px solid var(--line2);color:var(--ink2);
   border-radius:9px;padding:9px 12px;font:inherit;font-size:15.4px;cursor:pointer;text-align:left}
 .imh:hover{border-color:var(--coral);color:var(--ink)}
@@ -255,21 +247,14 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .frames img,.frames video{width:100%;max-width:300px;background:#fff;border-radius:10px}
 
 @media(max-width:900px){
-  .info{position:static;width:100%;border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
-  .info .open-p,.info .open-s{display:none}
-  .info .open-h{margin-bottom:8px}
-  .istats{flex-direction:row;flex-wrap:wrap;gap:14px;margin-top:12px;padding-top:10px}
-  .istats div{flex-direction:row;gap:6px}
-  .ifoot{margin-top:12px;padding-top:10px}
-  .jump{left:0}
-  .app{flex-direction:column}
-  .side{transform:translateX(-100%);box-shadow:3px 0 22px rgba(0,0,0,.35)}
-  .side.open{transform:none}
+  /* On a phone the panel is dropped entirely: the thread and the composer are the
+     whole screen. It stays in the DOM, so the counters and the card still work. */
+  .info{display:none}
+  .app{display:block}
   .main{margin-left:0}
-  .dock{left:0;padding:0 14px 12px}
-  .thread{padding:18px 16px 200px}
-  .top{padding:9px 14px}
-  .hide-s{display:none}
+  .jump{left:0}
+  .dock{left:0;padding:0 12px 10px}
+  .thread{padding:14px 14px 190px}
   .say{font-size:17px}
   .turn.me .inner{max-width:88%}
 }
@@ -540,7 +525,6 @@ function counts(){
   const n=msgs.filter(speech).length;
   const f=$('foot-n'); if(f)f.textContent=n;
 }
-let FOLD=[];
 function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
@@ -550,23 +534,14 @@ function render(){
   let head=`<div class="toploader" id="toploader">${next>0?(busy?`Loading… ${shown()} messages from ${scanned} blocks`:'Loading earlier messages…'):'Beginning of the scanned range'}</div>`;
   if(!scanned) head+='<div class="skel"></div><div class="skel w2"></div><div class="skel w3"></div>';
   else if(!talk.length) head+=`<div class="mid">Nothing${query?' matching “'+esc(query)+'”':''} in the last ${scanned} blocks.<br>Keep scrolling up to search further back.</div>`;
-  /* Everything in a block is here. What people wrote is drawn as conversation;
-     runs of protocol payloads fold into one line that opens on a click. */
-  FOLD=[];
-  let body='',lastDay='',prev=null,run=[];
-  const flush=()=>{
-    if(!run.length) return;
-    const n=run.length; FOLD.push(run); run=[];
-    body+=`<button class="fold" data-f="${FOLD.length-1}">· ${n.toLocaleString()} protocol payload${n>1?'s':''} ·</button>`;
-  };
-  for(const m of list){
-    if(!speech(m)){ run.push(m); continue }
-    flush();
+  /* Only what people wrote is drawn. Protocol payloads are still parsed and
+     counted in the panel, but they are kept out of the thread. */
+  let body='',lastDay='',prev=null;
+  for(const m of talk){
     const day=new Date(m.time*1000).toLocaleDateString(undefined,{month:'long',day:'numeric'});
     if(day!==lastDay){body+=`<div class="daysep"><span>${day}</span></div>`;lastDay=day;prev=null}
     body+=turn(m,prev); prev=m;
   }
-  flush();
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
@@ -578,16 +553,6 @@ function bind(){
     i.className='ims'; i.loading='lazy'; i.alt='image from block '+m.height;
     i.src='data:'+m.mime+';base64,'+m.b64;
     el.replaceWith(i);
-  });
-  document.querySelectorAll('.fold').forEach(el=>el.onclick=()=>{
-    const run=FOLD[+el.dataset.f]; if(!run) return;
-    el.outerHTML='<div class="payl">'+run.map(m=>{
-      const body=m.kind==='data'?m.hex:(m.text||'').replace(/\s+/g,' ');
-      return `<div class="pay">`
-        +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
-        +`<span class="p">${esc(body.slice(0,160))}</span>`
-        +`<span>#${m.height.toLocaleString()}</span></div>`;
-    }).join('')+'</div>';
   });
   document.querySelectorAll('.more').forEach(el=>el.onclick=()=>{
     const t=el.closest('.bub').querySelector('.txt');
@@ -755,9 +720,10 @@ document.addEventListener('keydown',e=>{
 });
 function fillSearch(){
   const q=$('sq').value.trim().toLowerCase();
-  const all=msgs;
+  /* Search covers only what is drawn, so every result can be jumped to. */
+  const all=msgs.filter(speech);
   const hits=(q?all.filter(m=>(m.text||'').toLowerCase().includes(q)||(m.who||'').toLowerCase().includes(q)||(m.txid||'').startsWith(q))
-                :all.filter(speech)).slice(-80).reverse();
+                :all).slice(-80).reverse();
   $('sl').innerHTML=hits.length?hits.map(m=>{const w=m.who||(m.txid?m.txid.slice(0,8):'?');
       return `<div class="it" data-id="${m.txid||''}"><span class="d" style="background:${hue(w)}"></span>`
         +`<span class="tx">${esc((m.text||m.hex||'').replace(/\s+/g,' ').slice(0,140))}</span>`
@@ -1086,9 +1052,9 @@ function openInfo(){
   <div class="cbd">
     <p style="margin:0 0 12px">This room is the OP_RETURN outputs of recent Bitcoin blocks, fetched raw from
       <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> and parsed here in the page.
-      Scrolling up pulls in older blocks. Every OP_RETURN in those blocks is kept: what people wrote is drawn as
-      conversation, and runs of protocol payloads collapse into one line you can open. Only token data, which is
-      binary and makes up almost all OP_RETURN traffic, is left out — the panel counts it.</p>
+      Scrolling up pulls in older blocks. Only what people wrote is drawn. Protocol and token payloads, which are
+      machine data and make up almost all OP_RETURN traffic, are parsed and counted in the panel but kept out of
+      the thread.</p>
     <p style="margin:0 0 12px">A quoted reply is a transaction that spends an output of the transaction it answers,
       between two different wallets. That link is on the chain, not added by this site.</p>
     <p style="margin:0 0 12px">Writing works the same way. You type a message, this page builds an unsigned
