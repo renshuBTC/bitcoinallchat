@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-KPEJKB5cyCNW5bNGe4t1k1MUIjZQ6u6+FYPO5LRnB6o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-qS10reTfEgcjDDK9EMrBYCztPk4YGibp4vNquv1vEEw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -23,6 +23,9 @@
 <meta name="twitter:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
 <meta name="twitter:description" content="Read messages and images stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="translate.js" integrity="sha384-xBgIBGiG5hSoAuNr+VJJCL1YkpGul2GfL0I2RyT6ldCpjPHUkPk5UNllZ3d5bfWg" defer></script>
+<script src="ui-language.js" integrity="sha384-SwmYY9exg15BUqZHsig3O8y/O15tYWLfEiCNZP4zsqpAaBWeQiLsmC4QMULjcI4c" defer></script>
+<script src="language-settings.js" integrity="sha384-PXKSmlAdpCPaTmI/SiC9LWlpzTRsbI8rvySM3QNICpZjmYoVNUrQ7zZ/Fum2F1lO" defer></script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter:wght@400;450;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -149,6 +152,10 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .row{scroll-margin-top:20px}
 .txt{font-size:16.6px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-break:break-word}
 .txt.mono{font-family:var(--mono);font-size:13.6px;line-height:1.5;color:var(--ink2)}
+.translation{border-top:1px solid var(--line2);margin-top:8px;padding-top:7px;color:var(--ink)}
+.translation-label,.translation-status{font-size:11.5px;line-height:1.45;color:var(--mut)}
+.translation-text{font-size:16.6px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;unicode-bidi:plaintext;text-align:start}
+.translation-label{margin-bottom:3px}
 .txt.clip{max-height:9em;overflow:hidden}
 .mst{display:flex;align-items:center;gap:9px;justify-content:flex-end;margin-top:1px;
   font-size:11px;color:var(--mut2);white-space:nowrap}
@@ -219,6 +226,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .vb:hover{color:var(--ink2);border-color:var(--line2)}
 .vb.on{background:var(--comp);color:var(--ink);border-color:var(--line2)}
 .payl{margin:0 0 8px}
+.payload-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:10px 0 16px}
+.payload-nav button:disabled{opacity:.45;cursor:default}
 .pay{display:flex;gap:11px;align-items:baseline;padding:3px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
 .pay .h{flex:0 0 auto;width:68px;text-align:right}
 .pay .t{flex:0 0 auto;width:64px;text-align:right;color:var(--mut2)}
@@ -461,6 +470,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 /* Signing choices remain available before typing or pressing Enter. */
 .dockfoot .bw{display:inline;flex:0 0 auto}
 .dockfoot .bw.on{display:inline}
+.dockfoot .vb,.dockfoot .bw{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.dockfoot .wallets{max-width:100%;white-space:normal}
 .txt{font-size:var(--message-size)}
 .istats span{min-width:0}
 .istats b{flex-shrink:0}
@@ -481,6 +492,13 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 /* Each message chooses its own direction without reversing transaction metadata. */
 .txt,.qx,.reply-excerpt,.it .tx,.pay .p,#q,#sq{unicode-bidi:plaintext;text-align:start}
 @media(max-width:600px){.dfr{margin-left:0}}
+.language-select{display:block;width:100%;margin:10px 0 14px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--pill);color:var(--ink);font:inherit}
+.language-help,.language-status{font-size:14px;line-height:1.5;color:var(--mut)}
+.language-status{margin:14px 0 10px;overflow-wrap:anywhere}
+.translation-notice{padding:8px;font-size:12px;line-height:1.5;text-align:center;color:var(--mut);overflow-wrap:anywhere}
+.translation-notice button{border:0;background:none;color:var(--ink2);padding:0 3px;font:inherit;text-decoration:underline;text-underline-offset:3px}
+#ovl [hidden],.translation-notice[hidden]{display:none}
+#languageb[aria-pressed=true]{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -493,7 +511,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <p class="open-p">Conversation filters for messages and images. Everything includes parsed protocol data.</p>
     <p class="open-p">Publish text or attach a file with +. Your wallet signs the transaction; miner fees apply.
       This site does not request private keys.</p>
-    <p class="open-p warn-p">Use a burner wallet. Posts are public. Confirmed posts cannot be edited or deleted.</p>
+    <p class="open-p warn-p">Use a burner wallet for safety. Bitcoin AllChat accepts no liability for Bitcoin losses, theft, or security breaches.</p>
     <div class="blocks" id="blocks">
       <div class="mbw">
         <div class="mbh">&nbsp;</div>
@@ -521,7 +539,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
     <div class="ifoot">
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
       Built By <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
-      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">Source</a>
+      <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">Open Source</a>
     </div>
   </aside>
 
@@ -541,6 +559,19 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
 <div class="ov" id="ovp"><div class="pal" id="pcard" role="dialog" aria-modal="true" aria-labelledby="publish-title"></div></div>
 
+<div class="ov" id="ovl"><div class="pal" role="dialog" aria-modal="true" aria-labelledby="language-title">
+  <div class="chd"><h2 id="language-title">Language</h2><button class="cl" id="language-close" type="button" title="Close" aria-label="Close language settings">×</button></div>
+  <div class="cbd">
+    <label for="language-select">Display Language</label>
+    <select id="language-select" class="language-select" translate="no"></select>
+    <p>Use this language for the interface and message translations. Original messages stay visible.</p>
+    <p class="language-help">Translation runs on your device. Language packs may download. Availability depends on your browser and device.</p>
+    <button class="midb" id="language-apply" type="button">Apply Language</button>
+    <div id="language-status" class="language-status" role="status" aria-live="polite"></div>
+    <button class="midb" id="language-enable" type="button" hidden>Enable Translation</button>
+  </div>
+</div></div>
+
 <div class="dock">
   <div class="dock-in">
     <input type="file" id="fi" hidden>
@@ -557,12 +588,14 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <div class="comp-r">
         <button class="plus" id="plusb" title="Attach a file or image">+</button>
       <span class="cnt" id="cnt"></span>
+      <button class="rb" id="languageb" type="button" title="Language" aria-label="Language"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></button>
       <button class="rb" id="searchb" title="Search messages (⌘K)"><svg viewBox="0 0 24 24" width="21" height="21"
         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16 16"/></svg></button>
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
       </div>
     </div>
     <div class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></div>
+    <div id="translation-notice" class="translation-notice" hidden><span id="translation-notice-text"></span> <button id="translation-enable" type="button">Enable Translation</button></div>
     <div class="dockfoot" aria-label="Message views and signing options">
       <div class="dfl">
         <div class="vsw">
@@ -928,7 +961,7 @@ function classify(bytes){
 function validVout(value){return Number.isInteger(value)&&value>=0&&value<=0xffffffff}
 function messageKey(m){return cleanTxid(m.txid)+':'+(validVout(m.vout)?m.vout:'')}
 function messageDomId(m){return 'm-'+cleanTxid(m.txid)+(validVout(m.vout)?'-'+m.vout:'')}
-function messageExcerpt(m){return m.kind==='img'?'Image':(m.text||m.hex||'File').replace(/\s+/g,' ').slice(0,180)}
+function messageExcerpt(m){return m.kind==='img'?'Image':(m.text||m.hex||'File').slice(0,180).replace(/\s+/g,' ')}
 function encodeReply(data,target){
   const body=typeof data==='string'?new TextEncoder().encode(data):new Uint8Array(data);
   if(!target) return body;
@@ -1010,7 +1043,7 @@ function turn(m,prev){
   const quote=quoteHTML(m);
   const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
                  :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
-  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="${messageDomId(m)}" data-txid="${esc(m.txid||'')}">
+  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="${messageDomId(m)}" data-kind="${esc(m.kind||'')}" data-txid="${esc(m.txid||'')}">
     <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
       ${same?'':nm}
@@ -1077,21 +1110,69 @@ function counts(){
   const n=msgs.filter(speech).length;
   const f=$('foot-n'); if(f)f.textContent=n;
 }
+const ALL_PAGE_SIZE=2000;
+let ALL_FIRST='',ALL_COUNT=ALL_PAGE_SIZE,ALL_QUERY='',ALL_LOADING=false,ALL_NAV_RUN=0;
+function allMatches(){return query?msgs.filter(m=>(m.text||m.hex||'').toLowerCase().includes(query)):msgs}
+function allPage(){
+  if(ALL_QUERY!==query){ALL_QUERY=query;ALL_FIRST='';ALL_COUNT=ALL_PAGE_SIZE;ALL_NAV_RUN++}
+  const matches=allMatches();
+  let start=ALL_FIRST?matches.findIndex(m=>messageKey(m)===ALL_FIRST):-1;
+  if(start<0){ALL_FIRST='';ALL_COUNT=ALL_PAGE_SIZE;start=Math.max(0,matches.length-ALL_PAGE_SIZE)}
+  const end=Math.min(matches.length,start+ALL_COUNT);
+  return {matches,start,end,rows:matches.slice(start,end),latest:!ALL_FIRST};
+}
+function setAllPage(matches,start,end){
+  if(end<=start)return;
+  ALL_FIRST=messageKey(matches[start]);ALL_COUNT=Math.min(ALL_PAGE_SIZE,end-start);
+}
+function payloadExcerpt(m){return String((m.kind==='data'?m.hex:m.text)||'').slice(0,180).replace(/\s+/g,' ')}
+function allPageControls(page){
+  const earlier=page.start>0||next>0||BLOCK_RETRY.size;
+  return `<nav class="payload-nav" aria-label="Payload pages">`
+    +`<button type="button" class="midb all-earlier" ${!earlier||ALL_LOADING||(busy&&page.start===0)?'disabled':''}>${ALL_LOADING?'Loading Earlier Payloads…':'Earlier Payloads'}</button>`
+    +`<button type="button" class="midb all-latest" ${page.latest&&!ALL_LOADING?'disabled':''}>Latest Payloads</button></nav>`;
+}
+function latestPayloads(){
+  ALL_NAV_RUN++;ALL_FIRST='';ALL_COUNT=ALL_PAGE_SIZE;ALL_QUERY=query;
+  if(filter==='all'){render();toBottom(false)}
+}
+async function earlierPayloads(){
+  if(filter!=='all'||ALL_LOADING)return;
+  let page=allPage();
+  if(page.start>0){setAllPage(page.matches,Math.max(0,page.start-ALL_PAGE_SIZE),page.start);render();toBottom(false);return}
+  if(busy||(next<=0&&!BLOCK_RETRY.size))return;
+  const run=++ALL_NAV_RUN,wantedQuery=query,boundary=page.rows.length?messageKey(page.rows[0]):'';
+  /* Pin the visible page before fetching; new live payloads must not move it. */
+  if(boundary)setAllPage(page.matches,page.start,page.end);
+  ALL_LOADING=true;LOAD_FAILED=false;LOAD_PAUSED=false;render();
+  try{
+    await loadOlder(LANES);
+    if(run!==ALL_NAV_RUN||query!==wantedQuery)return;
+    const matches=allMatches(),end=boundary?matches.findIndex(m=>messageKey(m)===boundary):matches.length;
+    if(end>0)setAllPage(matches,Math.max(0,end-ALL_PAGE_SIZE),end);
+  }catch(e){
+    if(run===ALL_NAV_RUN&&query===wantedQuery)LOAD_FAILED=true;
+  }finally{
+    ALL_LOADING=false;
+    if(filter==='all'){render();if(run===ALL_NAV_RUN&&query===wantedQuery)toBottom(false)}
+  }
+}
+
 function render(){
   const t=$('thread');
   if(filter==='liquid'){t.innerHTML=liquidHTML();bind();return}
-  /* Nothing is unreachable: this lists every OP_RETURN the parser kept, in order. */
+  /* Everything uses bounded pages; earlier loaded payloads remain reachable. */
   if(filter==='all'){
-    const rows=msgs.filter(m=>!query||(m.text||m.hex||'').toLowerCase().includes(query)).slice(-2000);
-    t.innerHTML=`<div class="toploader" id="toploader">${LOAD_FAILED||LOAD_PAUSED?loadingRetryButton():`${rows.length.toLocaleString()} of ${msgs.length.toLocaleString()} payloads from ${scanned} blocks — newest last`}</div><div class="payl">`
-      +rows.map(m=>{
-        const txt=m.kind==='data'?(m.hex||''):(m.text||'').replace(/\s+/g,' ');
-        return `<div class="pay">`
+    const page=allPage(),{rows,start,end,matches}=page,controls=allPageControls(page);
+    const status=matches.length?`Payloads ${(start+1).toLocaleString()}–${end.toLocaleString()} of ${matches.length.toLocaleString()} loaded${query?' matches':''}`:'No loaded payloads'+(query?' match this search':'');
+    const note=ALL_LOADING?'Loading an earlier batch…':LOAD_FAILED?'Some blocks could not load. Earlier Payloads retries them.':page.latest?'Newest last · Updates appear here.':'Newest last · This page stays in place. Latest Payloads shows new arrivals.';
+    t.innerHTML=`<div class="toploader" id="toploader"><div>${status} · ${scanned.toLocaleString()} blocks</div><div>${note}</div></div>${controls}<div class="payl">`
+      +rows.map(m=>`<div class="pay" data-message="${esc(messageKey(m))}">`
           +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
-          +`<span class="p" dir="auto">${esc(txt.slice(0,180))}</span>`
-          +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${new Date(m.time*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></div>`;
-      }).join('')+`</div>`;
-    counts(); bind(); observeTop(); return;
+          +`<span class="p" dir="auto">${esc(payloadExcerpt(m))}</span>`
+          +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${new Date(m.time*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></div>`
+      ).join('')+`</div>${controls}`;
+    counts();bind();observeTop();return;
   }
   reindex(msgs);
   const list=msgs.filter(m=>!query||(m.text||'').toLowerCase().includes(query));
@@ -1110,6 +1191,8 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
+  document.querySelectorAll('.all-earlier').forEach(el=>el.onclick=earlierPayloads);
+  document.querySelectorAll('.all-latest').forEach(el=>el.onclick=latestPayloads);
   const retry=$('retryblocks');if(retry)retry.onclick=()=>{LOAD_FAILED=false;LOAD_PAUSED=false;shown()<TARGET?loadInitial():loadOlder()};
   document.querySelectorAll('.reply-action').forEach(el=>el.onclick=()=>{
     el.closest('details').open=false;
@@ -1156,8 +1239,8 @@ function atBottom(){return window.innerHeight+window.scrollY>=document.documentE
 function toBottom(smooth){window.scrollTo({top:document.documentElement.scrollHeight,behavior:smooth?'smooth':'auto'})}
 function observeTop(){
   if(io)io.disconnect();
-  const el=$('toploader'); if(!el||filter==='liquid'||LOAD_FAILED||LOAD_PAUSED||next<=0)return;
-  io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))loadOlder(3)},{rootMargin:'700px 0px 0px 0px'});
+  const el=$('toploader'); if(!el||filter==='liquid'||filter==='all'||LOAD_FAILED||LOAD_PAUSED||next<=0)return;
+  io=new IntersectionObserver(es=>{if(filter!=='all'&&filter!=='liquid'&&es.some(e=>e.isIntersecting))loadOlder(3)},{rootMargin:'700px 0px 0px 0px'});
   io.observe(el);
 }
 function updateJump(){const b=$('jump'); if(b)b.style.display=atBottom()?'none':'flex'}

@@ -7,7 +7,7 @@ There is no application backend or user account. The static page fetches raw
 blocks from mempool.space and parses them in your browser. Published data is on
 Bitcoin. Up to 1,000 successfully sent transaction IDs are saved in this browser's
 local storage for message colours; message text, wallet addresses and keys are not.
-The site always uses dark mode.
+The site always uses dark mode. An optional display-language code is also saved locally.
 
 ## Reading
 
@@ -29,8 +29,10 @@ whether the bytes are a message, a picture, or protocol noise.
   pixels overall. Animated, oversized or unsupported images link to their transaction.
 
 Conversation uses language and payload heuristics; it cannot verify human
-authorship. Everything also shows parsed protocol data, up to the latest 2,000
-matching entries. Unsupported and skipped outputs are not displayed.
+authorship. Everything also shows parsed protocol data in pages of up to 2,000
+matching entries. **Earlier Payloads** browses loaded history and fetches one
+earlier batch at its edge; **Latest Payloads** returns to new arrivals. Unsupported
+and skipped outputs are not displayed.
 
 Use **⋯ → Reply** to quote a message above the composer. Cancel removes the reply
 selection and keeps the draft. The posted payload includes the original
@@ -42,6 +44,32 @@ filter apparent self-replies. Neither method verifies a person's identity.
 Messages sent successfully from this browser receive a green bubble and a **You**
 label. These local display markers are not proof of authorship. They synchronize
 between tabs, not different browsers, and disappear when site storage is cleared.
+
+## Languages and translation
+
+The globe button beside Search opens **Language** settings. Choose a display
+language and apply it to the sidebar, composer, dialogs and visible messages.
+The menu offers 39 target languages from the browser's documented translation
+list; support for a particular pair depends on the browser and device.
+
+Translation uses the browser's on-device `Translator` and `LanguageDetector`
+APIs. Chrome supports these APIs on desktop, not mobile; other browsers may not
+provide them. See the [browser documentation](https://developer.chrome.com/docs/ai/translator-api).
+The first use can download language resources. **Enable Translation** supplies
+another user action when the browser requires it for an additional language pack.
+Unavailable or failed translations leave the original text visible.
+
+Translated messages appear below the unchanged original with an **Auto-translated**
+label. Only visible text messages are queued, with two concurrent translation
+jobs, bounded caches and a 5,000-character limit per message. Large messages use
+the currently expanded text; protocol data and attachments are not translated.
+Automatic language detection and translation can be inaccurate, especially for
+short or mixed-language messages.
+
+The site sends no message text to a translation service and stores no translations.
+Choosing **Original (No Translation)** restores English controls and removes
+translations. Drafts, signed transaction bytes, wallet addresses, transaction IDs,
+amounts and attachment names are kept out of interface translation.
 
 ## Writing
 
@@ -119,9 +147,10 @@ shows you before approving anything.
 
 ## Running it
 
-After editing inline JavaScript, run `node scripts/update-csp.cjs` to update its
-Content-Security-Policy hash, then run `npm test`. The CSP rejects injected inline
-handlers and scripts that do not match the application hash.
+After editing JavaScript, run `node scripts/update-csp.cjs` to update the inline
+Content-Security-Policy hash and translation-module integrity hashes, then run
+`npm test`. The CSP rejects injected inline handlers and scripts that do not match
+the application hash.
 
 Any static server works, and the file has no build step of its own:
 

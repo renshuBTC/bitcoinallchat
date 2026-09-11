@@ -37,6 +37,16 @@ of successfully sent transactions are stored locally for message colours. These
 labels are display preferences, not proof of authorship. Message drafts, wallet
 addresses and private keys are not saved by the app.
 
+**Translation stays on device.** The browser may download native language packs,
+but the app does not send message text to a translation server. Translations are
+inserted as text, never HTML. The original message and transaction bytes remain
+unchanged. UI translation excludes draft values, addresses, amounts and IDs. If
+a protected placeholder is altered, bounded text fragments are translated around
+the unchanged values; an invalid result leaves the original in place. Only the
+chosen language code is saved. Work, text lengths and in-memory caches are bounded;
+changing languages cancels stale jobs. The translation modules also use integrity
+hashes. Translations are reading aids and can be inaccurate.
+
 **Connection and spending are separate.** Connecting requests an account from the
 wallet. Publishing requires a signed Bitcoin transaction. Review the outputs and
 fee in the wallet before approving.
