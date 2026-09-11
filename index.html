@@ -80,7 +80,7 @@ a{color:inherit}
 .istats b{font-family:var(--mono);font-weight:400;font-size:15.4px;color:var(--ink2)}
 .ifoot{margin-top:auto;padding-top:20px;border-top:1px solid var(--line);color:var(--ink2);position:relative}
 .ifoot a{color:var(--ink2);text-decoration:underline;text-underline-offset:2px}
-.ifoot .icb{position:absolute;right:0;bottom:0}
+.ifoot .icb{width:24px;height:24px;font-size:13px;vertical-align:-7px;margin-left:2px}
 .dockfoot a{color:var(--mut);text-decoration:underline;text-underline-offset:2px}
 .pill{font-size:11px;color:var(--mut2);font-family:var(--mono);white-space:nowrap}
 .pill b{color:var(--mut);font-weight:400}
@@ -324,7 +324,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       Data <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a> ·
       built by <a href="https://x.com/RenshuBTC" target="_blank" rel="noopener">@RenshuBTC</a> ·
       <a href="https://github.com/renshuBTC/bitcoinallchat" target="_blank" rel="noopener">source</a>
-    </div>    </div>
+      <button class="icb" id="theme" title="Theme">◐</button>
+    </div>
   </aside>
 
   <div class="main">
@@ -378,7 +379,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       </div>
       <button class="dlink" id="howb">how this works</button>
       <span class="bw">Burner wallet, not your main one.</span>
-      <button class="icb" id="theme" title="Theme">◐</button>
     </div>
   </div>
 </div>
@@ -684,34 +684,55 @@ if(window.ResizeObserver){const dn=document.querySelector('.dock-in');
 placeJump();
 
 /* ---------------- block clock ----------------
-   A message is only in the room once a block carrying it is mined, so the strip above
-   the composer shows the last block and roughly when the next one is due. The estimate
-   is the average gap over the last dozen blocks, not a fixed ten minutes, and blocks
-   arrive irregularly however good the average is. */
+   A message is only in the room once a block carrying it is mined, so the footer draws the
+   block being built and the one that just landed, the way mempool.space draws them: median
+   fee, the range of fees inside, the fees it pays, how many transactions, and the timing.
+   The next-block estimate is the average gap over the last dozen blocks rather than a fixed
+   ten minutes, and blocks still arrive irregularly however good the average is. */
 let BLKT=0, BLKAVG=600;
+const feeFmt=n=>{n=Number(n)||0; return n<10?Math.round(n*100)/100:Math.round(n)};
+const rangeTxt=fr=>(fr&&fr.length)?feeFmt(fr[0])+' - '+feeFmt(fr[fr.length-1])+' sat/vB':'';
+const btcTxt=sats=>((Number(sats)||0)/1e8).toFixed(3)+' BTC';
+const txTxt=n=>{n=Number(n)||0; return n.toLocaleString()+' transaction'+(n===1?'':'s')};
 function ago(sec){
-  if(sec<45) return 'mined just now';
+  if(sec<45) return 'Just now';
   const m=Math.round(sec/60);
-  if(m<60) return 'mined '+m+' minute'+(m===1?'':'s')+' ago';
-  const h=Math.round(m/60); return 'mined '+h+' hour'+(h===1?'':'s')+' ago';
+  if(m<60) return m+' minute'+(m===1?'':'s')+' ago';
+  const h=Math.round(m/60); return h+' hour'+(h===1?'':'s')+' ago';
 }
 function tickClock(){
   if(!BLKT) return;
   const now=Math.floor(Date.now()/1000);
   $('bk-a').textContent=ago(now-BLKT);
   const left=BLKT+BLKAVG-now;
-  $('bk-n').textContent=left>90?'in ~'+Math.round(left/60)+' min':'due any minute';
+  $('p-eta').textContent=left>90?'In ~'+Math.round(left/60)+' minutes':'Any minute now';
 }
 async function blockClock(){
   try{
-    const bs=await (await fetch(`${API}/blocks`)).json();
-    if(!bs||!bs.length) return;
-    BLKT=bs[0].timestamp;
-    const n=Math.min(bs.length-1,11);
-    if(n>0) BLKAVG=Math.max(120,Math.round((bs[0].timestamp-bs[n].timestamp)/n));
-    $('bk-h').textContent='#'+bs[0].height.toLocaleString();
+    const [bs,mp]=await Promise.all([
+      fetch(`${API}/v1/blocks`).then(r=>r.json()),
+      fetch(`${API}/v1/fees/mempool-blocks`).then(r=>r.json())
+    ]);
+    if(bs&&bs.length){
+      const b=bs[0], x=b.extras||{};
+      BLKT=b.timestamp;
+      const n=Math.min(bs.length-1,11);
+      if(n>0) BLKAVG=Math.max(120,Math.round((bs[0].timestamp-bs[n].timestamp)/n));
+      $('bk-h').textContent=b.height.toLocaleString();
+      $('m-med').textContent='~'+feeFmt(x.medianFee)+' sat/vB';
+      $('m-rng').textContent=rangeTxt(x.feeRange);
+      $('m-btc').textContent=btcTxt(x.totalFees);
+      $('m-tx').textContent=txTxt(b.tx_count);
+    }
+    if(mp&&mp.length){
+      const p=mp[0];
+      $('p-med').textContent='~'+feeFmt(p.medianFee)+' sat/vB';
+      $('p-rng').textContent=rangeTxt(p.feeRange);
+      $('p-btc').textContent=btcTxt(p.totalFees);
+      $('p-tx').textContent=txTxt(p.nTx);
+    }
   }catch(e){}
-  tickClock();
+  try{tickClock()}catch(e){}
 }
 setInterval(tickClock,10000);
 setInterval(blockClock,60000);
