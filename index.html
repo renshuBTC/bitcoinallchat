@@ -2540,7 +2540,7 @@ async function broadcastPasted(L,draft=captureDraft(),expected,run=OFFLINE_RUN){
   finally{if(OFFLINE_DECODING===decoding)OFFLINE_DECODING=null;decoding?.abort();OFFLINE_SENDING=false;if(current()&&button)button.disabled=false}
 }
 
-$('jump').onclick=()=>{ try{ if(filter==='all'&&typeof latestPayloads==='function') latestPayloads() }catch(e){} toBottom(true) };
+$('jump').onclick=()=>filter==='all'?latestPayloads():filter==='liquid'?toBottom(true):latestMessages(true);
 // Dark mode is fixed; ignore and remove any preference saved by older versions.
 try{localStorage.removeItem('bac_theme')}catch(e){}
 
