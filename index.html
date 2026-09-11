@@ -373,6 +373,23 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .lnk{font-size:13.6px;padding:0;margin:2px 0 0;color:var(--mut);text-align:left;
   text-decoration:underline;text-underline-offset:2px}
 .info .lnk:hover{color:var(--ink2)}
+/* The panel sets a colour on every div inside it, which was quietly beating the block
+   labels on specificity: the height was coming out off-white instead of cyan and the pool
+   name at the panel's own size. These say it again, more specifically. */
+.info .mbh{font-size:13.4px;line-height:16px;color:#3fc5db}
+.info .mbp{font-size:11.6px;line-height:16px;color:var(--ink2)}
+.info .mb .face{color:#fff}
+
+/* A clearer edge on the box, and the controls drawn in closer to it. */
+.comp{flex-direction:column;align-items:stretch;gap:2px;padding:10px 12px 8px;
+  border-radius:16px;border:1px solid var(--line2)}
+.comp textarea#q{padding:3px 2px 0}
+.comp-r{display:flex;align-items:center;gap:6px;margin-top:1px}
+.comp-r .plus{background:transparent;border:0;width:26px;height:26px;flex:0 0 26px;
+  border-radius:7px;color:var(--mut);font-size:19px;line-height:1;display:grid;place-items:center}
+.comp-r .plus:hover{background:rgba(255,255,255,.07);color:var(--ink)}
+[data-theme=light] .comp-r .plus:hover{background:rgba(0,0,0,.05)}
+.dockfoot{padding:7px 6px 0}
 </style>
 </head>
 <body>
@@ -389,7 +406,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       file, under 100 kB, priced per byte.</p>
     <p class="open-p warn-p">Use a burner wallet, not the one holding your savings. Nothing published can be
       undone. No warranty, and no liability for any loss.</p>
-    <button class="lnk" id="qrb">Sign offline instead</button>
     <div class="blocks" id="blocks">
       <div class="mbw">
         <div class="mbh">&nbsp;</div>
@@ -1363,17 +1379,19 @@ function idleHint(){
     if(typeof BUSY!=='undefined'&&BUSY) return;
     const h=$('hint'); if(!h) return;
     const av=WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
-    if(!av.length){ h.innerHTML=''; return }
-    h.innerHTML='sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('');
+    const off='<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">offline</button>';
+    h.innerHTML=(av.length
+      ? 'sign with '+av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('')
+      : 'sign ')+off;
     h.querySelectorAll('button').forEach(b=>b.onclick=()=>{
       const p=payload();
       if(!p||!p.length){ const q=$('q'); if(q) q.focus(); return }
+      if(b.dataset.w==='__off') return drawQR(p);
       publish(WAL.find(x=>x.id===b.dataset.w),p);
     });
   }catch(e){}
 }
 setTimeout(idleHint,500); setTimeout(idleHint,1800);
-try{ $('qrb').onclick=()=>drawQR(payload()) }catch(e){}
 </script>
 </body>
 </html>
