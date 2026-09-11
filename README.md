@@ -1,172 +1,97 @@
 # Bitcoin AllChat
 
-[Bitcoin AllChat](https://bitcoinallchat.com/) is a browser app for reading Bitcoin
-OP_RETURN messages and images and publishing messages and replies with a Bitcoin wallet.
+[Bitcoin AllChat](https://bitcoinallchat.com/) reads text messages from
+Bitcoin OP_RETURN outputs and publishes messages using a Bitcoin wallet.
 
-There is no application backend or user account. The static page fetches raw
-blocks from mempool.space and parses them in your browser. Published data is on
-Bitcoin. Up to 1,000 successfully sent transaction IDs are saved in this browser's
-local storage for message colours; message text, wallet addresses and keys are not.
-The site always uses dark mode. An optional display-language code is also saved locally.
+A static browser application: no application server, user accounts, or private-key
+collection. Blockchain data is fetched from mempool.space and decoded locally.
+Publishing creates a Bitcoin transaction and incurs miner fees.
 
-## Reading
+## Features
 
-`index.html` walks the wire format of each block, pulls the scriptPubKey out of
-every output beginning with `OP_RETURN`, joins all of its data pushes, and decides
-whether the bytes are a message, a picture, or protocol noise.
+- Read recent messages, search dated results back to the first Liquid whitehat
+  message, load earlier blocks, or inspect parsed protocol data.
+- Publish text with Xverse, UniSat, or an offline signer.
+- Quote replies with an exact transaction-and-output reference stored on-chain.
+- Choose from 39 interface languages using the globe menu. Message translation
+  opens Google Translate only when selected from a message's options.
+- Dark appearance and a live Bitcoin price quoted in USDT.
 
-- **Multiple pushes are joined.** The composer splits data into pushes of up to
-  520 bytes. Reading only the first push would truncate those long messages.
-- **Token data is skipped.** `OP_RETURN OP_13` is a token protocol, not writing.
-- **Unicode messages are supported.** Letters, combining marks, joined scripts,
-  scripts written without spaces, and emoji are recognised. Messages and reply
-  previews follow their text direction, including Arabic and Hebrew. Repeated
-  greetings are treated equally across languages. Known protocol markers such as
-  `MMSS`, `ordi`, and `SATFLOW` remain in Everything.
-- **Pictures are recognised by magic bytes** and shown only when you click, because
-  anyone can pay to put an image in a block.
-  Still-image previews are limited to 100 kB, 8,192 pixels per edge and 16 million
-  pixels overall. Animated, oversized or unsupported images link to their transaction.
+Use a burner wallet for safety. Bitcoin AllChat accepts no liability for Bitcoin
+losses, theft, or security breaches.
 
-Conversation uses language and payload heuristics; it cannot verify human
-authorship. Everything also shows parsed protocol data in pages of up to 2,000
-matching entries. **Earlier Payloads** browses loaded history and fetches one
-earlier batch at its edge; **Latest Payloads** returns to new arrivals. Unsupported
-and skipped outputs are not displayed.
+## Run locally
 
-Use **⋯ → Reply** to quote a message above the composer. Cancel removes the reply
-selection and keeps the draft. The posted payload includes the original
-transaction ID and output index, so readers can resolve the exact message even
-when a transaction contains several OP_RETURN outputs. Older quoted replies are
-still inferred from spend links, with shared outputs and repeated text used to
-filter apparent self-replies. Neither method verifies a person's identity.
+Install [Node.js](https://nodejs.org/) 22 or newer, then:
 
-Messages sent successfully from this browser receive a green bubble and a **You**
-label. These local display markers are not proof of authorship. They synchronize
-between tabs, not different browsers, and disappear when site storage is cleared.
+```sh
+git clone https://github.com/renshuBTC/bitcoinallchat.git
+cd bitcoinallchat
+npm start
+```
 
-## Languages and translation
+Open [localhost:8000](http://127.0.0.1:8000/). The committed browser assets are ready
+to serve; dependency installation is needed only to rebuild them. Any static
+HTTPS host can serve the application.
 
-The globe button beside Search opens **Language** settings. The 39 bundled
-language dictionaries translate the sidebar, chat controls and language settings.
-They work immediately without language packs, extensions, a translation API key,
-or native browser translation support.
+## Develop and verify
 
-Message bubbles keep their original text. **⋯ → Translate** opens Google Translate
-in a separate tab, with automatic source-language detection and the target language
-selected in settings. Only the chosen message is included in that link; no message
-text is sent to Google by this page automatically. Opening the link shares its text
-with Google, and it may appear in browser history. The new tab cannot control this
-page through an opener reference.
+```sh
+npm ci
+npm run build
+npm run check
+npm test
+```
 
-The link uses the full original message, not its shortened preview. Text longer
-than 5,000 characters or an encoded URL longer than 8,000 characters must be copied
-manually; the app does not silently truncate it. Image-only messages have no
-Translate action.
+Dependencies are version-locked, and installation scripts are disabled by
+`.npmrc`. The build runs on Windows, macOS and Linux. It rebuilds the transaction
+bundle and language catalog, then updates the browser integrity hashes.
+`npm run check` fails if committed generated files differ from their sources.
+Tests use local fixtures and do not request wallet access or broadcast transactions.
 
-Choosing **English** restores English controls. Drafts, message text, signed
-transaction bytes, wallet addresses, transaction IDs, amounts and attachment names
-are not changed by interface translation. Only the chosen language code is saved.
-The dictionaries are reading aids and translations can be imperfect.
+## Project guide
 
-## Writing
+| File or directory | Purpose |
+| --- | --- |
+| `index.html` | Page, blockchain reader, wallet integration and independent transaction checks |
+| `post-src.js`, `entry.js` | Transaction-builder source and bundle entry point |
+| `post.js` | Generated transaction and QR-code bundle |
+| `locales/` | Editable interface translations |
+| `locales.js` | Generated browser language catalog |
+| `ui-language.js`, `language-settings.js` | Interface translation and language menu |
+| `translate.js` | User-requested Google Translate links |
+| `scripts/`, `tests/` | Build, preview and regression checks |
 
-You type, the page builds an unsigned PSBT with one `OP_RETURN` output carrying
-your bytes and change back to the address you are spending from, and your wallet
-signs it. The page does not request private keys or charge a service fee. Miner
-fees apply. Xverse and UniSat open their official download pages when the selected
-extension is unavailable; Offline supports signing on a separate device.
-The signing choices are always visible. Connect Xverse or UniSat before typing,
-then press Enter or the send arrow to prepare and sign a message. You can also
-type first and choose a wallet. Connections are held only for the current page;
-the site does not save wallet addresses or reconnect automatically on reload.
+## Behavior and limits
 
-Replies use AllChat's versioned payload format:
+- Messages are public once published. Confirmed posts cannot be edited or deleted
+  by this application.
+- Reply references use the existing `BAC1` application format. Bitcoin itself has
+  no native reply field; payment links alone do not establish reply intent.
+- Conversation filtering and inferred older replies use heuristics. Sender labels
+  and local **You** markers are not identity verification.
+- Search includes a quick lookup of the Liquid exchange and optional block scans
+  back to block 965,818. Coverage is shown explicitly; loaded results are not a
+  complete search until the selected range has been scanned.
+- Up to 1,000 successfully published transaction IDs and the selected interface
+  language may be saved locally. Drafts, wallet addresses and private keys are not.
+- Text and its reply reference are limited to 100,000 bytes, with stricter limits
+  imposed by the completed transaction size and network policy.
+- The page is not a full node. It relies on external APIs for chain data, unspent
+  status and fee recommendations. Wallet confirmation remains essential.
 
-    BAC1:reply:<64-character transaction ID>:<output index>\n<original payload bytes>
+See [Architecture](docs/ARCHITECTURE.md) for data flow, reply encoding, supported
+wallets and external services.
 
-Here `\n` means one LF byte, not a literal backslash and n. The original body can
-be UTF-8 text or a file. The reader strips one validated header before classifying
-the body. Unsupported or malformed headers remain ordinary payload data. The
-reference bytes count toward size limits and fees, and are included in the
-independent transaction check. This is an application format, not a special
-Bitcoin transaction type; it does not spend from or pay the original poster.
-Missing quoted content can be loaded on demand from its transaction and output.
+## Contribute and report issues
 
-`post-src.js` builds the transaction: bech32/bech32m and base58check address
-decoding, coin selection, PSBT v0 serialisation, extraction of a signed PSBT, and
-BBQr for offline signers. It handles `bc1q`, `bc1p` and legacy `1…` addresses.
-Nested SegWit (`3…`) is not supported and says so.
+Read [Contributing](CONTRIBUTING.md) for development and translation changes.
+Use [GitHub issues](https://github.com/renshuBTC/bitcoinallchat/issues) for ordinary
+bugs and suggestions. Report vulnerabilities privately through the
+[security policy](SECURITY.md).
 
-The app accepts inputs up to 100,000 bytes, which is not a guarantee that a file
-can be relayed or mined. [Bitcoin Core v30](https://bitcoincore.org/en/releases/30.0/)
-sets a default aggregate data-carrier script limit of 100,000 bytes; transaction
-size limits and script overhead reduce usable payload capacity. Nodes can apply
-different policies.
+## License and credits
 
-## The check before signing
-
-`index.html` reads the finished transaction back and refuses to hand it to your
-wallet unless:
-
-- every input comes from the same script,
-- every output is either the one `OP_RETURN`, carrying exactly the bytes you
-  typed and no coins, or change back to that same script,
-- inputs minus outputs equals the fee it showed you,
-- and that fee is not wildly above the rate you chose.
-
-This parser is deliberately separate from `post-src.js` and duplicates the little
-it needs, so a swapped builder cannot both write a bad transaction and approve it.
-
-Selected funding transactions are also checked against their IDs, amounts and
-address scripts. Wallets return signed data without broadcasting; the app checks
-that inputs, outputs, amounts and message bytes still match before submission.
-Pasted offline results receive the same comparison. The API supplies current
-confirmation/unspent status and fee recommendations; this page is not a full node.
-
-## Verifying what is served
-
-`post.js` is loaded with a Subresource Integrity hash, so an altered builder will
-not run. Rebuild it and compare:
-
-    npm install
-    sh build.sh
-
-Expected output:
-
-    sha384-Hs8mtIGN+GjUlNluDQhvRgmOKVLd87Vmq/BVEs4KuTsTVB3eZEF9TQfZMSJ1ljJ4
-
-That is the same string as the `integrity` attribute in `index.html`. Pinned
-versions (esbuild 0.28.2, qrcode-generator 2.0.4) make the build byte-identical.
-
-`index.html` itself cannot be pinned by the browser — nothing can pin the entry
-document. Compare it against this repository, and read the outputs your wallet
-shows you before approving anything.
-
-## Running it
-
-After editing JavaScript, run `node scripts/update-csp.cjs` to update the inline
-Content-Security-Policy hash and translation-module integrity hashes, then run
-`npm test`. The CSP rejects injected inline handlers and scripts that do not match
-the application hash.
-
-Any static server works, and the file has no build step of its own:
-
-    python3 -m http.server 8000
-
-Fonts come from Google Fonts and message data from mempool.space. The BTC/USDT
-price uses Binance's unauthenticated public market-data REST and WebSocket feeds.
-The stream reconnects automatically, with REST fallback and stale-price handling.
-These hosts are declared in the Content-Security-Policy.
-
-## Checks
-
-Run `npm test` (Node.js 20 or newer) for the conversation-classifier, wallet-routing,
-offline-dialog, reply-payload, price-feed, ownership and composer-keyboard tests.
-They exercise the page's actual functions
-with local fixtures; they do not connect a wallet or broadcast a transaction.
-
-## Credit
-
-Data from [mempool.space](https://mempool.space). Built by
-[@RenshuBTC](https://x.com/RenshuBTC). MIT licensed.
+[MIT License](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md).
+Blockchain data: [mempool.space](https://mempool.space).
+Created by [@RenshuBTC](https://x.com/RenshuBTC).

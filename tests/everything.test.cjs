@@ -22,7 +22,8 @@ function runtime(count=4500){
     IntersectionObserver:class{constructor(callback){observers.push(this);this.callback=callback}observe(){this.observed=true}disconnect(){this.disconnected=true}},
     loadOlder:async count=>loads.push(count),
   });
-  for(const name of ['cleanTxid','validVout','messageKey','esc','messageExcerpt'])vm.runInContext(declaration(name),scope);
+  scope.searchMessages=()=>scope.msgs.filter(scope.speech);
+  for(const name of ['cleanTxid','validVout','messageKey','esc','messageExcerpt','displayTime'])vm.runInContext(declaration(name),scope);
   const start=html.indexOf('const ALL_PAGE_SIZE='),end=html.indexOf('function render(){',start);
   assert.ok(start>=0&&end>start);vm.runInContext(html.slice(start,end),scope);
   vm.runInContext(declaration('observeTop')+'\n'+declaration('render'),scope);
@@ -31,12 +32,17 @@ function runtime(count=4500){
   const keys=()=>Array.from(scope.allPage().rows,m=>m.txid+':'+m.vout);
   return {scope,element,elements,loads,renders,scrolls,observers,evaluate,keys};
 }
-test('Latest payload page is bounded at 2,000 rows and both navigation controls are rendered',()=>{
+test('Latest payload page is bounded at 2,000 rows and shows only available navigation',()=>{
   const app=runtime();app.scope.render();const page=app.scope.allPage();
   assert.equal(page.start,2500);assert.equal(page.end,4500);assert.equal(page.rows.length,2000);
   assert.equal((app.element('thread').innerHTML.match(/class="pay"/g)||[]).length,2000);
-  assert.match(app.element('thread').innerHTML,/Earlier Payloads/);assert.match(app.element('thread').innerHTML,/Latest Payloads/);
+  assert.match(app.element('thread').innerHTML,/>Older<\/button>/);assert.doesNotMatch(app.element('thread').innerHTML,/class="midb all-latest"/);
   assert.match(app.element('thread').innerHTML,/2,501–4,500 of 4,500 loaded/);
+});
+
+test('A complete single payload page has no inactive navigation controls',()=>{
+  const app=runtime(50);app.scope.next=0;
+  assert.equal(app.scope.allPageControls(app.scope.allPage()),'');
 });
 test('Every loaded payload is reachable without extra network requests, including the partial oldest page',async()=>{
   const app=runtime(),seen=new Set(app.keys());
@@ -47,10 +53,11 @@ test('Every loaded payload is reachable without extra network requests, includin
 });
 test('Already loaded pages remain navigable during background loading, without launching another fetch',async()=>{
   const app=runtime();app.scope.busy=true;
-  assert.doesNotMatch(app.scope.allPageControls(app.scope.allPage()),/all-earlier" disabled/);
+  assert.match(app.scope.allPageControls(app.scope.allPage()),/class="midb all-earlier"/);
   await app.scope.earlierPayloads();assert.equal(app.scope.allPage().start,500);
   await app.scope.earlierPayloads();assert.equal(app.scope.allPage().start,0);
-  assert.match(app.scope.allPageControls(app.scope.allPage()),/all-earlier" disabled/);
+  assert.doesNotMatch(app.scope.allPageControls(app.scope.allPage()),/all-earlier/);
+  assert.match(app.scope.allPageControls(app.scope.allPage()),/>Latest<\/button>/);
   await app.scope.earlierPayloads();assert.deepEqual(app.loads,[]);
 });
 test('Older pages retain their complete row set as live payloads append and other blocks prepend',async()=>{
@@ -99,7 +106,7 @@ test('Repeated earlier clicks share no extra request and Latest can cancel the p
   const pending=app.scope.earlierPayloads();await app.scope.earlierPayloads();assert.deepEqual(app.loads,[3]);
   app.scope.latestPayloads();app.scope.msgs=[...messages(2500,-2500),...app.scope.msgs];finish();await pending;
   assert.equal(app.scope.allPage().latest,true);assert.equal(app.scope.allPage().rows.at(-1).text,'payload 99');
-  assert.equal(app.evaluate('ALL_LOADING'),false);assert.doesNotMatch(app.element('thread').innerHTML,/Loading Earlier Payloads/);
+  assert.equal(app.evaluate('ALL_LOADING'),false);assert.doesNotMatch(app.element('thread').innerHTML,/<span role="status">Loading…/);
 });
 test('Changing query or view during a request does not apply the old page selection or scroll the new view',async()=>{
   for(const changed of ['query','filter']){
@@ -114,7 +121,7 @@ test('Changing query or view during a request does not apply the old page select
 test('An unexpected loader rejection restores controls and offers an explicit retry',async()=>{
   const app=runtime(100);app.scope.loadOlder=async()=>{throw new Error('test offline')};
   await app.scope.earlierPayloads();assert.equal(app.evaluate('ALL_LOADING'),false);assert.equal(app.scope.LOAD_FAILED,true);
-  assert.match(app.element('thread').innerHTML,/Earlier Payloads retries them/);
+  assert.match(app.element('thread').innerHTML,/Could not load earlier blocks. Try again./);
 });
 test('Everything disconnects any old top observer and cannot create an automatic loader',()=>{
   const app=runtime();let disconnected=0;app.scope.io={disconnect:()=>disconnected++};
@@ -122,10 +129,11 @@ test('Everything disconnects any old top observer and cannot create an automatic
   app.scope.filter='talk';app.scope.observeTop();assert.equal(app.observers.length,1);assert.equal(app.observers[0].observed,true);
   app.scope.filter='all';app.observers[0].callback([{isIntersecting:true}]);assert.deepEqual(app.loads,[]);
 });
-test('Conversation still renders all loaded conversation rows with its original top loader',()=>{
+test('Conversation uses its own bounded window and retains the original top loader',()=>{
   const app=runtime(4500);app.scope.filter='talk';app.scope.render();
-  assert.equal((app.element('thread').innerHTML.match(/<article>/g)||[]).length,4500);
-  assert.doesNotMatch(app.element('thread').innerHTML,/Earlier Payloads/);assert.equal(app.observers.length,1);
+  assert.equal((app.element('thread').innerHTML.match(/<article>/g)||[]).length,1000);
+  assert.match(app.element('thread').innerHTML,/Earlier Messages/);assert.match(app.element('thread').innerHTML,/Latest Messages/);
+  assert.doesNotMatch(app.element('thread').innerHTML,/all-earlier|all-latest/);assert.equal(app.observers.length,1);
 });
 test('Real event binding wires both copies of paging buttons',()=>{
   const app=runtime(),earlier=[{},{}],latest=[{},{}];

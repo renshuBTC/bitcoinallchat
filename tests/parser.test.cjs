@@ -115,6 +115,14 @@ test('Input ID extraction honors its limit and still validates the complete inpu
   assert.throws(()=>app.inTxids(Uint8Array.from([2,1,2,3]),null,0,0));
 });
 
+test('Default input extraction includes conversation links beyond the fourth input',()=>{
+  const app=runtime(),inputs=Array.from({length:15},(_,i)=>input(i+1));
+  const tx=transaction([opret('all input links')],{inputs});
+  const parsed=app.parseBlock(arrayBuffer(block([tx.raw]))),body=parsed.outs[0].tx.bodyStart;
+  const links=Array.from(app.inTxids(parsed.bytes,parsed.dv,body));
+  assert.equal(links.length,15);assert.equal(links[8],'09'.repeat(32));assert.equal(links[10],'0b'.repeat(32));
+});
+
 test('OP_RETURN reassembly supports every push width and ignores empty pushes',()=>{
   const app=runtime();
   const mixed='6a0001414c01424d0100434e010000004400';

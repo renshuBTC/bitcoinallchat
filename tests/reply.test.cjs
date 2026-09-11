@@ -56,10 +56,10 @@ function runtime() {
   scope.window = {addEventListener() {}, scrollTo() {}, scrollY: 0, innerHeight: 800};
   vm.runInContext(isolatedScript, scope, {filename: 'actual-page.js'});
   const evaluate = text => vm.runInContext(text, scope);
-  function setDraft({text = '', file = null, reply = null}) {
+  function setDraft({text = '', reply = null}) {
     element('q').value = text;
-    scope.testFile = file; scope.testReply = reply;
-    evaluate('FILE=testFile;REPLY=testReply;BUSY=false;refreshComp();');
+    scope.testReply = reply;
+    evaluate('REPLY=testReply;BUSY=false;refreshComp();');
   }
   function setMessages(list, cached = []) {
     scope.testMessages = list; scope.testCache = cached;
@@ -101,7 +101,7 @@ test('Plain payloads are unchanged and encoding copies input bytes', () => {
   assert.equal(app.scope.classifyPayload(utf8(text)).text, text);
 });
 
-test('Reply images and arbitrary binary retain their original complete body', () => {
+test('Existing binary replies retain their original bytes as unsupported data', () => {
   const app = runtime();
   for (const data of [png, Uint8Array.from([0, 255, 254, 1, 128, 10, 13]), new Uint8Array(1800).fill(0xff)]) {
     const encoded = app.scope.encodeReply(data, target);
@@ -109,12 +109,8 @@ test('Reply images and arbitrary binary retain their original complete body', ()
     assert.deepEqual(bytes(decoded.body), bytes(data));
     const classified = app.scope.classifyPayload(encoded);
     assert.equal(classified.replyTo, FIRST); assert.equal(classified.replyVout, 2);
-    assert.equal(classified.kind, data === png ? 'img' : 'data');
-    if (data === png) {
-      assert.equal(classified.mime, 'image/png');
-      assert.deepEqual(bytes(classified.imageBytes), bytes(png));
-      assert.equal(classified.b64, undefined);
-    }
+    assert.equal(classified.kind, 'data');assert.equal(app.scope.speech(classified),false);
+    assert.deepEqual(Object.keys(classified).sort(),['bytes','hex','kind','replyTo','replyVout','text']);
   }
 });
 
@@ -207,7 +203,7 @@ test('Raw block parsing and scanBlock preserve each OP_RETURN output index and r
   assert.deepEqual(Array.from(found, m => m.vout), [1, 2, 3]);
   assert.equal(found[0].replyTo, FIRST); assert.equal(found[0].replyVout, 2);
   assert.equal(found[0].text, 'Reply to an exact output');
-  assert.equal(found[2].kind, 'img'); assert.equal(found[2].replyTo, SECOND);
+  assert.equal(found[2].kind, 'data'); assert.equal(found[2].replyTo, SECOND);assert.equal(app.scope.speech(found[2]),false);
   assert.equal(new Set(found.map(m => m.txid)).size, 1);
 });
 
@@ -288,7 +284,7 @@ test('Legacy spend quotes retain same-wallet and repost exclusions', () => {
   reply.pay = [8]; reply.text = parent.text; assert.equal(app.scope.parentOf(reply), null);
 });
 
-test('Composer includes envelope bytes in text and file limits', () => {
+test('Composer includes reply envelope bytes in text limits', () => {
   const app = runtime();
   const max = app.evaluate('MAXDATA');
   const overhead = app.scope.encodeReply('', target).length;
@@ -297,11 +293,6 @@ test('Composer includes envelope bytes in text and file limits', () => {
   app.setDraft({text: 'x'.repeat(max - overhead + 1), reply: target});
   assert.equal(app.element('sendb').disabled, true);
   app.setDraft({text: 'x'.repeat(max)}); assert.equal(app.element('sendb').disabled, false);
-  const file = {name: 'bytes.bin', type: 'application/octet-stream', bytes: new Uint8Array(max - overhead)};
-  app.setDraft({file, reply: target});
-  assert.equal(app.evaluate('payload().length'), max); assert.equal(app.element('sendb').disabled, false);
-  app.setDraft({file: {...file, bytes: new Uint8Array(max - overhead + 1)}, reply: target});
-  assert.equal(app.element('sendb').disabled, true);
 });
 
 test('Selecting a reply alone or with whitespace cannot open a signing route', async () => {
@@ -319,24 +310,22 @@ test('Selecting a reply alone or with whitespace cannot open a signing route', a
 
 test('Draft cleanup clears the sent selection and preserves the complete draft if anything changed while signing', () => {
   const app = runtime();
-  const file = {name: 'a.bin', type: 'application/octet-stream', bytes: new Uint8Array([1])};
-  app.setDraft({text: 'sent text', file, reply: target});
+  app.setDraft({text: 'sent text', reply: target});
   const draft = app.scope.captureDraft();
-  assert.equal(draft.text, 'sent text'); assert.equal(draft.file, file); assert.equal(draft.reply, target);
+  assert.equal(draft.text, 'sent text'); assert.equal(draft.reply, target);
   app.scope.clearSentDraft(draft);
-  assert.equal(app.element('q').value, ''); assert.equal(app.evaluate('FILE'), null); assert.equal(app.evaluate('REPLY'), null);
-  const otherFile = {...file, name: 'b.bin', bytes: new Uint8Array([2])};
+  assert.equal(app.element('q').value, ''); assert.equal(app.evaluate('REPLY'), null);
   const otherReply = {txid: SECOND, vout: 0};
-  app.setDraft({text: 'sent text', file, reply: target});
+  app.setDraft({text: 'sent text', reply: target});
   const snapshot = app.scope.captureDraft();
-  app.setDraft({text: 'new unsent text', file: otherFile, reply: otherReply});
+  app.setDraft({text: 'new unsent text', reply: otherReply});
   app.scope.clearSentDraft(snapshot);
   assert.equal(app.element('q').value, 'new unsent text');
-  assert.equal(app.evaluate('FILE'), otherFile); assert.equal(app.evaluate('REPLY'), otherReply);
-  app.setDraft({text: 'new unsent text', file, reply: target});
+  assert.equal(app.evaluate('REPLY'), otherReply);
+  app.setDraft({text: 'new unsent text', reply: target});
   app.scope.clearSentDraft(snapshot);
   assert.equal(app.element('q').value, 'new unsent text');
-  assert.equal(app.evaluate('FILE'), file); assert.equal(app.evaluate('REPLY'), target);
+  assert.equal(app.evaluate('REPLY'), target);
 });
 
 test('Reply is the only menu action and preserves the draft when selected', () => {

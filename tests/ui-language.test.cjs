@@ -9,13 +9,12 @@ const SAMPLE_COPY={
   'OP_RETURN Seen':['OP_RETURN détectés','عمليات OP_RETURN المرصودة'],
   'Conversation (Latest 100 Messages)':['Conversation (100 derniers messages)','المحادثة (أحدث 100 رسالة)'],
   'Everything':['Tout','الكل'],
+  'Older':['Plus anciens','الأقدم'],
+  'Latest':['Derniers','الأحدث'],
   'Write a message onto Bitcoin…':['Écrivez un message sur Bitcoin…','اكتب رسالة على Bitcoin…'],
-  'The file above is what gets published':['Le fichier ci-dessus sera publié','الملف أعلاه هو ما سيُنشر'],
-  'Attach a file or image':['Joindre un fichier ou une image','إرفاق ملف أو صورة'],
   'Publish onto Bitcoin':['Publier sur Bitcoin','النشر على Bitcoin'],
   'Sign With':['Signer avec','التوقيع باستخدام'],
   'Offline':['Hors ligne','دون اتصال'],
-  'Remove':['Retirer','إزالة'],
   'Language':['Langue','اللغة'],
   'Display Language':['Langue d’affichage','لغة العرض'],
   'Close':['Fermer','إغلاق'],
@@ -29,7 +28,6 @@ const SAMPLE_COPY={
   'Connecting to {wallet}…':['Connexion à {wallet}…','جارٍ الاتصال بـ {wallet}…'],
   'Connected to {wallet}.':['Connecté à {wallet}.','تم الاتصال بـ {wallet}.'],
   'Checked · {fee} to the miner, the rest back to you — confirm in {wallet}':['Vérifié · {fee} au mineur, le reste vous revient — confirmez dans {wallet}','تم التحقق · {fee} للمُعدّن، والباقي يُعاد إليك — أكّد في {wallet}'],
-  '{name} exceeds the {n}-byte upload limit.':['{name} dépasse la limite de téléversement de {n} octets.','يتجاوز {name} حد الرفع البالغ {n} بايت.'],
   '{n} transactions':['{n} transactions','عدد المعاملات: {n}'],
   'In ~{n} minutes':['Dans environ {n} minutes','خلال نحو {n} دقيقة'],
   'Bitcoin price in USDT · Updated {time}':['Prix du Bitcoin en USDT · Mis à jour {time}','سعر Bitcoin بوحدة USDT · آخر تحديث {time}'],
@@ -85,7 +83,7 @@ function app(languages=sampleLocales()){
     set textContent(value){this.nodeValue=value}
   }
   class Element extends Node {
-    constructor(tag){super(1);this.tagName=tag.toUpperCase();this.attrs=new Map();this.style={};this.value='';this.className='';this.id='';}
+    constructor(tag){super(1);this.tagName=tag.toUpperCase();this.attrs=new Map();this.style={};this.value='';this.className='';this.id='';this.dataset={};}
     get children(){return this.childNodes.filter(n=>n.nodeType===1)}
     get textContent(){return this.childNodes.map(n=>n.textContent).join('')}
     set textContent(value){
@@ -176,13 +174,14 @@ test('All template placeholders retain literal names, wallets, fees, counts, tim
   assert.deepEqual(a.calls,[]);a.api.dispose();
 });
 
-test('Sidebar, dock, language modal and message options translate while all other content stays original',async()=>{
+test('Sidebar, dock, conversation navigation and message options translate while all other content stays original',async()=>{
   const a=app(),info=a.add(a.document.body,'aside',{className:'info'}),dock=a.add(a.document.body,'div',{className:'dock'});
   const translated=[
     a.add(info,'p',{text:'Messages on Bitcoin.'}),
     a.add(dock,'button',{text:'Everything'}),
-    a.add(a.add(a.document.body,'div',{id:'ovl'}),'h2',{text:'Display Language'}),
-    a.add(a.add(a.document.body,'details',{className:'msgopts'}),'button',{text:'Reply'})
+    a.add(a.add(a.document.body,'nav',{id:'test-nav',className:'chat-nav'}),'button',{text:'Display Language'}),
+    a.add(a.add(a.document.body,'details',{className:'msgopts'}),'button',{text:'Reply'}),
+    a.add(a.add(a.document.body,'nav',{className:'payload-nav'}),'button',{text:'Older'})
   ];
   // Known dictionary keys prove these are exclusions, not simply missing translations.
   const protectedNodes=[
@@ -194,7 +193,6 @@ test('Sidebar, dock, language modal and message options translate while all othe
     a.add(dock,'div',{className:'pay',text:'Everything'}),
     a.add(dock,'span',{id:'reply-excerpt',text:'Messages on Bitcoin.'}),
     a.add(dock,'span',{className:'reply-excerpt',text:'Messages on Bitcoin.'}),
-    a.add(a.add(dock,'div',{className:'att'}),'span',{className:'nm',text:'Everything'}),
     a.add(info,'div',{id:'m-pool',text:'Messages on Bitcoin.'}),
     a.add(dock,'span',{text:'Reply',attrs:{translate:'no'}}),
     a.add(dock,'span',{text:'Reply',attrs:{'data-no-translate':''}}),
@@ -205,10 +203,10 @@ test('Sidebar, dock, language modal and message options translate while all othe
   const body=a.add(thread,'div',{className:'txt',text:'Messages on Bitcoin.'});
   const quote=a.add(thread,'div',{className:'qt',text:'Reply'});
   const draft=a.add(dock,'textarea',{value:'Everything',text:'Reply',attrs:{placeholder:'Write a message onto Bitcoin…'}});
-  const select=a.add(a.document.getElementById('ovl'),'select',{attrs:{'aria-label':'Display Language'}});
+  const select=a.add(a.document.getElementById('test-nav'),'select',{attrs:{'aria-label':'Display Language'}});
   const option=a.add(select,'option',{text:'Reply',attrs:{value:'fr'}});
   await a.language('fr');
-  assert.deepEqual(translated.map(node=>node.textContent),['Des messages sur Bitcoin.','Tout','Langue d’affichage','Répondre']);
+  assert.deepEqual(translated.map(node=>node.textContent),['Des messages sur Bitcoin.','Tout','Langue d’affichage','Répondre','Plus anciens']);
   assert.deepEqual(protectedNodes.map(node=>node.textContent),before);
   assert.equal(body.textContent,'Messages on Bitcoin.');assert.equal(quote.textContent,'Reply');
   assert.equal(draft.value,'Everything');assert.equal(draft.textContent,'Reply');
@@ -242,13 +240,13 @@ test('RTL labels preserve wallet order, links and original element direction on 
 test('Changing language and disabling it restore original text and accessible attributes exactly',async()=>{
   const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
   const paragraph=a.add(dock,'p',{text:'  Messages on Bitcoin.\n'});
-  const input=a.add(dock,'textarea',{value:'Unsent 中文 draft',attrs:{placeholder:'Write a message onto Bitcoin…',title:'Attach a file or image','aria-label':'Publish onto Bitcoin'}});
+  const input=a.add(dock,'textarea',{value:'Unsent 中文 draft',attrs:{placeholder:'Write a message onto Bitcoin…',title:'Publish onto Bitcoin','aria-label':'Publish onto Bitcoin'}});
   await a.language('fr');await a.language('ar');
   assert.equal(paragraph.textContent,'  رسائل على Bitcoin.\n');
-  assert.equal(input.getAttribute('title'),'إرفاق ملف أو صورة');assert.equal(input.getAttribute('aria-label'),'النشر على Bitcoin');
+  assert.equal(input.getAttribute('title'),'النشر على Bitcoin');assert.equal(input.getAttribute('aria-label'),'النشر على Bitcoin');
   await a.language('off');
   assert.equal(a.api.getLanguage(),'en');assert.equal(paragraph.textContent,'  Messages on Bitcoin.\n');
-  assert.equal(input.getAttribute('placeholder'),'Write a message onto Bitcoin…');assert.equal(input.getAttribute('title'),'Attach a file or image');assert.equal(input.getAttribute('aria-label'),'Publish onto Bitcoin');
+  assert.equal(input.getAttribute('placeholder'),'Write a message onto Bitcoin…');assert.equal(input.getAttribute('title'),'Publish onto Bitcoin');assert.equal(input.getAttribute('aria-label'),'Publish onto Bitcoin');
   assert.equal(input.value,'Unsent 中文 draft');assert.equal(paragraph.getAttribute('lang'),null);assert.equal(paragraph.getAttribute('dir'),null);
   a.api.dispose();
 });
@@ -257,17 +255,17 @@ test('Dynamic statuses, text-node updates and changed placeholders use their lat
   const a=app(),dock=a.add(a.document.body,'div',{className:'dock'});
   const hint=a.add(dock,'div',{text:'Preparing…'}),input=a.add(dock,'textarea',{attrs:{placeholder:'Write a message onto Bitcoin…'}});
   await a.language('fr');
-  hint.textContent='Connecting to Xverse…';input.setAttribute('placeholder','The file above is what gets published');await a.flush();
-  assert.equal(hint.textContent,'Connexion à Xverse…');assert.equal(input.getAttribute('placeholder'),'Le fichier ci-dessus sera publié');
+  hint.textContent='Connecting to Xverse…';input.setAttribute('placeholder','Reply');await a.flush();
+  assert.equal(hint.textContent,'Connexion à Xverse…');assert.equal(input.getAttribute('placeholder'),'Répondre');
   hint.childNodes[0].nodeValue='Connected to UniSat.';await a.flush();assert.equal(hint.textContent,'Connecté à UniSat.');
   await a.language('ar');assert.equal(hint.textContent,'تم الاتصال بـ UniSat.');
-  await a.language('en');assert.equal(hint.textContent,'Connected to UniSat.');assert.equal(input.getAttribute('placeholder'),'The file above is what gets published');
+  await a.language('en');assert.equal(hint.textContent,'Connected to UniSat.');assert.equal(input.getAttribute('placeholder'),'Reply');
   a.api.dispose();
 });
 
 test('New scoped roots and nested controls are translated once without a mutation self-loop',async()=>{
   const a=app();await a.language('fr');
-  const modal=a.add(a.document.body,'div',{id:'ovl'}),heading=a.add(modal,'h2',{text:'Display Language'});
+  const modal=a.add(a.document.body,'nav',{className:'chat-nav'}),heading=a.add(modal,'h2',{text:'Display Language'});
   const nested=a.add(modal,'div',{className:'dock'}),button=a.add(nested,'button',{text:'Apply Language'});
   await a.flush();assert.equal(heading.textContent,'Langue d’affichage');assert.equal(button.textContent,'Appliquer la langue');
   const settled=a.stats();assert.equal(settled.pending,0);assert.equal(a.observers.size,1);
@@ -309,4 +307,53 @@ test('Missing locale entries and oversized dynamic values retain their English s
   const oversized='Replying to '+'A'.repeat(513);assert.equal(a.api.t(oversized),oversized);
   assert.equal(a.api.t('Unlisted status: Reply'),'Unlisted status: Reply');
   assert.deepEqual(a.calls,[]);a.api.dispose();
+});
+
+test('A sidebar tick does not rescan or reformat every translated message menu',async()=>{
+  const a=app(),info=a.add(a.document.body,'aside',{className:'info'}),status=a.add(info,'span',{text:'Preparing…'});
+  const menus=Array.from({length:100},()=>a.add(a.add(a.document.body,'details',{className:'msgopts'}),'button',{text:'Reply'}));
+  await a.language('fr');
+  let reads=0;
+  for(const menu of menus){
+    const text=menu.childNodes[0],descriptor=Object.getOwnPropertyDescriptor(a.Text.prototype,'nodeValue');
+    Object.defineProperty(text,'nodeValue',{get(){reads++;return descriptor.get.call(this)},set(value){descriptor.set.call(this,value)}});
+  }
+  status.textContent='Reading your coins…';await a.flush();
+  assert.equal(status.textContent,'Vérification de vos fonds…');assert.equal(reads,0);
+  const before=a.stats().notifications;a.api.refresh();await a.flush();
+  assert.equal(a.stats().notifications,before,'An unchanged refresh must not rewrite lang/dir attributes');
+  a.api.dispose();
+});
+
+test('An explicit refresh consumes the scheduled observer work and dispose leaves no orphan timer',async()=>{
+  const a=app(),dock=a.add(a.document.body,'div',{className:'dock'}),status=a.add(dock,'span',{text:'Preparing…'});
+  await a.language('fr');status.textContent='Reading your coins…';
+  for(const observer of a.observers)if(observer.records.length)observer.callback(observer.records.splice(0));
+  assert.equal(a.timers.size,1);
+  a.api.refresh();assert.equal(a.timers.size,0);assert.equal(status.textContent,'Vérification de vos fonds…');
+  a.api.dispose();assert.equal(a.timers.size,0);assert.equal(status.textContent,'Reading your coins…');
+  await a.flush();assert.equal(a.stats().pending,0);
+});
+
+test('Search controls and dynamic coverage translate while matching message previews and date metadata stay original',async()=>{
+  const packs=sampleLocales();
+  const copy={
+    'Search Earlier Blocks':'Rechercher dans les blocs précédents',
+    'No matching loaded messages.':'Aucun message chargé ne correspond.',
+    '{n} of {total} blocks searched':'{n} blocs sur {total} recherchés',
+    'Results {start}–{end} of {n}':'Résultats {start}–{end} sur {n}'
+  };
+  for(const [key,value] of Object.entries(copy)){packs.en[key]=key;packs.fr[key]=value;packs.ar[key]=key}
+  const a=app(packs),tools=a.add(a.document.body,'div',{className:'search-tools'});
+  const button=a.add(tools,'button',{text:'Search Earlier Blocks'}),coverage=a.add(tools,'span',{text:'2 of 102 blocks searched'});
+  const summary=a.add(tools,'span',{text:'Results 1–80 of 181'}),empty=a.add(a.document.body,'div',{className:'pal-e',text:'No matching loaded messages.'});
+  const result=a.add(a.document.body,'button',{className:'it'}),preview=a.add(result,'span',{className:'tx',text:'Search Earlier Blocks'});
+  const stamp=a.add(result,'time',{className:'stmp',text:'01/03/2009 6:15 PM'});
+  await a.language('fr');
+  assert.equal(button.textContent,copy['Search Earlier Blocks']);assert.equal(empty.textContent,copy['No matching loaded messages.']);
+  assert.equal(coverage.textContent,'2 blocs sur 102 recherchés');assert.equal(summary.textContent,'Résultats 1–80 sur 181');
+  assert.equal(preview.textContent,'Search Earlier Blocks');assert.equal(stamp.textContent,'01/03/2009 6:15 PM');
+  coverage.textContent='9 of 102 blocks searched';await a.flush();assert.equal(coverage.textContent,'9 blocs sur 102 recherchés');
+  await a.language('en');assert.equal(coverage.textContent,'9 of 102 blocks searched');assert.equal(button.textContent,'Search Earlier Blocks');
+  assert.deepEqual(a.calls,[]);assert.equal(a.stats().pending,0);a.api.dispose();
 });

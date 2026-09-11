@@ -37,7 +37,7 @@ function psbt(parsed,{tx=parsed.tx,maps=parsed.ins.map(i=>i.map)}={}){
 }
 function cloneTx(t){return {version:t.version,locktime:t.locktime,ins:t.ins.map(i=>({...i,scriptSig:bytes(i.scriptSig),witness:i.witness.map(bytes)})),outs:t.outs.map(o=>({...o,script:bytes(o.script)}))}}
 function runtime(){
-  const scope=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,DataView,crypto:webcrypto,atob,btoa,window:{}});
+  const scope=vm.createContext({console,TextEncoder,TextDecoder,Uint8Array,ArrayBuffer,DataView,crypto:webcrypto,atob,btoa,window:{},AbortController,DecompressionStream,ReadableStream,setTimeout,clearTimeout});
   vm.runInContext(fs.readFileSync(path.join(root,'post.js'),'utf8'),scope);
   const L=scope.window.BTCPOST;
   vm.runInContext(declaration('cleanTxid')+'\n'+source,scope);
@@ -116,9 +116,9 @@ test('Strict parsing rejects truncation, appended data, invalid hex and noncanon
 });
 async function sending(options={}){
   const f=await fixture(),events=[],elements=new Map([['sig',{value:f.raw}],['hint',{textContent:''}]]);
-  const snapshot={text,file:null,reply:null};
+  const snapshot={text,reply:null};
   Object.assign(f.scope,{BUSY:false,WALLET_EPOCH:0,ACTIVE_WALLET:null,RATE:3,API:'https://example.invalid',
-    OFFLINE_RUN:1,OFFLINE_SENDING:false,ovp:{classList:{contains:()=>true}},
+    OFFLINE_RUN:1,OFFLINE_SENDING:false,OFFLINE_DECODING:null,ovp:{classList:{contains:()=>true}},
     $:id=>elements.get(id),captureDraft:()=>snapshot,clearSentDraft:d=>{assert.equal(d,snapshot);events.push('clear')},
     refreshComp(){},hint:(s,bad)=>events.push(['hint',s,bad]),setst:s=>events.push(['status',s]),fail:e=>events.push(['error',e.message]),
     esc:s=>String(s).replace(/[<>&"']/g,c=>'&#'+c.charCodeAt(0)+';'),sats:n=>n+' sats',setTimeout(){},
@@ -169,10 +169,53 @@ test('Malformed response IDs cannot enter success HTML or ownership after publis
   }
 });
 test('The actual network push validates successful response bodies',async()=>{
-  const f=runtime();Object.assign(f.scope,{API:'https://example.invalid',fetch:async()=>({ok:true,text:async()=>TXID.toUpperCase()})});
-  vm.runInContext(declaration('push'),f.scope);assert.equal(await f.scope.push('deadbeef'),TXID);
+  const f=await fixture(),id=await f.scope.transactionId(f.raw);
+  Object.assign(f.scope,{API:'https://example.invalid',fetch:async()=>({ok:true,text:async()=>id.toUpperCase()})});
+  vm.runInContext(declaration('push'),f.scope);assert.equal(await f.scope.push(f.raw),id);
   f.scope.fetch=async()=>({ok:true,text:async()=>'<img src=x onerror=alert(1)>'});
-  await assert.rejects(f.scope.push('deadbeef'),/valid transaction ID/);
+  await assert.rejects(f.scope.push(f.raw),/valid transaction ID/);
+  f.scope.fetch=async()=>({ok:true,text:async()=>TXID});
+  await assert.rejects(f.scope.push(f.raw),/different transaction ID/);
+});
+
+test('Network submission checks the session again after asynchronous transaction hashing',async()=>{
+  const f=await fixture();let fetches=0;
+  Object.assign(f.scope,{API:'https://example.invalid',fetch:async()=>{fetches++;throw Error('must not submit')}});
+  vm.runInContext(declaration('push'),f.scope);
+  await assert.rejects(f.scope.push(f.raw,()=>false),/session closed/);assert.equal(fetches,0);
+});
+
+test('Oversized offline paste is rejected before decoding or broadcasting',async()=>{
+  const f=await sending();f.elements.get('sig').value=' '.repeat(4000001);
+  await f.scope.broadcastPasted(f.L,f.snapshot,f.build.psbt);
+  assert.equal(f.events.some(e=>Array.isArray(e)&&e[0]==='push'),false);
+  assert.ok(f.events.some(e=>Array.isArray(e)&&e[0]==='error'&&/too large/.test(e[1])));
+});
+
+test('Closing offline signing aborts pending decoding and cannot broadcast stale results',async()=>{
+  const f=await sending();f.elements.get('sig').value='B$2P0100AA';let cancelled=false;
+  Object.assign(f.scope,{OFFLINE_BUILDING:false,stopAnim(){}});vm.runInContext(declaration('invalidateOffline'),f.scope);
+  const L={...f.L,bbqrJoin:(_parts,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>{cancelled=true;reject(Error('Offline decoding cancelled'))},{once:true}))};
+  const pending=f.scope.broadcastPasted(L,f.snapshot,f.build.psbt);f.scope.invalidateOffline();await pending;
+  assert.equal(cancelled,true);assert.equal(f.scope.OFFLINE_SENDING,false);assert.equal(f.scope.OFFLINE_DECODING,null);
+  assert.equal(f.events.some(e=>Array.isArray(e)&&e[0]==='push'),false);
+});
+
+test('An epoch change while asynchronous QR decoding finishes prevents broadcast',async()=>{
+  const f=await sending();f.elements.get('sig').value='B$2P0100AA';let finish;
+  const L={...f.L,bbqrJoin:()=>new Promise(resolve=>{finish=resolve})};
+  const pending=f.scope.broadcastPasted(L,f.snapshot,f.build.psbt);f.scope.WALLET_EPOCH++;
+  finish({fileType:'T',raw:f.scope.transactionBytes(f.raw)});await pending;
+  assert.equal(f.events.some(e=>Array.isArray(e)&&e[0]==='push'),false);assert.equal(f.scope.OFFLINE_DECODING,null);
+});
+
+test('Builder loading shares a pending request and can retry after failure',async()=>{
+  const scripts=[],scope=vm.createContext({Promise,window:{},LIB:null,LIB_LOADING:null,document:{createElement:()=>({}),head:{appendChild:s=>scripts.push(s)}}});
+  vm.runInContext(declaration('lib'),scope);
+  const first=scope.lib(),same=scope.lib();assert.equal(first,same);assert.equal(scripts.length,1);
+  scripts[0].onerror();await assert.rejects(first,/load/);
+  const retry=scope.lib();assert.equal(scripts.length,2);scope.window.BTCPOST={test:true};scripts[1].onload();
+  assert.equal(await retry,scope.window.BTCPOST);assert.equal(await scope.lib(),scope.window.BTCPOST);
 });
 test('All wallet adapters request signatures only and never call provider broadcast',async()=>{
   const f=await fixture();
@@ -182,6 +225,89 @@ test('All wallet adapters request signatures only and never call provider broadc
       signPSBT:async()=>f.final,request:async(method,params)=>{assert.equal(method,'signPsbt');assert.equal(params.broadcast,false);return{result:{psbt:f.L.b64enc(f.partial),hex:hex(f.partial)}}}};
     const result=await adapter.sign(provider,f.build.psbt,'address',[0],f.L);assert.ok(result.psbt);assert.equal(result.txid,undefined);
   }
+});
+
+test('Xverse cancellation never retries a different connection method',async()=>{
+  const f=runtime();vm.runInContext(html.slice(html.indexOf('const WAL=['),html.indexOf('const detected='))+'\nglobalThis.adapter=WAL.find(w=>w.id==="xverse");',f.scope);
+  for(const returned of [false,true]){
+    const calls=[],provider={request:async(method,params)=>{calls.push(method);assert.equal(params.network,'Mainnet');const error={code:4001,message:'User rejected request'};if(returned)return {error};throw Object.assign(new Error(error.message),error)}};
+    await assert.rejects(f.scope.adapter.connect(provider),/rejected/);assert.deepEqual(calls,['wallet_connect']);
+  }
+});
+
+test('UniSat rejects non-Bitcoin chains even when they share mainnet address encoding',async()=>{
+  const f=runtime();vm.runInContext(html.slice(html.indexOf('const WAL=['),html.indexOf('const detected='))+'\nglobalThis.adapter=WAL.find(w=>w.id==="unisat");',f.scope);
+  for(const name of ['FRACTAL_BITCOIN_MAINNET','BITCOIN_TESTNET',undefined]){
+    await assert.rejects(f.scope.adapter.connect({requestAccounts:async()=>['bc1q-test'],getPublicKey:async()=>hex(pubkey),getChain:async()=>({enum:name})}),/Bitcoin mainnet/);
+  }
+  await assert.rejects(f.scope.adapter.check({getChain:async()=>({enum:'BITCOIN_MAINNET'}),getAccounts:async()=>['bc1q-other']},'bc1q-test'),/account changed/);
+  await f.scope.adapter.check({getChain:async()=>({enum:'BITCOIN_MAINNET'}),getAccounts:async()=>['bc1q-test']},'bc1q-test');
+});
+
+test('A changed account or closed session during the final account check cannot trigger signing',async()=>{
+  for(const changed of [false,true]){
+    const f=await sending();f.wallet.check=async()=>{if(changed)throw Error('Wallet account changed');f.scope.WALLET_EPOCH++};
+    await f.scope.publish(f.wallet,text);
+    assert.equal(f.events.includes('sign'),false);assert.equal(f.events.some(e=>Array.isArray(e)&&e[0]==='push'),false);
+  }
+});
+
+test('No-change remainder fees still pass the independent fee ceiling',async()=>{
+  const f=runtime(),build=await f.L.buildPsbt({address:'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',utxos:[{txid:OUTPOINT,vout:0,value:600}],message:text,feeRate:3});
+  assert.equal(build.change,0);const parsed=f.scope.readPsbt(build.psbt),source=parsed.ins[0];
+  assert.equal(f.scope.checkPsbt(build.psbt,new TextEncoder().encode(text),3,build.fee,{script:source.script,coins:[{txid:OUTPOINT,vout:0,value:600,script:source.script}]}),600);
+});
+
+test('Untrusted error objects are displayed safely and release the busy state',async()=>{
+  const f=await sending();f.wallet.connect=async()=>{throw {message:{reason:'denied'}}};
+  await f.scope.publish(f.wallet,text);
+  assert.equal(f.scope.BUSY,false);assert.ok(f.events.some(e=>Array.isArray(e)&&e[0]==='hint'&&e[2]));
+  assert.equal(f.events.includes('sign'),false);
+});
+
+test('UTXO loading accepts only bounded arrays with explicitly confirmed entries',async()=>{
+  const f=runtime();Object.assign(f.scope,{API:'https://example.invalid'});vm.runInContext(declaration('getUtxos'),f.scope);
+  for(const outputs of [{utxos:[]},new Array(10001)]){
+    f.scope.fetch=async()=>({ok:true,json:async()=>outputs});await assert.rejects(f.scope.getUtxos('address'),/unspent-output response/);
+  }
+  f.scope.fetch=async()=>({ok:true,json:async()=>[null,{status:{confirmed:'true'}},{status:{confirmed:false}},{txid:TXID,status:{confirmed:true}}]});
+  const result=await f.scope.getUtxos('address');assert.equal(result.length,1);assert.equal(result[0].txid,TXID);
+});
+
+test('Transaction response limits are enforced during streaming and close the reader',async()=>{
+  const f=runtime();let signal,cancelled=false,released=false,reads=0;
+  f.scope.fetch=async(_url,options)=>{signal=options.signal;return {ok:true,body:{getReader:()=>({
+    read:async()=>({done:false,value:bytes(reads++?[4,5]:[1,2,3])}),
+    cancel:async()=>{cancelled=true},releaseLock:()=>{released=true}
+  })}}};
+  await assert.rejects(f.scope.transactionRequest('https://example.invalid',{},'text',4),/size limit/);
+  assert.equal(reads,2);assert.equal(cancelled,true);assert.equal(released,true);assert.equal(signal.aborted,true);
+  let consumed=false;f.scope.fetch=async()=>({ok:true,headers:{get:()=> '99999999'},text:async()=>{consumed=true;return ''}});
+  await assert.rejects(f.scope.transactionRequest('https://example.invalid',{},'text',4),/size limit/);assert.equal(consumed,false);
+});
+
+test('Transaction request timeouts release state and never retry an uncertain broadcast',async()=>{
+  for(const post of [false,true]){
+    const f=runtime();let timeout,calls=0,cleared=false;
+    Object.assign(f.scope,{setTimeout:callback=>{timeout=callback;return 1},clearTimeout:()=>{cleared=true},
+      fetch:async(_url,{signal})=>{calls++;return new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true}))}});
+    const pending=f.scope.transactionRequest('https://example.invalid',post?{method:'POST'}:{});timeout();
+    await assert.rejects(pending,post?/check your wallet before retrying/:/timed out/);assert.equal(calls,1);assert.equal(cleared,true);
+  }
+});
+
+test('Xverse falls back only for an unsupported method and never selects an ordinal-only account',async()=>{
+  const f=runtime();vm.runInContext(html.slice(html.indexOf('const WAL=['),html.indexOf('const detected='))+'\nglobalThis.adapter=WAL.find(w=>w.id==="xverse");',f.scope);
+  const calls=[],provider={request:async method=>{calls.push(method);return method==='wallet_connect'?{error:{code:-32601,message:'Method not found'}}:{result:[{purpose:'payment',address:'bc1q-test'}]}}};
+  assert.equal((await f.scope.adapter.connect(provider)).address,'bc1q-test');assert.deepEqual(calls,['wallet_connect','getAccounts']);
+  await assert.rejects(f.scope.adapter.connect({request:async()=>({result:{addresses:[{purpose:'ordinals',address:'bc1p-test'}]}})}),/payment address/);
+});
+
+test('Independent fee check rejects excessive fee hidden inside the previous 50,000-sat allowance',async()=>{
+  const f=await fixture(),tx=cloneTx(f.parsed.tx);tx.outs[1].value-=1000;
+  const changed=psbt(f.parsed,{tx});
+  const sources={script:f.parsed.ins[0].script,coins:f.parsed.ins.map(i=>({txid:hex(Buffer.from(i.txid,'hex').reverse()),vout:i.vout,value:i.value,script:i.script}))};
+  assert.throws(()=>f.scope.checkPsbt(changed,new TextEncoder().encode(text),3,f.build.fee+1000,sources),/far more/);
 });
 
 async function fundingFixture(address='bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'){
@@ -258,8 +384,8 @@ function offlineRuntime(){
   const element=id=>{if(!elements.has(id))elements.set(id,{id,value:id==='qa'?'address':'',disabled:false,innerHTML:'',textContent:'',focus(){events.push(['focus',id])},appendChild(){}});return elements.get(id)};
   const scope=f.scope;
   Object.assign(scope,{$:element,ovp:{classList:{contains:x=>classes.has(x),add:x=>classes.add(x),remove:x=>classes.delete(x)}},pcard:element('pcard'),
-    OFFLINE_RUN:1,OFFLINE_BUILDING:false,OFFLINE_SENDING:false,ANIM:null,CAM:null,WALLET_EPOCH:0,RATE:3,
-    captureDraft:()=>({text,file:null,reply:null}),clearSentDraft:()=>events.push('clear'),markMine:()=>events.push('mine'),
+    OFFLINE_RUN:1,OFFLINE_BUILDING:false,OFFLINE_SENDING:false,OFFLINE_DECODING:null,ANIM:null,CAM:null,WALLET_EPOCH:0,RATE:3,
+    captureDraft:()=>({text,reply:null}),clearSentDraft:()=>events.push('clear'),markMine:()=>events.push('mine'),
     sats:n=>n+' sats',esc:s=>s,hint:s=>events.push(['hint',s]),setst:s=>events.push(['status',s]),fail:e=>events.push(['error',e.message]),
     setInterval:fn=>{timers.push(fn);events.push('animation');return timers.length},clearInterval:()=>events.push('stop-animation'),
     lib:async()=>({bbqr:()=>['one','two'],qrCanvas:()=>{events.push('paint');return{}}}),

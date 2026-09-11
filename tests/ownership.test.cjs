@@ -337,7 +337,7 @@ test('Existing bubbles and You labels update in place when ownership changes', (
 function sendingRuntime(options = {}) {
   const app = runtime(options);
   const events = [];
-  const draft = Object.freeze({text: 'yoyoyo', file: null, reply: null});
+  const draft = Object.freeze({text: 'yoyoyo', reply: null});
   const L = {
     buildPsbt: async () => ({type: 'p2wpkh', psbt: new Uint8Array([1]), fee: 100, vbytes: 100, inputs: [{}]}),
     extract: () => {events.push('extract'); return 'deadbeef';},
@@ -357,11 +357,11 @@ function sendingRuntime(options = {}) {
     },
   };
   Object.assign(app.scope, {
-    BUSY: false, FILE: null, RATE: 3, ACTIVE_WALLET: null, WALLET_EPOCH: 0,
-    OFFLINE_RUN: 1, OFFLINE_SENDING: false, ovp: {classList: {contains: () => true}},
+    BUSY: false, RATE: 3, ACTIVE_WALLET: null, WALLET_EPOCH: 0,
+    OFFLINE_RUN: 1, OFFLINE_SENDING: false, OFFLINE_DECODING: null, ovp: {classList: {contains: () => true}},
     captureDraft: () => {events.push('captured-draft'); return draft;},
     clearSentDraft: snapshot => {events.push(['cleared-draft', snapshot]);},
-    refreshComp: () => {}, drawAtt: () => {},
+    refreshComp: () => {},
     hint: text => {app.elements.get('hint').textContent = text;},
     setst: text => {events.push(['status', text]);},
     fail: error => {events.push(['error', error.message]);},

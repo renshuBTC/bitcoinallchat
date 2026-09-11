@@ -42,6 +42,22 @@ test('block hash is validated before metadata or raw downloads',async()=>{
   await assert.rejects(app.ctx.scanBlock(42),/Invalid block identifier/);assert.equal(calls,1);assert.equal(app.ctx.scanned,0);
 });
 
+test('neighboring block conflicts are rejected before their messages or counters are committed',async()=>{
+  for(const setup of ["BLOCK_HASHES.set(42,'b'.repeat(64))","BLOCK_HASHES.set(41,'b'.repeat(64))","BLOCK_PARENTS.set(43,'b'.repeat(64))"]){
+    const app=runtime();app.evaluate(setup);
+    app.ctx.fetch=async()=>({ok:true,text:async()=>'a'.repeat(64),json:async()=>({timestamp:1,height:42,id:'a'.repeat(64),previousblockhash:'c'.repeat(64)}),arrayBuffer:async()=>new ArrayBuffer(81)});
+    await assert.rejects(app.ctx.scanBlock(42),/chain changed/i);
+    assert.equal(app.ctx.scanned,0);assert.equal(app.ctx.orCount,0);assert.equal(app.evaluate('CHAIN_CHANGED'),true);
+  }
+});
+
+test('mismatched metadata and impossible timestamps cannot be attached to a requested block',async()=>{
+  for(const metadata of [{timestamp:1,height:43},{timestamp:1,id:'b'.repeat(64)},{timestamp:0x100000000},{timestamp:1.5}]){
+    const app=runtime();app.ctx.fetch=async()=>({ok:true,text:async()=>'a'.repeat(64),json:async()=>metadata,arrayBuffer:async()=>new ArrayBuffer(81)});
+    await assert.rejects(app.ctx.scanBlock(42),/metadata mismatch|timestamp/i);assert.equal(app.ctx.scanned,0);
+  }
+});
+
 test('raw reader rejects an excessive content length without reading its body',async()=>{
   const app=runtime();let read=false;app.ctx.fetch=async()=>({ok:true,headers:{get:()=>4000001},arrayBuffer:async()=>{read=true;return new ArrayBuffer(1)}});
   await assert.rejects(app.ctx.readBlockResource('test','raw'),/size limit/);assert.equal(read,false);assert.equal(app.timers.size,0);
@@ -100,8 +116,9 @@ test('initial and expanded text have finite DOM sizes without modifying the sour
   assert.match(html,/View Full Transaction/,'oversized full original remains reachable');
 });
 
-test('Everything has the same observer sentinel and no silent cap is added to conversation records',()=>{
+test('Everything has an observer sentinel and conversation windows do not discard source records',()=>{
   const start=html.indexOf("if(filter==='all')"),end=html.indexOf('reindex(msgs)',start);
   assert.match(html.slice(start,end),/id="toploader"/);
-  assert.doesNotMatch(html.slice(html.indexOf('function render(){'),html.indexOf('function bind(){')),/talk\.slice/);
+  assert.match(html.slice(html.indexOf('function render(){'),html.indexOf('function bind(){')),/talk=page\.rows/);
+  assert.match(html,/const CHAT_PAGE_SIZE=1000/);
 });

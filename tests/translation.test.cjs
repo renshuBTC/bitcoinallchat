@@ -127,13 +127,6 @@ test('Actual text message options contain Reply and a safe Translate link',()=>{
   assert.match(anchor[1],/referrerpolicy="no-referrer"/);assert.match(anchor[1],/opens a new tab/);
   assert.match(anchor[1],new RegExp('data-txid="'+FIRST+'"'));assert.match(anchor[1],/data-vout="0"/);
 });
-test('Actual image message options retain Reply without translating attachment data',()=>{
-  const run=pageRuntime();
-  for(const previewUnavailable of [false,true]){
-    const markup=run.scope.turn(message({kind:'img',text:'Image attachment',bytes:100,previewUnavailable}),null);
-    assert.match(markup,/class="reply-action"/);assert.doesNotMatch(markup,/class="translate-action"/);
-  }
-});
 test('Blank text and invalid output references never render a Translate action',()=>{
   const run=pageRuntime();
   for(const candidate of [message({text:' \n\t'}),message({txid:FIRST.slice(0,8)}),message({vout:-1}),message({vout:undefined})]){

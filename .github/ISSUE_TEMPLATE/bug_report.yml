@@ -1,0 +1,29 @@
+name: Bug report
+description: Report an application problem. Use private reporting for security vulnerabilities.
+body:
+  - type: markdown
+    attributes:
+      value: Do not post seed phrases, private keys, sensitive wallet data, or security exploit details. See SECURITY.md for private reporting.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: Browser name/version and operating system
+  - type: textarea
+    id: details
+    attributes:
+      label: Relevant details
+      description: Optional screenshots, error messages, or public transaction IDs. Remove sensitive information first.

@@ -134,16 +134,16 @@ test('Binary and control bytes remain data', () => {
   assert.equal(app.classifyBytes([0xff, 0xfe, 0xfd, 0]).kind, 'data');
   assert.equal(app.classifyBytes([1, 2, 3, 4]).kind, 'data');
 });
-test('PGP messages and images keep their existing classification', () => {
+test('PGP messages remain text while binary payloads stay outside Conversation', () => {
   const app = runtime();
   assert.equal(app.classifyText('-----BEGIN PGP SIGNED MESSAGE-----\nHello Bitcoin').kind, 'pgp');
-  assert.equal(app.classifyBytes([0x89, 0x50, 0x4e, 0x47, ...new Array(20).fill(0)]).kind, 'img');
+  assert.equal(app.classifyBytes([0x89, 0x50, 0x4e, 0x47, ...new Array(20).fill(0)]).kind, 'data');
 });
 
 test('Reply detection does not decode arbitrary binary or PNG headers as UTF-8', () => {
   const app = runtime();
   assert.equal(app.classifyPayloadBytes([0xff, 0x0a, 0x01]).kind, 'data');
   const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...new Array(20).fill(0)];
-  assert.equal(app.classifyPayloadBytes(png).kind, 'img');
+  assert.equal(app.classifyPayloadBytes(png).kind, 'data');
   assert.equal(app.classifyPayloadBytes(png).replyTo, '');
 });

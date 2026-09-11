@@ -2,10 +2,20 @@
   "name": "bitcoinallchat",
   "version": "1.0.0",
   "private": true,
-  "description": "Reads OP_RETURN messages out of Bitcoin blocks and writes new ones",
+  "description": "Static Bitcoin OP_RETURN reader and wallet-signed message publisher",
   "license": "MIT",
   "type": "module",
-  "scripts": { "build": "sh build.sh", "test": "node --test tests/*.test.cjs" },
+  "homepage": "https://bitcoinallchat.com/",
+  "repository": { "type": "git", "url": "https://github.com/renshuBTC/bitcoinallchat.git" },
+  "bugs": { "url": "https://github.com/renshuBTC/bitcoinallchat/issues" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "build": "node scripts/build.cjs",
+    "build:locales": "node scripts/build-locales.cjs",
+    "check": "node scripts/build.cjs --check",
+    "test": "node --test tests/*.test.cjs"
+  },
   "dependencies": { "qrcode-generator": "2.0.4" },
   "devDependencies": { "esbuild": "0.28.2" }
 }

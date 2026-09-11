@@ -68,7 +68,8 @@ function environment(wallet = true) {
         this.children.push(child);
       }
     }
-    get textContent() { return this._html.replace(/<[^>]*>/g, ''); }
+    // This fixture stores assigned content; it does not emulate HTML parsing.
+    get textContent() { return this._html; }
     set textContent(value) { this._html = value; }
     querySelectorAll(selector) {
       if (selector === 'button') return this.children.filter(el => el.tagName === 'BUTTON');
@@ -84,9 +85,10 @@ function environment(wallet = true) {
   const activeWallet = { id: 'xverse', name: 'Xverse' };
   const ctx = vm.createContext({
     document,
+    addEventListener(type, callback) { listeners.set(type, callback); },
     $: id => elements.get(id) || null,
     ovs: elements.get('ovs'), ovp: elements.get('ovp'), pcard: elements.get('pcard'),
-    BUSY: false, ACTIVE_WALLET: null, FILE: null, REPLY: null, MAXDATA: 100000, WAL: [activeWallet], RATE: null,
+    BUSY: false, ACTIVE_WALLET: null, REPLY: null, MAXDATA: 100000, WAL: [activeWallet], RATE: null,
     detected: () => wallet ? [activeWallet] : [],
     payload: () => 'Message for offline signing',
     hasDraft: () => !!String(ctx.payload()).trim(),
@@ -131,6 +133,14 @@ function environment(wallet = true) {
     }
   };
 }
+
+test('Status fallback preserves authored markup and error details stay escaped', () => {
+  const e = environment();
+  vm.runInContext('setst(\'<span class="k">Reading unspent outputs…</span>\')', e.ctx);
+  assert.equal(e.elements.get('hint').innerHTML, '<span class="k">Reading unspent outputs…</span>');
+  vm.runInContext('fail(new Error(\'<img src=x onerror=alert(1)>\'))', e.ctx);
+  assert.equal(e.elements.get('hint').innerHTML, '&lt;img src=x onerror=alert(1)&gt;');
+});
 
 for (const wallet of [true, false]) {
   test(`Offline click opens its form ${wallet ? 'with' : 'without'} an installed wallet`, async () => {

@@ -21,7 +21,7 @@ test('Shipped templates translate through the actual adapter without changing na
   const fixture=fs.readFileSync(path.join(__dirname,'ui-language.test.cjs'),'utf8');
   const {app}=vm.runInNewContext(fixture.slice(0,fixture.indexOf('\ntest('))+'\n({app});',{require,__dirname,console});
   const a=app(locales);
-  const examples={wallet:'Xverse',fee:'0.00001234 BTC',name:'report-中文.txt',n:'1,234',time:'23:06:45',reason:'Error 31: exact original'};
+  const examples={wallet:'Xverse',fee:'0.00001234 BTC',name:'report-中文.txt',n:'1,234',start:'101',end:'200',total:'5,000',time:'23:06:45',reason:'Error 31: exact original'};
   const fill=key=>key.replace(/\{([a-z]+)\}/g,(_,name)=>examples[name]);
   for(const [code,copy] of Object.entries(locales)){
     for(const key of keys){
