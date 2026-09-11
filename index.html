@@ -108,6 +108,21 @@ a{color:inherit}
 .bub{position:relative;max-width:76%;width:fit-content;background:var(--pill);
   border-radius:13px 13px 13px 4px;padding:8px 13px 6px;box-shadow:0 1px 1px rgba(0,0,0,.14)}
 [data-theme=light] .bub{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.row.own .bub{background:#25443A}
+.row.own .snd{color:#BDE5C7!important}
+.row.own .mst,.row.own .msgopts summary{color:#B4CBBB}
+[data-theme=light] .row.own .bub{background:#E4F3DA}
+[data-theme=light] .row.own .snd{color:#3C682F!important}
+[data-theme=light] .row.own .mst,[data-theme=light] .row.own .msgopts summary{color:#52694B}
+.mine-label{font-weight:600}
+.msgopts{position:relative;flex:0 0 auto}
+.msgopts summary{list-style:none;cursor:pointer;color:var(--mut);font-size:17px;line-height:18px;padding:0 3px;border-radius:4px}
+.msgopts summary::-webkit-details-marker{display:none}
+.msgopts summary:hover,.msgopts summary:focus-visible{background:var(--line2);color:var(--ink)}
+.markmine{position:absolute;right:0;bottom:24px;z-index:10;padding:8px 12px;white-space:nowrap;
+  border:1px solid var(--line2);border-radius:8px;background:var(--pill);color:var(--ink);
+  font-family:var(--sans);font-size:12.2px;box-shadow:0 3px 12px rgba(0,0,0,.2);cursor:pointer}
+.markmine:hover{color:var(--coral)}
 .snd{display:inline-block;font-size:14px;font-weight:600;line-height:1.35;margin-bottom:1px;
   text-decoration:none;font-family:var(--mono);letter-spacing:-.02em}
 a.snd:hover{text-decoration:underline;text-underline-offset:2px}
@@ -349,20 +364,24 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 /* One language for the whole footer line. Nothing in it is coloured and nothing is
    underlined: what you can click is white, what you cannot is dimmed, and hovering lifts
    a soft chip behind it. Those are the only three states, as in Claude's own footer. */
-.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
-  gap:4px 14px;padding:9px 2px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
-  color:var(--mut2)}
-.dfl,.dfr{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-width:0;max-width:100%}
-.vsw{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:0}
-.vb,.dockfoot .dlink,.hint button{background:transparent;border:0;text-decoration:none;
+.dockfoot{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;
+  gap:12px;padding:9px 2px 0;font-family:var(--sans);font-size:12.2px;line-height:1.5;
+  color:var(--mut2);white-space:nowrap;overflow-x:auto;scrollbar-width:thin}
+.dfl,.dfr{display:flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:8px;min-width:0}
+.dfr{margin-left:auto}
+.vsw{display:flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:8px;margin:0}
+.vb,.dockfoot .dlink,.hint button,.wallets a,.wallets button{background:transparent;border:0;text-decoration:none;
   font:inherit;font-family:var(--sans);font-size:12.2px;line-height:1.5;white-space:nowrap;
   color:var(--mut);cursor:pointer;padding:3px 7px;margin:0 -3px;border-radius:7px}
-.vb:hover,.dockfoot .dlink:hover,.hint button:hover{background:rgba(255,255,255,.075);color:var(--ink)}
+.vb:hover,.dockfoot .dlink:hover,.hint button:hover,.wallets a:hover,.wallets button:hover{background:rgba(255,255,255,.075);color:var(--ink)}
 [data-theme=light] .vb:hover,[data-theme=light] .dockfoot .dlink:hover,
-[data-theme=light] .hint button:hover{background:rgba(0,0,0,.055)}
-.vb.on,.hint button{color:var(--ink)}
-.hint{display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px;padding:0;margin:0;min-height:0;
-  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;overflow-wrap:anywhere}
+[data-theme=light] .hint button:hover,[data-theme=light] .wallets a:hover,
+[data-theme=light] .wallets button:hover{background:rgba(0,0,0,.055)}
+.vb.on,.hint button,.wallets a,.wallets button{color:var(--ink)}
+.wallets{display:inline-flex;align-items:center;flex:0 0 auto;gap:2px;color:var(--mut2)}
+.wallets a,.wallets button{flex:0 0 auto}
+.hint{display:inline-flex;align-items:center;flex:0 0 auto;flex-wrap:nowrap;gap:2px;padding:0;margin:0;min-height:0;
+  font-size:12.2px;line-height:1.5;color:var(--mut2);text-align:left;white-space:nowrap}
 .hint:empty{display:none}
 .hint a,.hint a:hover{color:var(--ink);text-decoration:none}
 .dockfoot .bw{color:var(--mut2);font-size:12.2px}
@@ -413,11 +432,8 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .info .istats b{font-weight:700}
 .info .ifoot a,.info .ifoot .icb{text-decoration:underline;text-underline-offset:2px}
 .info .ifoot .icb:hover,.info .ifoot a:hover{color:var(--ink)}
-/* The signing options and the burner note are both consequences of pressing enter, so the
-   note keeps its place in the row but stays invisible until then — hidden rather than
-   removed, so the footer does not shift when it arrives. */
-.dockfoot .bw{visibility:hidden}
-.dockfoot .bw.on{visibility:visible}
+/* Keep all signing choices and the reminder on the same horizontally scrollable row. */
+.dockfoot .bw{flex:0 0 auto}
 .txt{font-size:var(--message-size)}
 .istats span{min-width:0}
 .istats b{flex-shrink:0}
@@ -431,13 +447,13 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 
   <aside class="info">
     <div class="ihead">Bitcoin AllChat</div>
-    <h1 class="open-h">Text written into Bitcoin blocks.</h1>
-    <p class="open-p">Messages are OP_RETURN outputs, read from mempool.space, parsed in your browser.
-      Nothing stored.</p>
-    <p class="open-p">Conversation: what people wrote. Everything: all payloads.</p>
-    <p class="open-p">Writing signs one transaction in your wallet. No key leaves it. You pay the miner fee.
-      + attaches a file, max 100 kB.</p>
-    <p class="open-p warn-p">Use a burner wallet. Nothing published can be undone. No warranty, no liability.</p>
+    <h1 class="open-h">Messages on Bitcoin.</h1>
+    <p class="open-p">OP_RETURN data from mempool.space, decoded in your browser.</p>
+    <p class="open-p">Conversation filters for messages and images. Everything includes parsed protocol data.</p>
+    <p class="open-p">Publish text or attach a file with +. Your wallet signs the transaction; miner fees apply.
+      This site does not request private keys.</p>
+    <p class="open-p">This browser remembers your theme and messages marked as yours.</p>
+    <p class="open-p warn-p">Use a burner wallet. Posts are public. Confirmed posts cannot be edited or deleted.</p>
     <div class="blocks" id="blocks">
       <div class="mbw">
         <div class="mbh">&nbsp;</div>
@@ -499,7 +515,7 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
       <button class="send" id="sendb" title="Publish onto Bitcoin" disabled>↑</button>
       </div>
     </div>
-    <div class="dockfoot">
+    <div class="dockfoot" tabindex="0" aria-label="Message views and signing options">
       <div class="dfl">
         <div class="vsw">
           <button class="vb on" data-v="talk" title="Starts with the latest 100 messages. Scroll up to load earlier messages.">Conversation (Latest 100 Messages)</button>
@@ -507,6 +523,11 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
         </div>
       </div>
       <div class="dfr">
+        <span class="wallets" aria-label="Signing options">Sign With
+          <a id="wallet-xverse" href="https://www.xverse.app/download" target="_blank" rel="noopener noreferrer" title="Sign with Xverse, or download it if it is not installed">Xverse</a>
+          <a id="wallet-unisat" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer" title="Sign with UniSat, or download it if it is not installed">UniSat</a>
+          <button id="hoff" title="Sign with an offline wallet">Offline</button>
+        </span>
         <span class="hint" id="hint" role="status" aria-live="polite" tabindex="-1"></span>
         <span class="bw">Burner wallet, not your main one.</span>
       </div>
@@ -518,6 +539,43 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 const API='https://mempool.space/api';
 const $=id=>document.getElementById(id);
 let TIP=0,next=0,scanned=0,orCount=0,msgs=[],filter='talk',query='',busy=false;
+
+/* Ownership is a local display preference, never inferred from public text or
+   transaction links. No account, address, or private key is stored. */
+function cleanTxid(value){return typeof value==='string'&&/^[0-9a-f]{64}$/i.test(value)?value.toLowerCase():''}
+function readOwn(fallback=new Set()){
+  try{
+    const saved=JSON.parse(localStorage.getItem('bac_sent_txids')||'[]');
+    return new Set(Array.isArray(saved)?[...new Set(saved.map(cleanTxid).filter(Boolean))].slice(-1000):[]);
+  }catch(e){return fallback}
+}
+let OWN=readOwn(), OWN_PENDING=new Map();
+function isMine(txid){return OWN.has(cleanTxid(txid))}
+function refreshOwn(){
+  OWN=readOwn(OWN);
+  for(const [id,yes] of OWN_PENDING){OWN.delete(id);if(yes) OWN.add(id)}
+  while(OWN.size>1000) OWN.delete(OWN.values().next().value);
+}
+function markMine(txid,yes=true){
+  const id=cleanTxid(txid); if(!id) return;
+  OWN_PENDING.set(id,!!yes);
+  refreshOwn();
+  try{localStorage.setItem('bac_sent_txids',JSON.stringify([...OWN]));OWN_PENDING.clear()}catch(e){}
+  updateOwnBubbles();
+}
+function syncOwn(event){
+  if(event.key!=='bac_sent_txids'&&event.key!==null) return;
+  refreshOwn();
+  updateOwnBubbles();
+}
+function updateOwnBubbles(){
+  document.querySelectorAll('.row[data-txid]').forEach(row=>{
+    const mine=isMine(row.dataset.txid);
+    row.classList.toggle('own',mine);
+    const label=row.querySelector('.mine-label'); if(label) label.hidden=!mine;
+    const button=row.querySelector('.markmine'); if(button) button.textContent=mine?'Unmark as Mine':'Mark as Mine';
+  });
+}
 
 /* ---------------- raw block parser ---------------- */
 const h32=b=>{let h=2166136261;for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619)}return h>>>0};
@@ -665,14 +723,15 @@ function turn(m,prev){
   const long=m.text.length>340, mono=(m.kind==='pgp'||m.kind==='bridge');
   const who=m.who||(m.txid?m.txid.slice(0,8):'unknown');
   const col=hue(who);
-  const same=prev&&(prev.who||(prev.txid?prev.txid.slice(0,8):'unknown'))===who;
+  const mine=isMine(m.txid);
+  const same=prev&&isMine(prev.txid)===mine&&(prev.who||(prev.txid?prev.txid.slice(0,8):'unknown'))===who;
   const t=new Date(m.time*1000).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
   const par=parentOf(m);
   const pw=par?(par.who||par.txid.slice(0,8)):'';
   const quote=par?`<a class="qt" href="#m-${par.txid}" style="border-color:${hue(pw)}"><span class="qn" style="color:${hue(pw)}">${esc(pw)}</span><span class="qx">${esc((par.text||'').replace(/\s+/g,' ').slice(0,110))}</span></a>`:'';
   const nm=m.txid?`<a class="snd" style="color:${col}" href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener" title="Open this transaction on mempool.space">${esc(who)} \u2197</a>`
                  :`<div class="snd" style="color:${col}">${esc(who)}</div>`;
-  return `<div class="row ${same?'':'grp'}" id="m-${m.txid||''}">
+  return `<div class="row ${same?'':'grp'} ${mine?'own':''}" id="m-${m.txid||''}" data-txid="${esc(m.txid||'')}">
     <div class="ava ${same?'hid':''}" style="background:${col}">${esc(who).slice(0,2).toUpperCase()}</div>
     <div class="bub">
       ${same?'':nm}
@@ -680,7 +739,8 @@ function turn(m,prev){
       ${m.kind==='img'
         ? `<button class="imh" data-id="${esc(m.txid||'')}">Image · ${(m.bytes/1024).toFixed(1)} KB · Show</button>`
         : `<div class="txt ${mono?'mono':''} ${long?'clip':''}">${esc(m.text)}</div>`}
-      <div class="mst">${long?'<span class="more">More</span>':''}<span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span></div>
+      <div class="mst">${long?'<span class="more">More</span>':''}<span class="mine-label" ${mine?'':'hidden'} title="Marked as yours in this browser">You</span><span class="blk">#${m.height.toLocaleString()}</span><span>${t}</span>
+        ${cleanTxid(m.txid)?`<details class="msgopts"><summary aria-label="Message options" title="Message options">⋯</summary><button class="markmine" data-txid="${m.txid}" title="Remember this choice in this browser">${mine?'Unmark as Mine':'Mark as Mine'}</button></details>`:''}</div>
     </div></div>`;
 }
 /* find the message this one answers: first by spend-link, then by a txid quoted in the text */
@@ -773,6 +833,10 @@ function render(){
   t.innerHTML=head+body; counts(); bind(); observeTop();
 }
 function bind(){
+  document.querySelectorAll('.markmine').forEach(el=>el.onclick=()=>{
+    markMine(el.dataset.txid,!isMine(el.dataset.txid));
+    el.closest('details').open=false;
+  });
   document.querySelectorAll('.vb').forEach(el=>el.onclick=()=>{
     filter=el.dataset.v;
     document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v===filter));
@@ -1143,9 +1207,8 @@ const WAL=[
 const detected=()=>WAL.filter(w=>{try{return !!w.p()}catch(e){return false}});
 let BUSY=false;
 
-/* No wallet state is kept. Nothing is written to storage, the choice is not
-   remembered between sends, and the connection is dropped as soon as the wallet
-   has signed — so a reload never lands on a page that is already connected. */
+/* Wallet connections are not persisted by this site. Only theme preferences and
+   the public transaction IDs marked as yours are remembered in this browser. */
 try{localStorage.removeItem('bac_wallet')}catch(e){}
 async function drop(w){
   try{
@@ -1156,6 +1219,7 @@ async function drop(w){
 }
 const dropAll=()=>{for(const w of WAL) drop(w)};
 addEventListener('pagehide',dropAll);
+addEventListener('storage',syncOwn);
 
 /* One status line under the composer carries the whole flow: which wallet,
    what the fee is, and the link when it lands. No dialog, no options. */
@@ -1262,23 +1326,34 @@ function checkPsbt(psbt,data,feeRate,claimed){
 async function send(){
   const text=payload();
   if(BUSY||(!FILE&&!String(text).trim())) return;
-  const av=detected();
-  if(!av.length){
-    hint('No Bitcoin wallet in this browser. <button id="hoff">Sign Offline Instead</button>');
-    $('hoff').onclick=()=>drawQR(text);
-    return;
-  }
-  if(true){
-    hint((av.length?'Sign With ':'Sign ')
-      +av.map(x=>`<button data-w="${esc(x.id)}">${esc(x.name)}</button>`).join('')
-      +'<button data-w="__off" title="Sparrow, Coldcard, Keystone, SeedSigner">Offline</button>');
-    armFooter();
-    $('hint').querySelectorAll('button').forEach(b=>b.onclick=()=>
-      b.dataset.w==='__off' ? drawQR(text) : publish(WAL.find(x=>x.id===b.dataset.w),text));
-    return;
-  }
-  publish(av[0],text);
+  hint('');
+  $('wallet-xverse').focus();
 }
+
+function chooseWallet(id){
+  if(BUSY) return;
+  const text=payload();
+  if(!FILE&&!String(text).trim()){
+    hint('Write a message first.'); $('q').focus(); return;
+  }
+  hint('');
+  if(id==='__off') return drawQR(text);
+  const w=detected().find(w=>w.id===id);
+  if(w) return publish(w,text);
+}
+function bindWallets(){
+  for(const id of ['xverse','unisat']){
+    $('wallet-'+id).onclick=e=>{
+      /* Detect on each click: extensions can become available after page load.
+         An absent provider leaves the ordinary official-download link intact. */
+      if(!detected().some(w=>w.id===id)) return;
+      e.preventDefault();
+      return chooseWallet(id);
+    };
+  }
+  $('hoff').onclick=()=>chooseWallet('__off');
+}
+bindWallets();
 
 async function publish(w,text){
   BUSY=true; refreshComp();
@@ -1304,6 +1379,7 @@ async function publish(w,text){
     hint(`Checked · ${sats(fee)} to the miner, the rest back to you — confirm in ${esc(w.name)}`);
     const r=await w.sign(p,b.psbt,acc.address,b.inputs.map((_,i)=>i),L);
     const txid=r.txid||await push(L.extract(r.psbt));
+    markMine(txid);
     $('q').value=''; FILE=null; drawAtt();
     hint(`Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,12)}…</a> appears here at the next block.`);
     setTimeout(()=>{if(($('hint').textContent||'').startsWith('Sent.')) hint('')},20000);
@@ -1387,6 +1463,7 @@ async function broadcastPasted(L){
     }
     setst('<span class="k">Broadcasting…</span>');
     const txid=await push(raw);
+    markMine(txid);
     $('q').value=''; refreshComp();
     setst(`<div class="ok">Sent. <a href="https://mempool.space/tx/${txid}" target="_blank" rel="noopener">${txid.slice(0,24)}…</a>`
       +`<br><span class="k">It appears in the room at the next block.</span></div>`);

@@ -3,9 +3,10 @@
 [bitcoinallchat.com](https://bitcoinallchat.com) — the OP_RETURN outputs of recent
 Bitcoin blocks, read as one conversation, and a composer for adding to it.
 
-There is no server, no database, no account and no cookie. The page is a single
-HTML file that fetches raw blocks from mempool.space and parses them in your
-browser. Nothing is stored anywhere; the chain is the database.
+There is no application backend or user account. The static page fetches raw
+blocks from mempool.space and parses them in your browser. Published data is on
+Bitcoin. The theme and up to 1,000 transaction IDs marked as yours are saved in
+this browser's local storage; message text, wallet addresses and keys are not.
 
 ## Reading
 
@@ -13,8 +14,8 @@ browser. Nothing is stored anywhere; the chain is the database.
 every output beginning with `OP_RETURN`, joins all of its data pushes, and decides
 whether the bytes are a message, a picture, or protocol noise.
 
-- **Multiple pushes are joined.** Anything over 520 bytes has to be split, so a
-  reader that takes only the first push truncates long messages.
+- **Multiple pushes are joined.** The composer splits data into pushes of up to
+  520 bytes. Reading only the first push would truncate those long messages.
 - **Token data is skipped.** `OP_RETURN OP_13` is a token protocol, not writing.
 - **Short messages count.** Two words, an emoji, or bare punctuation like `:(`
   reads as someone talking. A lone alphanumeric token — `MMSS`, `ordi`, `SATFLOW`
@@ -22,25 +23,37 @@ whether the bytes are a message, a picture, or protocol noise.
 - **Pictures are recognised by magic bytes** and shown only when you click, because
   anyone can pay to put an image in a block.
 
-A quoted reply is a transaction that spends an output of the transaction it
-answers, between two different wallets. Wallets spending their own change, and
-reposts of identical text, are excluded — otherwise one person posting repeatedly
-looks like a conversation with themselves.
+Conversation uses language and payload heuristics; it cannot verify human
+authorship. Everything also shows parsed protocol data, up to the latest 2,000
+matching entries. Unsupported and skipped outputs are not displayed.
+
+Quoted replies are inferred from transaction spend links. Shared output scripts
+and repeated text help filter apparent self-replies; this does not verify who
+controls a wallet.
+
+Messages sent successfully from this browser receive a green bubble and a **You**
+label. For older posts, use **⋯ → Mark as Mine**. These are local display markers,
+not proof of authorship. **Unmark as Mine** removes a marker. Markers do not sync
+between browsers and are lost when this site's browser storage is cleared.
 
 ## Writing
 
 You type, the page builds an unsigned PSBT with one `OP_RETURN` output carrying
 your bytes and change back to the address you are spending from, and your wallet
-signs it. The page never sees a key, never holds a coin, and takes nothing. The
-only cost is the miner fee.
+signs it. The page does not request private keys or charge a service fee. Miner
+fees apply. Xverse and UniSat open their official download pages when the selected
+extension is unavailable; Offline supports signing on a separate device.
 
 `post-src.js` builds the transaction: bech32/bech32m and base58check address
 decoding, coin selection, PSBT v0 serialisation, extraction of a signed PSBT, and
 BBQr for offline signers. It handles `bc1q`, `bc1p` and legacy `1…` addresses.
 Nested SegWit (`3…`) is not supported and says so.
 
-Bitcoin Core v30 relays up to 100,000 bytes of `OP_RETURN` data by default; older
-nodes stop at 83, which is where the composer starts showing a byte count.
+The app accepts inputs up to 100,000 bytes, which is not a guarantee that a file
+can be relayed or mined. [Bitcoin Core v30](https://bitcoincore.org/en/releases/30.0/)
+sets a default aggregate data-carrier script limit of 100,000 bytes; transaction
+size limits and script overhead reduce usable payload capacity. Nodes can apply
+different policies.
 
 ## The check before signing
 
@@ -86,8 +99,8 @@ declared in the Content-Security-Policy and nothing else is allowed to be reache
 
 ## Checks
 
-Run `npm test` (Node.js 20 or newer) for the conversation-classifier, offline-dialog,
-and composer-keyboard regression tests. They exercise the page's actual functions
+Run `npm test` (Node.js 20 or newer) for the conversation-classifier, wallet-routing,
+offline-dialog, ownership-marker and composer-keyboard tests. They exercise the page's actual functions
 with local fixtures; they do not connect a wallet or broadcast a transaction.
 
 ## Credit

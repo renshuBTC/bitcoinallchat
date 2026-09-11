@@ -20,6 +20,7 @@ function environment(wallet = true) {
   const elements = new Map();
   const listeners = new Map();
   const intervalsCleared = [];
+  const publishCalls = [];
   const document = { activeElement: null,
     addEventListener(type, callback) { listeners.set(type, callback); },
     getElementById(id) { return elements.get(id) || null; },
@@ -79,8 +80,8 @@ function environment(wallet = true) {
     focus() { document.activeElement = this; }
     click() { this.focus(); return this.onclick?.({ target: this, preventDefault() {} }); }
   }
-  for (const id of ['ovs', 'ovp', 'pcard', 'hint', 'q', 'sendb']) new Element(id);
-  const activeWallet = { id: 'testwallet', name: 'Test Wallet' };
+  for (const id of ['ovs', 'ovp', 'pcard', 'hint', 'q', 'sendb', 'hoff', 'wallet-xverse', 'wallet-unisat']) new Element(id);
+  const activeWallet = { id: 'xverse', name: 'Xverse' };
   const ctx = vm.createContext({
     document,
     $: id => elements.get(id) || null,
@@ -88,7 +89,7 @@ function environment(wallet = true) {
     BUSY: false, FILE: null, WAL: [activeWallet], RATE: null,
     detected: () => wallet ? [activeWallet] : [],
     payload: () => 'Message for offline signing',
-    armFooter() {}, publish() { throw new Error('A wallet must not be invoked by these tests'); },
+    armFooter() {}, publish: (w, text) => publishCalls.push({ id: w.id, text }),
     esc: value => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     clearInterval: id => intervalsCleared.push(id),
     setTimeout: fn => { fn(); return 1; },
@@ -111,18 +112,17 @@ function environment(wallet = true) {
     const modalState = html.slice(modalStart, modalEnd).replace(/const ovs=[^;]*;/, '');
     vm.runInContext(modalState, ctx);
   }
-  for (const name of ['openSearch', 'closeSearch', 'closeSheet', 'send', 'drawQR', 'buildQR']) {
+  for (const name of ['openSearch', 'closeSearch', 'closeSheet', 'send', 'chooseWallet', 'bindWallets', 'drawQR', 'buildQR']) {
     vm.runInContext(declaration(name), ctx);
   }
   const closeBindingsStart = html.indexOf('ovs.onclick=');
   const closeBindingsEnd = html.indexOf('function fillSearch(', closeBindingsStart);
   vm.runInContext(html.slice(closeBindingsStart, closeBindingsEnd), ctx);
-  return { ctx, elements, document, listeners, intervalsCleared,
+  ctx.bindWallets();
+  return { ctx, elements, document, listeners, intervalsCleared, publishCalls,
     async open() {
       await ctx.send();
-      const button = wallet
-        ? elements.get('hint').querySelectorAll('button').find(el => el.dataset.w === '__off')
-        : elements.get('hoff');
+      const button = elements.get('hoff');
       assert.ok(button, 'Offline option is presented');
       await button.click();
       return button;
@@ -149,6 +149,52 @@ test('Closing the sheet stops QR animation and camera tracks', async () => {
   assert.equal(e.elements.get('ovp').classList.contains('on'), false);
   assert.deepEqual(e.intervalsCleared, [41]);
   assert.equal(e.ctx.cameraStopped, true);
+});
+
+for (const id of ['xverse', 'unisat']) {
+  test(`Missing ${id} follows the download link without invoking a wallet`, async () => {
+    const e = environment(false);
+    let prevented = false;
+    await e.elements.get('wallet-' + id).onclick({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, false);
+    assert.deepEqual(e.publishCalls, []);
+    const anchor = html.match(new RegExp('<a id="wallet-' + id + '"[^>]+>'))[0];
+    assert.ok(anchor.includes('href="' + (id === 'xverse' ? 'https://www.xverse.app/download' : 'https://unisat.io/download') + '"'));
+    assert.match(anchor, /target="_blank"/);
+    assert.match(anchor, /rel="noopener noreferrer"/);
+  });
+
+  test(`Installed ${id} signs the draft and prevents download navigation`, async () => {
+    const e = environment(false);
+    // Availability changes after the controls have been bound.
+    e.ctx.detected = () => [{ id, name: id }];
+    let prevented = false;
+    await e.elements.get('wallet-' + id).onclick({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.deepEqual(e.publishCalls, [{ id, text: 'Message for offline signing' }]);
+  });
+}
+
+test('An installed wallet does not intercept the other wallet download', async () => {
+  const e = environment(true);
+  let prevented = false;
+  await e.elements.get('wallet-unisat').onclick({ preventDefault() { prevented = true; } });
+  assert.equal(prevented, false);
+  assert.deepEqual(e.publishCalls, []);
+});
+
+test('Empty drafts and in-progress sends do not start another signing flow', async () => {
+  const e = environment(true);
+  e.ctx.payload = () => '  ';
+  await e.elements.get('wallet-xverse').click();
+  assert.match(e.elements.get('hint').textContent, /Write a message first/);
+  assert.equal(e.document.activeElement, e.elements.get('q'));
+  e.ctx.payload = () => 'Another message';
+  e.ctx.BUSY = true;
+  await e.elements.get('wallet-xverse').click();
+  await e.elements.get('hoff').click();
+  assert.deepEqual(e.publishCalls, []);
+  assert.equal(e.elements.get('ovp').classList.contains('on'), false);
 });
 
 test('Backdrop and Escape close the sheet', async () => {
