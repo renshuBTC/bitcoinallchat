@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-yt75b+MKY+ic+eXP1zVEzMqnkq1Ik9hUEt55rR+GM7Y='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-4c0m1JUfd9yaK5P8H2KR3CBANlyal2MuceyqqjiheHM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -22,6 +22,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Bitcoin AllChat — Bitcoin OP_RETURN Chat">
 <meta name="twitter:description" content="Read text messages stored in Bitcoin OP_RETURN outputs. Publish messages and replies with a Bitcoin wallet or an offline signer.">
+<link rel="preconnect" href="https://mempool.space" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="locales.js" integrity="sha384-UXVUQ/jzH085fQRF9rT2RXOX4E8erf5EYa8NH2x6E7jxTzEgvNGfUwjSXx8bBzNM" defer></script>
 <script src="translate.js" integrity="sha384-/qdDU9ulf951n6wD7Gx0WIttBOK8KokcfR+pNCMNdZc9x5hm53hUWEZ7LhFX/W71" defer></script>
@@ -1119,7 +1120,27 @@ function revealMessage(key){
   if(at<page.start||at>=page.end){const start=Math.max(0,at-Math.floor(CHAT_PAGE_SIZE/2));setChatPage(page.matches,start,Math.min(page.matches.length,start+CHAT_PAGE_SIZE))}
   render();
   const element=document.getElementById(messageDomId(target));
-  if(element){element.scrollIntoView({block:'center',behavior:'smooth'});element.classList.add('flash');setTimeout(()=>element.classList.remove('flash'),1500)}
+  if(element){
+    element.classList.add('flash');setTimeout(()=>element.classList.remove('flash'),1500);
+    /* Put the message at the top of the view so the reader can carry on downwards from it.
+       scrollIntoView loses this race: the thread is still being rebuilt around the target, and the
+       smooth animation is cancelled by the scroll the rebuild restores, which left the message far
+       off screen. Set the position outright and reapply it briefly until the height settles, giving
+       up the moment the reader scrolls somewhere else themselves. */
+    const revealId=messageDomId(target);let revealAt=-1;
+    const placeReveal=()=>{
+      const row=document.getElementById(revealId);if(!row)return false;
+      if(revealAt>=0&&Math.abs(window.scrollY-revealAt)>40)return false;
+      const limit=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const want=Math.max(0,Math.min(row.getBoundingClientRect().top+window.scrollY-12,limit));
+      if(Math.abs(window.scrollY-want)>2)window.scrollTo(0,want);
+      revealAt=window.scrollY;return true;
+    };
+    placeReveal();
+    const revealUntil=Date.now()+1200;
+    const keepPlaced=()=>{if(placeReveal()&&Date.now()<revealUntil)setTimeout(keepPlaced,100)};
+    setTimeout(keepPlaced,60);
+  }
   return !!element;
 }
 
