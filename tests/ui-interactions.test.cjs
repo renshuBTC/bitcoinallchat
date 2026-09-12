@@ -47,7 +47,7 @@ function search(){
     revealMessage:key=>effects.push('reveal:'+key),closeSheet:()=>effects.push('close-offline'),cancelReply:()=>effects.push('cancel-reply'),
     setTimeout:fn=>{const id=++timerId;timers.set(id,fn);return id},clearTimeout:id=>timers.delete(id),console});
   context.searchMessages=()=>context.msgs;
-  for(const name of ['openSearch','closeSearch','cancelSearchWork','queueSearchQuery','tryPendingSearch','captureSearchAnchor','noteSearchScroll','handleSearchScroll','searchKey','fillSearch','esc','displayTime','searchTimeHTML','updateSearchNotice','searchResultPage','earlierSearchResults','newerSearchResults','latestSearchResults'])vm.runInContext(declaration(name),context);
+  for(const name of ['openSearch','closeSearch','cancelSearchWork','queueSearchQuery','tryPendingSearch','captureSearchAnchor','noteSearchScroll','handleSearchScroll','searchKey','fillSearch','esc','displayTime','updateSearchNotice','searchResultPage','earlierSearchResults','newerSearchResults','latestSearchResults'])vm.runInContext(declaration(name),context);
   const start=html.indexOf("$('sq').oninput=",html.indexOf('/* ---- search palette ---- */'));
   const end=html.indexOf('function searchKey(',start);vm.runInContext(html.slice(start,end),context);
   function key(fields={}){const e={key:'Escape',prevented:false,preventDefault(){this.prevented=true},...fields};listeners.get('keydown')(e);return e}
@@ -94,30 +94,14 @@ test('Jump to latest opens the latest window rather than stopping at the end of 
   }
 });
 
-test('Search rows match Everything order with one-line time and a full accessible date',()=>{
-  const a=search(),timestamp=1231006505,txid='a'.repeat(64);
-  a.context.msgs=[{txid,vout:2,text:'Historical message',who:'sender',height:123,time:timestamp}];
+test('Search rows show only the transaction id and the message text',()=>{
+  const a=search(),txid='a'.repeat(64);
+  a.context.msgs=[{txid,vout:2,text:'Historical message',who:'sender',height:123,time:1231006505}];
   a.context.openSearch();const markup=a.nodes.get('sl').innerHTML;
-  const expectedDate=new Intl.DateTimeFormat(undefined,{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(timestamp*1000));
-  assert.match(markup,/<span class="txid">aaaaaaaa<\/span><span class="p" dir="auto">Historical message<\/span><span class="h">#123<\/span>/);
+  assert.match(markup,/<span class="txid">aaaaaaaa<\/span><span class="p" dir="auto">Historical message<\/span><\/button>/);
   assert.doesNotMatch(markup,/sender|class="d"|background:/);
-  const time=a.context.displayTime(timestamp),label=a.context.esc(expectedDate+' '+time);
-  assert(markup.includes('<time class="stmp" datetime="2009-01-03T18:15:05.000Z"'));
-  assert(markup.includes('title="'+label+'" aria-label="'+label+'">'+a.context.esc(time)+'</time>'));
-  assert.doesNotMatch(markup,/<time[^>]*>[\s\S]*?<span/);
+  assert.doesNotMatch(markup,/class="h"|class="stmp"|<time/,'Block height and time no longer take width from the message');
   assert.equal(a.nodes.get('sl').children[0].tagName,'BUTTON');
-});
-test('Missing or invalid timestamps show a placeholder without exceptions or invalid datetime attributes',()=>{
-  const a=search();
-  for(const value of [undefined,null,'',NaN,Infinity,-1,1.5,1e50,'<svg onload=alert(1)>',{valueOf(){throw Error('Must not coerce')}}]){
-    assert.equal(a.context.searchTimeHTML(value),'<span class="stmp">—</span>');
-  }
-});
-test('Date and time labels are escaped even if a formatter returns markup-like text',()=>{
-  const a=search();a.context.searchTimeHTML.formatter={format:()=>'<img src=x>'};a.context.displayTime=()=>'<svg onload=alert(1)>';
-  const markup=a.context.searchTimeHTML(1231006505);
-  assert.match(markup,/&lt;img src=x&gt;/);assert.match(markup,/&lt;svg onload=alert\(1\)&gt;/);
-  assert.doesNotMatch(markup,/<img|<svg/);assert.match(markup,/datetime="2009-01-03T18:15:05.000Z"/);
 });
 
 function loadedMessages(count){return Array.from({length:count},(_,i)=>({txid:i.toString(16).padStart(64,'0'),vout:0,height:965818+i,text:'Message '+i}))}

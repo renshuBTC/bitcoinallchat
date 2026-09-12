@@ -7,7 +7,7 @@
 <!-- Everything on this page is attacker-supplied: the messages come off a public
      chain. This caps what any of it could reach even if something got through. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none';
-  script-src 'self' 'sha256-GE/ZrA9Vh2UfA7Ba1hZPmN464cSu5UpvG3yzyHkHXtI='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  script-src 'self' 'sha256-yt75b+MKY+ic+eXP1zVEzMqnkq1Ik9hUEt55rR+GM7Y='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src https://fonts.gstatic.com; img-src 'self' data: https://mempool.space;
   connect-src https://mempool.space https://data-api.binance.vision wss://data-stream.binance.vision;
   base-uri 'none'; form-action 'none'">
@@ -229,8 +229,6 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .vb.on{background:var(--comp);color:var(--ink);border-color:var(--line2)}
 .payl{margin:0 0 8px}
 .pay,.it{display:flex;gap:11px;align-items:baseline;padding:3px 0;font-family:var(--mono);font-size:12.6px;color:var(--mut2)}
-.pay .h,.it .h{flex:0 0 auto;width:68px;text-align:right}
-.pay .t{flex:0 0 auto;width:64px;text-align:right;color:var(--mut2)}
 .pay a{color:var(--mut);text-decoration:none;flex:0 0 auto;width:62px}
 .pay a:hover{color:var(--coral)}
 .pay .p,.it .p{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
@@ -256,14 +254,10 @@ a.snd:hover{text-decoration:underline;text-underline-offset:2px}
 .it{width:100%;border:0;border-radius:3px;background:transparent;text-align:start;cursor:pointer;line-height:normal}
 .it:hover{background:var(--pill)}
 .it .txid{flex:0 0 62px;color:var(--mut);white-space:nowrap}
-.it .h{min-width:0;white-space:nowrap}
-.it .stmp{flex:0 0 auto;width:64px;white-space:nowrap;text-align:right;color:var(--mut2)}
 @media(max-width:600px){
   .it{display:grid;grid-template-columns:62px minmax(0,1fr) max-content;gap:0 11px}
   .it .txid{grid-column:1;grid-row:1 / span 2;align-self:start}
   .it .p{grid-column:2 / -1}
-  .it .h{grid-column:2;grid-row:2;width:auto;text-align:left}
-  .it .stmp{grid-column:3;grid-row:2}
 }
 .pal-e{padding:12px 0;color:var(--mut);font:12.6px/1.5 var(--mono)}
 
@@ -1141,7 +1135,7 @@ function render(){
       +rows.map(m=>`<div class="pay" id="p-${esc(messageKey(m))}" data-message="${esc(messageKey(m))}">`
           +(m.txid?`<a href="https://mempool.space/tx/${m.txid}" target="_blank" rel="noopener">${esc(m.txid.slice(0,8))}</a>`:'')
           +`<span class="p" dir="auto">${esc(payloadExcerpt(m))}</span>`
-          +`<span class="h">#${m.height.toLocaleString()}</span><span class="t">${displayTime(m.time)}</span></div>`
+          +`</div>`
       ).join('')+`</div><div class="toploader" id="reader-bottom">${end<matches.length?'Scroll down for newer entries.':''}</div>`;
     restoreReaderAnchor(anchor);counts();bind();refreshHistorySearch();return;
   }
@@ -1889,14 +1883,6 @@ function searchKey(value){
   parts.push(text.slice(start).normalize('NFC'));
   return parts.join('').toLowerCase();
 }
-function searchTimeHTML(timestamp){
-  if(!Number.isInteger(timestamp)||timestamp<0)return '<span class="stmp">—</span>';
-  const date=new Date(timestamp*1000);
-  if(!Number.isFinite(date.getTime()))return '<span class="stmp">—</span>';
-  const formatter=searchTimeHTML.formatter||(searchTimeHTML.formatter=new Intl.DateTimeFormat(undefined,{year:'numeric',month:'2-digit',day:'2-digit'}));
-  const time=displayTime(timestamp),label=esc(formatter.format(date)+' '+time);
-  return `<time class="stmp" datetime="${date.toISOString()}" title="${label}" aria-label="${label}">${esc(time)}</time>`;
-}
 function fillSearch(reset=false){
   const list=$('sl'),anchor=reset?null:captureSearchAnchor();
   const q=searchKey($('sq').value.trim());
@@ -1908,8 +1894,7 @@ function fillSearch(reset=false){
   $('sl').innerHTML=hits.length?hits.map(m=>{
       return `<button type="button" class="it" data-message="${esc(messageKey(m))}"><span class="txid">${esc(m.txid?m.txid.slice(0,8):'—')}</span>`
         +`<span class="p" dir="auto">${esc((m.text||m.hex||'').slice(0,180).replace(/\s+/g,' '))}</span>`
-        +`<span class="h">#${m.height.toLocaleString()}</span>`
-        +searchTimeHTML(m.time)+'</button>'}).join('')
+        +'</button>'}).join('')
     :notice?'':'<div class="pal-e">No matching loaded messages.</div>';
   const buttons=[...$('sl').querySelectorAll('.it')];
   buttons.forEach(el=>el.onclick=()=>{
